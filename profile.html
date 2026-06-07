@@ -100,6 +100,7 @@
       font-size: 16px;
       line-height: 1;
       width: fit-content;
+      padding-bottom: 5px;
     }
 
     .menu-item img {
@@ -155,32 +156,11 @@
     }
 
     .avatar {
-      width: 106px;
-      height: 106px;
+      width: 130px;
+      height: 130px;
       border-radius: 50%;
       display: block;
       object-fit: cover;
-      background: #d7d7d7;
-      box-shadow: 0 0 0 6px #fff;
-    }
-
-    .photo-upload {
-      width: 28px;
-      height: 28px;
-      border: 0;
-      padding: 0;
-      background: transparent;
-      display: grid;
-      place-items: center;
-      margin-bottom: 8px;
-      cursor: pointer;
-      box-shadow: 0 0 0 3px #fff;
-    }
-
-    .photo-upload img {
-      width: 28px;
-      height: 28px;
-      display: block;
     }
 
     .hero-main {
@@ -204,10 +184,12 @@
       color: var(--blue-strong);
       font-size: 23px;
       margin: 0;
+      padding-left: 15px;
       line-height: 1.1;
     }
 
     .tags {
+      padding-left: 15px;
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
@@ -249,7 +231,6 @@
       flex: 0 0 auto;
       margin-left: auto;
       position: relative;
-      top: 26px;
       justify-self: end;
     }
 
@@ -487,9 +468,6 @@
         <div class="hero-body">
           <div class="avatar-wrap">
             <img class="avatar" src="stubs/photo_circle.svg" alt="Фото профиля" />
-            <button class="photo-upload" type="button" aria-label="Загрузить фото">
-              <img src="icons/add_photo_icon.svg" alt="" aria-hidden="true" />
-            </button>
           </div>
 
           <div class="hero-main">
