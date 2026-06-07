@@ -1,0 +1,154 @@
+/* components.css - универсальные стили для Web Components и базовых элементов */
+/* Этот файл подходит для всех страниц: профиль, чат, главная и т.д. */
+
+:root {
+    --bg: #eef3fb;
+    --blue: #4b59ff;
+    --blue-soft: #7f90df;
+    --blue-strong: #3f4cff;
+    --text: #24304a;
+    --muted: #8792b0;
+    --card: #ffffff;
+    --stroke: rgba(63, 76, 255, 0.12);
+    --shadow: 0 14px 30px rgba(59, 72, 150, 0.12);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-weight: 600;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Layout страницы - универсальная сетка */
+.page {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    gap: 18px;
+    padding: 14px 16px 18px;
+}
+
+/* Контентная область */
+.content {
+    min-width: 0;
+}
+
+/* Стили для topbar */
+.topbar {
+    height: 54px;
+    background: linear-gradient(180deg, #7c90de 0%, #7f92e2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px 0 14px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.24) inset;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    text-decoration: none;
+}
+
+.brand-icon { 
+    width: 34px; 
+    height: 34px; 
+    display: block; 
+}
+
+.brand-text { 
+    height: 20px; 
+    width: auto; 
+    display: block; 
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255,255,255,0.92);
+    font-size: 13px;
+}
+
+.mini-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: block;
+    object-fit: cover;
+}
+
+.caret {
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid rgba(255,255,255,0.85);
+    border-bottom: 2px solid rgba(255,255,255,0.85);
+    transform: rotate(45deg);
+    margin-top: -2px;
+}
+
+/* Стили для sidebar */
+.sidebar {
+    padding-top: 10px;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 10px;
+}
+
+.menu-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--blue-strong);
+    text-decoration: none;
+    font-size: 16px;
+    line-height: 1;
+    width: fit-content;
+    padding-bottom: 5px;
+    transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+    opacity: 0.8;
+}
+
+.menu-item img {
+    width: 17px;
+    height: 17px;
+    display: block;
+    flex: 0 0 17px;
+}
+
+/* Активное состояние пункта меню */
+.menu-item.active {
+    background: rgba(75, 89, 255, 0.08);
+    padding: 6px 14px 6px 10px;
+    border-radius: 40px;
+    margin-left: -6px;
+}
+
+/* Адаптивность */
+@media (max-width: 900px) {
+    .page {
+        grid-template-columns: 1fr;
+    }
+    .sidebar {
+        display: none;
+    }
+}

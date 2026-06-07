@@ -7,16 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../css/auth_reg_styles.css">
   </head>
   <body>
     <main class="auth-page">
       <div class="card-wrap">
         <div class="logo-wrap">
-          <img src="icons/logo_with_title.png" alt="HSE Connect" class="logo">
+          <img src="../icons/logo_with_title.png" alt="HSE Connect" class="logo">
         </div>
         <section class="auth-card">
-          <h1 class="title">Регистрация</h1>
+          <h1 class="title">Авторизация</h1>
 
           <form class="form" novalidate>
             <label class="label">
@@ -29,21 +29,14 @@
               <input class="input" type="password" placeholder="Пароль">
             </label>
 
-            <label class="label">
-              <span class="vis">Повторите пароль</span>
-              <input class="input" type="password" placeholder="Повторите пароль">
-            </label>
-
-            <div class="error password-mismatch" role="status" aria-live="polite" style="display:none">Пароли не совпадают</div>
-
-            <button class="primary" type="submit" disabled>Далее</button>
+            <button class="primary" type="submit" disabled>Войти</button>
           </form>
         </section>
         
-        <a class="muted-link" href="auth.html">Уже есть аккаунт?</a>
+        <a class="muted-link" href="../register.html">Еще не зарегистрированы?</a>
 
       </div>
     </main>
-    <script src="register_script.js"></script>
+    <script src="../scripts/auth_script.js"></script>
   </body>
 </html>

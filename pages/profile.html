@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HSE Connect — Профиль</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- Подключаем стили -->
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/profile.css">
+    
+    <!-- Подключаем Web Components -->
+    <script src="../js/components.js" defer></script>
+</head>
+<body>
+    <hse-header></hse-header>
+
+    <div class="page">
+        <hse-sidebar></hse-sidebar>
+        
+        <main class="content">
+            <section class="hero">
+                <div class="hero-cover"></div>
+                <div class="hero-body">
+                    <div class="avatar-wrap">
+                        <img class="avatar" src="../stubs/photo_circle.svg" alt="Фото профиля" />
+                    </div>
+
+                    <div class="hero-main">
+                        <div class="hero-main-left">
+                            <h1 class="name">ФАМИЛИЯ ИМЯ ОТЧЕСТВО</h1>
+                            <div class="tags">
+                                <span class="tag">ФКН</span>
+                                <span class="tag">ПМИ</span>
+                                <span class="tag">2 КУРС</span>
+                                <span class="tag">ASSIST</span>
+                                <span class="tag">БАЗЫ ДАННЫХ</span>
+                            </div>
+                        </div>
+
+                        <a class="edit-floating" href="#">
+                            <span>Редактировать</span>
+                            <img src="../icons/edit_icon.svg" alt="" aria-hidden="true" />
+                        </a>
+                    </div>
+
+                    <div class="row">
+                        <section class="card">
+                            <h2 class="section-title">ОПИСАНИЕ</h2>
+                            <p class="description">
+                                Увлекаюсь программированием и машинным обучением. Люблю решать интересные задачи и работать над проектами в команде.
+                                В свободное время устанавливаю друзьям лучшую ОС этой Вселенной: Linux Ubuntu.
+                            </p>
+                        </section>
+
+                        <section class="card">
+                            <div class="stats">
+                                <div>
+                                    <div class="stat-value">41</div>
+                                    <div class="stat-label">друг</div>
+                                </div>
+                                <div>
+                                    <div class="stat-value">120</div>
+                                    <div class="stat-label">подписчиков</div>
+                                </div>
+                                <div>
+                                    <div class="stat-value">3</div>
+                                    <div class="stat-label">событий</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="interests">
+                        <h2 class="section-title" style="margin:0; color:#4a59ff;">ИНТЕРЕСЫ</h2>
+                        <div class="chip-list">
+                            <span class="chip">Волейбол</span>
+                            <span class="chip">ML</span>
+                            <span class="chip">Фотография</span>
+                            <span class="chip">Путешествия</span>
+                            <span class="chip">Музыка</span>
+                            <span class="chip">Кино</span>
+                            <span class="chip">Программирование</span>
+                        </div>
+                    </section>
+
+                    <section class="events">
+                        <div class="events-tabs">
+                            <span>МОИ СОБЫТИЯ</span>
+                            <span>СОБИРАЮСЬ ПОЙТИ</span>
+                        </div>
+
+                        <div class="events-grid">
+                            <article class="event-card">
+                                <div>
+                                    <span class="event-badge">Учёба</span>
+                                    <h3 class="event-title">Подготовка к экзамену по матанализу</h3>
+                                    <div class="event-meta">
+                                        <span>15 декабря, 18:00</span>
+                                        <span>Покровка</span>
+                                        <span>3 участника</span>
+                                    </div>
+                                </div>
+                                <img class="event-photo" src="../stubs/photo_square.svg" alt="Фото события" />
+                                <div class="event-actions">
+                                    <button class="btn">Редактировать</button>
+                                    <button class="btn danger">Удалить</button>
+                                </div>
+                            </article>
+
+                            <article class="event-card">
+                                <div>
+                                    <span class="event-badge">Спорт</span>
+                                    <h3 class="event-title">Футбол</h3>
+                                    <div class="event-meta">
+                                        <span>21 декабря, 20:00</span>
+                                        <span>Стадион</span>
+                                        <span>17 участников</span>
+                                    </div>
+                                </div>
+                                <img class="event-photo" src="../stubs/photo_square.svg" alt="Фото события" />
+                                <div class="event-actions">
+                                    <button class="btn">Редактировать</button>
+                                    <button class="btn danger">Удалить</button>
+                                </div>
+                            </article>
+
+                            <article class="event-card">
+                                <div>
+                                    <span class="event-badge">Еда</span>
+                                    <h3 class="event-title">Сходка в БК</h3>
+                                    <div class="event-meta">
+                                        <span>31 декабря, 20:00</span>
+                                        <span>БК</span>
+                                        <span>5 участников</span>
+                                    </div>
+                                </div>
+                                <img class="event-photo" src="../stubs/photo_square.svg" alt="Фото события" />
+                                <div class="event-actions">
+                                    <button class="btn">Редактировать</button>
+                                    <button class="btn danger">Удалить</button>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
