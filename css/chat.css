@@ -428,3 +428,10 @@ body {
         font-size: 11px;
     }
 }
+
+.clip-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    filter: brightness(0) invert(1); /* Делает иконку белой, если она темная */
+}
