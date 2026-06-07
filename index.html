@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HSE Connect — Главная</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Подключаем стили -->
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/home.css">
+    
+    <!-- Подключаем Web Components -->
+    <script src="js/components.js" defer></script>
+</head>
+<body>
+    <hse-header></hse-header>
+    
+    <div class="page">
+        <hse-sidebar></hse-sidebar>
+        
+        <main class="content">
+            <!-- Приветственный баннер -->
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h1>Добро пожаловать, Алексей! 👋</h1>
+                    <p>Создавай события и приглашай друзей</p>
+                </div>
+                <button class="create-event-btn" id="openModalBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Создать событие
+                </button>
+            </div>
+            
+            <!-- Ближайшие события -->
+            <div class="events-section">
+                <div class="events-header">
+                    <h3>📅 Ближайшие события</h3>
+                </div>
+                <div class="events-list" id="eventsList">
+                    <!-- События будут добавлены через JavaScript -->
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Модальное окно для создания события -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <h2>Создать новое событие</h2>
+            <input type="text" id="eventTitle" placeholder="Название события">
+            <select id="eventType">
+                <option value="Учёба">Учёба</option>
+                <option value="Спорт">Спорт</option>
+                <option value="Вечеринка">Вечеринка</option>
+                <option value="Образование">Образование</option>
+                <option value="Развлечения">Развлечения</option>
+                <option value="Общение">Общение</option>
+            </select>
+            <input type="text" id="eventLocation" placeholder="Место проведения">
+            <input type="date" id="eventDate">
+            <input type="time" id="eventTime">
+            <textarea id="eventDescription" placeholder="Описание события"></textarea>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeModalBtn">Отмена</button>
+                <button class="submit-btn" id="createEventBtn">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let events = [
+            {
+                id: 1,
+                day: "15",
+                month: "дек",
+                title: "Подготовка к экзамену по матанализу",
+                location: "Покровка, 18:00",
+                badge: "Учёба",
+                date: "2024-12-15",
+                time: "18:00"
+            },
+            {
+                id: 2,
+                day: "21",
+                month: "дек",
+                title: "Футбольный матч ФКН vs ПМИ",
+                location: "Стадион, 20:00",
+                badge: "Спорт",
+                date: "2024-12-21",
+                time: "20:00"
+            },
+            {
+                id: 3,
+                day: "28",
+                month: "дек",
+                title: "IT-лекция: Будущее нейросетей",
+                location: "Атриум, 18:30",
+                badge: "Образование",
+                date: "2024-12-28",
+                time: "18:30"
+            },
+            {
+                id: 4,
+                day: "31",
+                month: "дек",
+                title: "Новогодняя вечеринка в БК",
+                location: "БК, 20:00",
+                badge: "Вечеринка",
+                date: "2024-12-31",
+                time: "20:00"
+            }
+        ];
+        
+        function renderEvents() {
+            const container = document.getElementById('eventsList');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            events.forEach(event => {
+                const eventItem = document.createElement('div');
+                eventItem.className = 'event-item';
+                eventItem.innerHTML = `
+                    <div class="event-date">
+                        <div class="event-day">${event.day}</div>
+                        <div class="event-month">${event.month}</div>
+                    </div>
+                    <div class="event-info">
+                        <div class="event-title">${escapeHtml(event.title)}</div>
+                        <div class="event-location">${escapeHtml(event.location)}</div>
+                    </div>
+                    <div class="event-badge">${event.badge}</div>
+                `;
+                container.appendChild(eventItem);
+            });
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        const modal = document.getElementById('eventModal');
+        const openBtn = document.getElementById('openModalBtn');
+        const closeBtn = document.getElementById('closeModalBtn');
+        const createBtn = document.getElementById('createEventBtn');
+        
+        openBtn.addEventListener('click', () => {
+            modal.classList.add('active');
+        });
+        
+        function closeModal() {
+            modal.classList.remove('active');
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventLocation').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventTime').value = '';
+            document.getElementById('eventDescription').value = '';
+        }
+        
+        closeBtn.addEventListener('click', closeModal);
+        
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        
+        createBtn.addEventListener('click', () => {
+            const title = document.getElementById('eventTitle').value.trim();
+            const type = document.getElementById('eventType').value;
+            const location = document.getElementById('eventLocation').value.trim();
+            const date = document.getElementById('eventDate').value;
+            const time = document.getElementById('eventTime').value;
+            
+            if (!title || !location || !date || !time) {
+                alert('Пожалуйста, заполните все поля!');
+                return;
+            }
+            
+            const dateObj = new Date(date);
+            const day = dateObj.getDate().toString();
+            const month = dateObj.toLocaleString('ru', { month: 'short' }).replace('.', '');
+            
+            const newEvent = {
+                id: events.length + 1,
+                day: day,
+                month: month,
+                title: title,
+                location: `${location}, ${time}`,
+                badge: type,
+                date: date,
+                time: time
+            };
+            
+            events.push(newEvent);
+            events.sort((a, b) => new Date(a.date) - new Date(b.date));
+            renderEvents();
+            closeModal();
+            alert('Событие успешно создано!');
+        });
+        
+        renderEvents();
+    </script>
+</body>
+</html>

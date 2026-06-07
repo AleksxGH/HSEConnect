@@ -7,17 +7,27 @@ class HseHeader extends HTMLElement {
         this.initDropdown();
     }
     
+    getBasePath() {
+        // Определяем путь относительно текущей страницы
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/pages/')) {
+            return '../'; // Для страниц в папке pages
+        }
+        return ''; // Для корневых страниц (index.html)
+    }
+    
     loadTemplate() {
+        const basePath = this.getBasePath();
         this.innerHTML = `
             <header class="topbar">
-                <div class="brand" href="#" aria-label="HSE Connect">
-                    <img class="brand-icon" src="../icons/logo.png" alt="logo" />
-                    <img class="brand-text" src="../icons/logo_text_white_blue.png" alt="ВЫШКоннект" />
-                </div>
+                <a class="brand" href="${basePath}index.html" aria-label="HSE Connect">
+                    <img class="brand-icon" src="${basePath}icons/logo.png" alt="logo" />
+                    <img class="brand-text" src="${basePath}icons/logo_text_white_blue.png" alt="ВЫШКоннект" />
+                </a>
 
                 <div class="topbar-right">
-                    <img class="mini-avatar" src="../stubs/photo_circle.svg" alt="Фото профиля" />
-                    <img class="dropdown-icon" src="../icons/dropdown_icon.svg" alt="Меню" />
+                    <img class="mini-avatar" src="${basePath}stubs/photo_circle.svg" alt="Фото профиля" />
+                    <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
                     <div class="dropdown-menu" id="userDropdown">
                         <div class="dropdown-item" id="logoutBtn">
                             <svg class="dropdown-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -34,31 +44,27 @@ class HseHeader extends HTMLElement {
     }
     
     initDropdown() {
-        // Ждем загрузки DOM
         setTimeout(() => {
             const dropdownIcon = this.querySelector('.dropdown-icon');
             const dropdownMenu = this.querySelector('.dropdown-menu');
             
             if (dropdownIcon && dropdownMenu) {
-                // Открытие/закрытие при клике на иконку
                 dropdownIcon.addEventListener('click', (e) => {
                     e.stopPropagation();
                     dropdownMenu.classList.toggle('show');
                 });
                 
-                // Закрытие при клике вне меню
                 document.addEventListener('click', (e) => {
                     if (!dropdownIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
                         dropdownMenu.classList.remove('show');
                     }
                 });
                 
-                // Обработчик кнопки "Выйти" - редирект без подтверждения
                 const logoutBtn = this.querySelector('#logoutBtn');
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', () => {
-                        // Редирект на страницу авторизации
-                        window.location.href = '../pages/auth.html';
+                        const basePath = this.getBasePath();
+                        window.location.href = `${basePath}login.html`;
                     });
                 }
             }
@@ -73,28 +79,37 @@ class HseSidebar extends HTMLElement {
         this.highlightActivePage();
     }
     
+    getBasePath() {
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/pages/')) {
+            return '../';
+        }
+        return '';
+    }
+    
     loadTemplate() {
+        const basePath = this.getBasePath();
         this.innerHTML = `
             <aside class="sidebar">
                 <nav class="menu" aria-label="Боковое меню">
-                    <a class="menu-item" href="../pages/profile.html" data-page="profile">
-                        <img src="../icons/profile_icon.svg" alt="" aria-hidden="true" />
+                    <a class="menu-item" href="${basePath}pages/profile.html" data-page="profile">
+                        <img src="${basePath}icons/profile_icon.svg" alt="" aria-hidden="true" />
                         <span>Профиль</span>
                     </a>
-                    <a class="menu-item" href="../index.html" data-page="home">
-                        <img src="../icons/home_icon.svg" alt="" aria-hidden="true" />
+                    <a class="menu-item" href="${basePath}index.html" data-page="home">
+                        <img src="${basePath}icons/home_icon.svg" alt="" aria-hidden="true" />
                         <span>Главная</span>
                     </a>
-                    <a class="menu-item" href="../pages/chat.html" data-page="chat">
-                        <img src="../icons/chat_icon.svg" alt="" aria-hidden="true" />
+                    <a class="menu-item" href="${basePath}pages/chat.html" data-page="chat">
+                        <img src="${basePath}icons/chat_icon.svg" alt="" aria-hidden="true" />
                         <span>Сообщения</span>
                     </a>
                     <a class="menu-item" href="#" data-page="notifications">
-                        <img src="../icons/notifications_icon.svg" alt="" aria-hidden="true" />
+                        <img src="${basePath}icons/notifications_icon.svg" alt="" aria-hidden="true" />
                         <span>Уведомления</span>
                     </a>
                     <a class="menu-item" href="#" data-page="friends">
-                        <img src="../icons/friends_icon.svg" alt="" aria-hidden="true" />
+                        <img src="${basePath}icons/friends_icon.svg" alt="" aria-hidden="true" />
                         <span>Друзья</span>
                     </a>
                 </nav>
@@ -103,7 +118,6 @@ class HseSidebar extends HTMLElement {
     }
     
     highlightActivePage() {
-        // Определяем текущую страницу по URL
         const currentPath = window.location.pathname;
         let currentPage = '';
         
@@ -111,7 +125,6 @@ class HseSidebar extends HTMLElement {
         else if (currentPath.includes('chat.html')) currentPage = 'chat';
         else if (currentPath === '/' || currentPath.includes('index.html')) currentPage = 'home';
         
-        // Добавляем класс active к соответствующей ссылке
         setTimeout(() => {
             const links = this.querySelectorAll('.menu-item');
             links.forEach(link => {
@@ -126,6 +139,5 @@ class HseSidebar extends HTMLElement {
     }
 }
 
-// Регистрируем компоненты
 customElements.define('hse-header', HseHeader);
 customElements.define('hse-sidebar', HseSidebar);
