@@ -30,7 +30,7 @@ body {
 /* Контейнер чата занимает всю высоту */
 .chat-container {
     flex: 1;
-    background: var(--card);
+    background: linear-gradient(135deg, #7c90de 0%, #7f92e2 100%);
     border-radius: 18px;
     box-shadow: var(--shadow);
     border: 1px solid var(--stroke);
@@ -43,8 +43,9 @@ body {
 /* список диалогов */
 .dialogs-panel {
     width: 300px;
-    border-right: 1px solid var(--border-light);
-    background: #fefeff;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -53,7 +54,7 @@ body {
 
 .dialogs-header {
     padding: 18px 16px 10px;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid rgba(75, 89, 255, 0.15);
     flex-shrink: 0;
 }
 
@@ -78,27 +79,29 @@ body {
     cursor: pointer;
     transition: 0.2s;
     margin-bottom: 4px;
+    background: rgba(255, 255, 255, 0.6);
 }
 
 .dialog-item:hover {
-    background: var(--hover-chat);
+    background: rgba(75, 89, 255, 0.15);
 }
 
 .dialog-item.active {
-    background: rgba(75, 89, 255, 0.12);
+    background: rgba(75, 89, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .dialog-avatar {
     width: 48px;
     height: 48px;
-    background: #eef2ff;
+    background: linear-gradient(135deg, #7c90de 0%, #4b59ff 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 20px;
-    color: var(--blue-strong);
+    color: white;
     flex-shrink: 0;
 }
 
@@ -115,7 +118,7 @@ body {
 
 .dialog-last {
     font-size: 12px;
-    color: var(--muted);
+    color: #5a6e8a;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -126,15 +129,16 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #fafbff;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
     min-height: 0;
     overflow: hidden;
 }
 
 .chat-header {
     padding: 14px 20px;
-    border-bottom: 1px solid var(--border-light);
-    background: white;
+    border-bottom: 1px solid rgba(75, 89, 255, 0.15);
+    background: rgba(255, 255, 255, 0.96);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -144,18 +148,20 @@ body {
 .chat-header-avatar {
     width: 44px;
     height: 44px;
-    background: #e0e7ff;
+    background: linear-gradient(135deg, #7c90de 0%, #4b59ff 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     font-size: 18px;
+    color: white;
 }
 
 .chat-header-info h4 {
     font-size: 16px;
     font-weight: 700;
+    color: var(--blue-strong);
 }
 
 .chat-header-info span {
@@ -190,21 +196,22 @@ body {
     background: white;
     padding: 8px 14px;
     border-radius: 20px;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px rgba(75, 89, 255, 0.1);
     font-size: 13px;
     line-height: 1.4;
     word-break: break-word;
-    border: 0.5px solid #e9edf4;
+    border: 1px solid rgba(75, 89, 255, 0.1);
 }
 
 .outgoing .bubble {
-    background: var(--blue-strong);
+    background: linear-gradient(135deg, #4b59ff 0%, #3f4cff 100%);
     color: white;
     border-bottom-right-radius: 5px;
+    border: none;
 }
 
 .incoming .bubble {
-    background: #f0f2f8;
+    background: rgba(255, 255, 255, 0.95);
     color: #1a263b;
     border-bottom-left-radius: 5px;
 }
@@ -220,17 +227,30 @@ body {
     font-size: 12px;
 }
 
+.outgoing .message-file {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
 .msg-meta {
     font-size: 10px;
     margin-top: 4px;
-    opacity: 0.6;
+    opacity: 0.7;
     text-align: right;
+}
+
+.outgoing .msg-meta {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.incoming .msg-meta {
+    color: #8792b0;
 }
 
 .input-area {
     padding: 14px 18px 18px;
-    background: white;
-    border-top: 1px solid var(--border-light);
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid rgba(75, 89, 255, 0.15);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -241,20 +261,22 @@ body {
 .msg-input {
     flex: 1;
     padding: 10px 15px;
-    border: 1px solid #dce3ec;
+    border: 1px solid rgba(75, 89, 255, 0.2);
     border-radius: 30px;
     font-family: inherit;
     font-size: 13px;
     outline: none;
     transition: 0.2s;
+    background: white;
 }
 
 .msg-input:focus {
-    border-color: var(--blue-soft);
+    border-color: var(--blue-strong);
+    box-shadow: 0 0 0 2px rgba(75, 89, 255, 0.1);
 }
 
 .file-label {
-    background: #f0f2fa;
+    background: linear-gradient(135deg, #7c90de 0%, #4b59ff 100%);
     padding: 8px 12px;
     border-radius: 30px;
     font-size: 13px;
@@ -263,11 +285,16 @@ body {
     align-items: center;
     gap: 6px;
     font-weight: 600;
-    color: var(--blue-strong);
+    color: white;
+    transition: opacity 0.2s;
+}
+
+.file-label:hover {
+    opacity: 0.9;
 }
 
 .send-btn {
-    background: var(--blue-strong);
+    background: linear-gradient(135deg, #4b59ff 0%, #3f4cff 100%);
     border: none;
     color: white;
     padding: 8px 18px;
@@ -280,16 +307,52 @@ body {
 
 .send-btn:hover {
     opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.send-btn:active {
+    transform: translateY(0);
 }
 
 .attachment-preview {
     font-size: 11px;
-    background: #edeff7;
+    background: rgba(75, 89, 255, 0.1);
     padding: 4px 8px;
     border-radius: 20px;
     display: inline-flex;
     gap: 6px;
     align-items: center;
+    color: var(--blue-strong);
+}
+
+/* Стили для скроллбара */
+.dialogs-list::-webkit-scrollbar,
+.messages-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dialogs-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.dialogs-list::-webkit-scrollbar-thumb {
+    background: rgba(75, 89, 255, 0.3);
+    border-radius: 10px;
+}
+
+.dialogs-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 89, 255, 0.5);
+}
+
+.messages-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+}
+
+.messages-list::-webkit-scrollbar-thumb {
+    background: rgba(75, 89, 255, 0.3);
+    border-radius: 10px;
 }
 
 /* Адаптивность для планшетов */
@@ -358,5 +421,10 @@ body {
     .send-btn {
         padding: 6px 14px;
         font-size: 12px;
+    }
+    
+    .file-label {
+        padding: 6px 10px;
+        font-size: 11px;
     }
 }

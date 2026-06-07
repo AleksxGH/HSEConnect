@@ -305,3 +305,65 @@
         flex-direction: column;
     }
 }
+
+/* ========== СТИЛИ ДЛЯ ПЕРЕКЛЮЧАЕМЫХ ВКЛАДОК ========== */
+
+/* Стили для вкладок событий */
+.events-tabs span {
+    transition: all 0.2s ease;
+    padding-bottom: 4px;
+    user-select: none;
+}
+
+.events-tabs span:hover {
+    opacity: 0.7 !important;
+}
+
+/* Анимация для карточек событий */
+.event-card {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Стиль для пустого состояния */
+.empty-events {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted, #8792b0);
+    font-size: 14px;
+    font-weight: 500;
+    grid-column: 1 / -1;
+}
+
+/* Улучшенные стили для кнопок */
+.event-card .btn {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.event-card .btn:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+}
+
+.event-card .btn:active {
+    transform: translateY(0);
+}
+
+/* Дополнительная адаптивность для пустого состояния */
+@media (max-width: 900px) {
+    .empty-events {
+        padding: 40px 20px;
+        font-size: 13px;
+    }
+}

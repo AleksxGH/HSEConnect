@@ -59,7 +59,7 @@
                     </div>
                     <div class="messages-list" id="messagesList"></div>
                     <div class="input-area">
-                        <input type="text" class="msg-input" id="messageInput" placeholder="Введите сообщение...">
+                        <input type="text" class="msg-input" id="messageInput" placeholder="Введите сообщение..." autofocus>
                         <label class="file-label" id="fileLabel">
                             📎 Файл
                             <input type="file" id="fileInput" style="display: none;" multiple>
@@ -131,6 +131,7 @@
                     renderMessages();
                     updateChatHeader();
                     clearFilePreview();
+                    focusMessageInput();
                 });
                 
                 container.appendChild(div);
@@ -214,6 +215,13 @@
             if (previewDiv) previewDiv.innerHTML = "";
             currentFileList = [];
         }
+
+        function focusMessageInput() {
+        const input = document.getElementById("messageInput");
+        if (input) {
+            input.focus();
+        }
+}
 
         function onFilesSelected(event) {
             const files = Array.from(event.target.files);
