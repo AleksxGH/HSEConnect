@@ -1,5 +1,8 @@
-const API_URL = 'http://localhost:8080';
-
+const API_URL =
+  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:8080"
+    : "https://hseconnect.onrender.com";
+    
 const form = document.getElementById('loginForm');
 const emailInput = document.getElementById('emailInput');
 const passwordInput = document.getElementById('passwordInput');

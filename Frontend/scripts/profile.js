@@ -4,22 +4,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   initProfileEditModal();
 
   try {
-    const userId = localStorage.getItem('userId') || 1;
+    const profile = await getProfile();
 
-    const response = await fetch(`http://localhost:8080/api/profile/${userId}`);
+    if (!profile) return;
 
-    if (!response.ok) {
-      window.location.href = 'auth.html';
-      return;
-    }
-
-    const profile = await response.json();
-
+    currentProfile = profile;
     renderProfile(profile);
 
   } catch (error) {
     console.error('Ошибка загрузки профиля:', error);
-    window.location.href = 'auth.html';
+    window.location.href = '../pages/register.html';
   }
 });
 
@@ -189,7 +183,7 @@ async function updateProfile(profile) {
   }
 
   const response = await fetch(
-      `http://localhost:8080/api/profile/${userId}`,
+      `${API_URL}/api/profile/${userId}`,
       {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(profile)});
 
   if (!response.ok) {
