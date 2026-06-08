@@ -1,4 +1,11 @@
-const API_URL = "http://localhost:8080";
+const LOCAL_API = "http://localhost:8080";
+const SERVER_API = "https://hseconnect.onrender.com";
+
+const API_BASE =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+        ? LOCAL_API
+        : SERVER_API;
 
 window.apiGet = async function (path) {
     const response = await fetch(`${API_URL}${path}`);
