@@ -25,9 +25,9 @@ class HseHeader extends HTMLElement {
                     <img class="brand-text" src="${basePath}icons/logo_text_white_blue.png" alt="ВЫШКоннект" />
                 </a>
 
-                <div class="topbar-right">
-                    <img class="mini-avatar" src="${basePath}stubs/photo_circle.svg" alt="Фото профиля" />
-                    <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
+               <div class="topbar-right">
+    <div class="mini-avatar">Фото</div>
+    <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
                     <div class="dropdown-menu" id="userDropdown">
                         <div class="dropdown-item" id="logoutBtn">
                             <svg class="dropdown-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
