@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
@@ -8,14 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
-
+    
     <!-- Подключаем стили -->
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/chat.css">
-
+    
     <!-- Подключаем Web Components -->
     <script src="../js/components.js" defer></script>
-
+    
     <style>
         /* Дополнительные стили для корневых элементов */
         * {
@@ -23,21 +22,19 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: 'Montserrat', system-ui, sans-serif;
             font-weight: 600;
             background: var(--bg, #eef3fb);
             color: var(--text, #24304a);
         }
-
-        html,
-        body {
+        
+        html, body {
             height: 100%;
         }
     </style>
 </head>
-
 <body>
     <!-- Web Components -->
     <hse-header></hse-header>
@@ -64,8 +61,7 @@
                     </div>
                     <div class="messages-list" id="messagesList"></div>
                     <div class="input-area">
-                        <input type="text" class="msg-input" id="messageInput" placeholder="Введите сообщение..."
-                            autofocus>
+                        <input type="text" class="msg-input" id="messageInput" placeholder="Введите сообщение..." autofocus>
                         <label class="file-label" id="fileLabel">
                             <img src="../icons/clip_icon.svg" alt="Прикрепить файл" class="clip-icon">
                             <input type="file" id="fileInput" style="display: none;" multiple>
@@ -143,7 +139,7 @@
                     clearFilePreview();
                     focusMessageInput();
                 });
-
+                
                 container.appendChild(div);
             });
         }
@@ -292,5 +288,4 @@
         }
     </script>
 </body>
-
 </html>

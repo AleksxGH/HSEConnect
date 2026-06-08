@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Упс! — HSE Connect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', system-ui, sans-serif;
+            font-weight: 500;
+            background: linear-gradient(135deg, #7c90de 0%, #7f92e2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        
+        .content {
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 120px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.1);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        .funny-text {
+            font-size: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .funny-text-small {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .home-link {
+            display: inline-block;
+            background: #4b59ff;
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 40px;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .home-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 680px) {
+            h1 {
+                font-size: 80px;
+            }
+            
+            .funny-text {
+                font-size: 18px;
+            }
+            
+            .funny-text-small {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h1>404</h1>
+        <div class="funny-text">Страница не найдена</div>
+        <div class="funny-text-small">Попробуйте установить Linux Ubuntu, проблему это не решит, но Данил Прахов будет спать спокойнее</div>
+        
+        <a href="index.html" class="home-link">Вернуться на главную</a>
+    </div>
+</body>
+</html>

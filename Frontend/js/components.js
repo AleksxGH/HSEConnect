@@ -25,9 +25,9 @@ class HseHeader extends HTMLElement {
                     <img class="brand-text" src="${basePath}icons/logo_text_white_blue.png" alt="ВЫШКоннект" />
                 </a>
 
-               <div class="topbar-right">
-    <div class="mini-avatar">Фото</div>
-    <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
+                <div class="topbar-right">
+                    <img class="mini-avatar" src="${basePath}stubs/photo_circle.jpg" alt="Фото профиля" />
+                    <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
                     <div class="dropdown-menu" id="userDropdown">
                         <div class="dropdown-item" id="logoutBtn">
                             <svg class="dropdown-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -64,7 +64,7 @@ class HseHeader extends HTMLElement {
                 if (logoutBtn) {
                     logoutBtn.addEventListener('click', () => {
                         const basePath = this.getBasePath();
-                        window.location.href = `${basePath}login.html`;
+                        window.location.href = `${basePath}pages/auth.html`;
                     });
                 }
             }
@@ -104,13 +104,13 @@ class HseSidebar extends HTMLElement {
                         <img src="${basePath}icons/chat_icon.svg" alt="" aria-hidden="true" />
                         <span>Сообщения</span>
                     </a>
-                    <a class="menu-item" href="#" data-page="notifications">
+                    <a class="menu-item" href="${basePath}pages/notifications.html" data-page="notifications">
                         <img src="${basePath}icons/notifications_icon.svg" alt="" aria-hidden="true" />
                         <span>Уведомления</span>
                     </a>
-                    <a class="menu-item" href="#" data-page="friends">
+                    <a class="menu-item" href="${basePath}pages/friends.html" data-page="friends">
                         <img src="${basePath}icons/friends_icon.svg" alt="" aria-hidden="true" />
-                        <span>Друзья</span>
+                        <span>Связи</span>
                     </a>
                 </nav>
             </aside>

@@ -45,72 +45,58 @@ body {
 
 /* Стили для topbar */
 .topbar {
-    height: 102px;
-    background: #7d92df;
+    height: 54px;
+    background: linear-gradient(180deg, #7c90de 0%, #7f92e2 100%);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 28px;
+    padding: 0 18px 0 14px;
     box-shadow: 0 1px 0 rgba(255,255,255,0.24) inset;
 }
 
 .brand {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
     color: #fff;
     text-decoration: none;
 }
 
-.brand-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    display: block;
+.brand-icon { 
+    width: 34px; 
+    height: 34px; 
+    display: block; 
 }
 
-.brand-text {
-    height: 36px;
-    width: auto;
-    display: block;
+.brand-text { 
+    height: 15px; 
+    width: auto; 
+    display: block; 
 }
 
 .topbar-right {
-    position: relative;
-    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 10px;
+    color: rgba(255,255,255,0.92);
+    font-size: 13px;
 }
 
 .mini-avatar {
-    width: 58px;
-    height: 58px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background: #d9d9d9;
-    color: #ffffff;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 14px;
-    font-weight: 700;
-    line-height: 1;
-    text-transform: uppercase;
-
-    padding: 0;
-    margin: 0;
-    text-align: center;
+    display: block;
+    object-fit: cover;
 }
 
 .caret {
-    width: 10px;
-    height: 10px;
-    border-right: 3px solid rgba(255,255,255,0.9);
-    border-bottom: 3px solid rgba(255,255,255,0.9);
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid rgba(255,255,255,0.85);
+    border-bottom: 2px solid rgba(255,255,255,0.85);
     transform: rotate(45deg);
-    margin-top: -4px;
+    margin-top: -2px;
 }
 
 /* Стили для sidebar */
@@ -191,7 +177,7 @@ body {
 /* Выпадающее меню */
 .dropdown-menu {
     position: absolute;
-    top: 70px;
+    top: 45px;
     right: 0;
     background: white;
     border-radius: 12px;

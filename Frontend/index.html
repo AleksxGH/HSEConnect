@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,21 +7,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
-
+    
     <!-- Подключаем стили -->
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/home.css">
-
+    
     <!-- Подключаем Web Components -->
     <script src="js/components.js" defer></script>
 </head>
-
 <body>
     <hse-header></hse-header>
-
+    
     <div class="page">
         <hse-sidebar></hse-sidebar>
-
+        
         <main class="content">
             <!-- Приветственный баннер -->
             <div class="welcome-banner">
@@ -32,13 +30,13 @@
                 </div>
                 <button class="create-event-btn" id="openModalBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
                     Создать событие
                 </button>
             </div>
-
+            
             <!-- Ближайшие события -->
             <div class="events-section">
                 <div class="events-header">
@@ -49,7 +47,7 @@
             </div>
         </main>
     </div>
-
+    
     <!-- Модальное окно для создания события -->
     <div class="modal" id="eventModal">
         <div class="modal-content">
