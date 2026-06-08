@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Связи — HSE Connect</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/friends.css">
+    
+    <script src="../js/components.js" defer></script>
+    
+    <style>
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .page {
+            display: grid;
+            grid-template-columns: 210px 1fr;
+            gap: 18px;
+            padding: 14px 16px 18px;
+            flex: 1;
+            min-height: 0;
+        }
+        
+        .content {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        @media (max-width: 900px) {
+            .page {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <hse-header></hse-header>
+    
+    <div class="page">
+        <hse-sidebar></hse-sidebar>
+        
+        <main class="content">
+            <div class="friends-section">
+                <div class="friends-header">
+                    <h1>Связи</h1>
+                    <div class="search-container">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input type="text" class="search-input" id="searchInput" placeholder="Поиск...">
+                        <button class="clear-search" id="clearSearch">✖</button>
+                    </div>
+                </div>
+                
+                <div class="friends-tabs">
+                    <button class="tab-btn active" data-tab="friends">Друзья</button>
+                    <button class="tab-btn" data-tab="followers">Подписчики</button>
+                    <button class="tab-btn" data-tab="following">Подписки</button>
+                </div>
+                
+                <div class="friends-list-container" id="friendsContainer">
+                    <!-- Список будет загружен через JavaScript -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentTab = 'friends';
+        let searchQuery = '';
+        
+        // Данные друзей
+        let friends = [
+            {
+                id: 1,
+                name: "Алексей Смирнов",
+                avatar: "А",
+                status: "online",
+                mutualFriends: 5
+            },
+            {
+                id: 2,
+                name: "Мария Ковальчук",
+                avatar: "М",
+                status: "offline",
+                mutualFriends: 3
+            },
+            {
+                id: 3,
+                name: "Даниил Воробьёв",
+                avatar: "Д",
+                status: "online",
+                mutualFriends: 7
+            },
+            {
+                id: 4,
+                name: "Екатерина Тихонова",
+                avatar: "Е",
+                status: "offline",
+                mutualFriends: 2
+            },
+            {
+                id: 5,
+                name: "Анна Кузнецова",
+                avatar: "А",
+                status: "online",
+                mutualFriends: 4
+            }
+        ];
+        
+        // Данные подписчиков
+        let followers = [
+            {
+                id: 6,
+                name: "Павел Морозов",
+                avatar: "П",
+                status: "online",
+                isFriend: false
+            },
+            {
+                id: 7,
+                name: "Иван Соколов",
+                avatar: "И",
+                status: "offline",
+                isFriend: true
+            },
+            {
+                id: 8,
+                name: "Ольга Лебедева",
+                avatar: "О",
+                status: "online",
+                isFriend: false
+            },
+            {
+                id: 9,
+                name: "Никита Волков",
+                avatar: "Н",
+                status: "offline",
+                isFriend: false
+            }
+        ];
+        
+        // Данные подписок
+        let following = [
+            {
+                id: 10,
+                name: "Алексей Смирнов",
+                avatar: "А",
+                status: "online",
+                isFriend: true
+            },
+            {
+                id: 11,
+                name: "Мария Ковальчук",
+                avatar: "М",
+                status: "offline",
+                isFriend: true
+            },
+            {
+                id: 12,
+                name: "Дмитрий Иванов",
+                avatar: "Д",
+                status: "offline",
+                isFriend: false
+            },
+            {
+                id: 13,
+                name: "Екатерина Тихонова",
+                avatar: "Е",
+                status: "offline",
+                isFriend: true
+            },
+            {
+                id: 14,
+                name: "Анна Кузнецова",
+                avatar: "А",
+                status: "online",
+                isFriend: true
+            }
+        ];
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentTab = tab.getAttribute('data-tab');
+                    renderFriends();
+                });
+            });
+        }
+        
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearch');
+            
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                renderFriends();
+            });
+            
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchQuery = '';
+                renderFriends();
+            });
+        }
+        
+        function removeFriend(friendId, friendName) {
+            if (confirm(`Удалить ${friendName} из друзей?`)) {
+                const index = friends.findIndex(f => f.id === friendId);
+                if (index !== -1) {
+                    friends.splice(index, 1);
+                    renderFriends();
+                    alert(`${friendName} удалён из друзей`);
+                }
+            }
+        }
+        
+        function removeFollower(followerId, followerName) {
+            if (confirm(`Удалить ${followerName} из подписчиков?`)) {
+                const index = followers.findIndex(f => f.id === followerId);
+                if (index !== -1) {
+                    followers.splice(index, 1);
+                    renderFriends();
+                    alert(`${followerName} удалён из подписчиков`);
+                }
+            }
+        }
+        
+        function unsubscribe(followingId, followingName) {
+            if (confirm(`Отписаться от ${followingName}?`)) {
+                const index = following.findIndex(f => f.id === followingId);
+                if (index !== -1) {
+                    following.splice(index, 1);
+                    renderFriends();
+                    alert(`Вы отписались от ${followingName}`);
+                }
+            }
+        }
+        
+        function addFriend(followerId, followerName) {
+            const follower = followers.find(f => f.id === followerId);
+            if (follower) {
+                follower.isFriend = true;
+                
+                friends.push({
+                    id: follower.id,
+                    name: follower.name,
+                    avatar: follower.avatar,
+                    status: follower.status,
+                    mutualFriends: 0
+                });
+                
+                renderFriends();
+                alert(`${followerName} добавлен в друзья`);
+            }
+        }
+        
+        function sendMessage(userId, userName) {
+            alert(`Открыть чат с ${userName}`);
+        }
+        
+        function renderFriends() {
+            const container = document.getElementById('friendsContainer');
+            if (!container) return;
+            
+            let data = [];
+            let emptyText = '';
+            
+            switch(currentTab) {
+                case 'friends':
+                    data = [...friends];
+                    emptyText = 'У вас пока нет друзей';
+                    break;
+                case 'followers':
+                    data = [...followers];
+                    emptyText = 'На вас пока никто не подписан';
+                    break;
+                case 'following':
+                    data = [...following];
+                    emptyText = 'Вы пока ни на кого не подписаны';
+                    break;
+            }
+            
+            // Фильтрация по поиску
+            if (searchQuery) {
+                data = data.filter(user => 
+                    user.name.toLowerCase().includes(searchQuery)
+                );
+            }
+            
+            if (data.length === 0) {
+                let noResultsText = '';
+                if (searchQuery) {
+                    noResultsText = `Ничего не найдено по запросу "${searchQuery}"`;
+                } else {
+                    noResultsText = emptyText;
+                }
+                container.innerHTML = `
+                    <div class="empty-friends">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="#8792b0" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <p>${noResultsText}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="friends-list">';
+            
+            data.forEach(user => {
+                const statusClass = user.status === 'online' ? 'online' : 'offline';
+                const statusText = user.status === 'online' ? 'В сети' : 'Не в сети';
+                
+                html += `
+                    <div class="friend-card">
+                        <div class="friend-avatar">
+                            ${user.avatar}
+                        </div>
+                        <div class="friend-info">
+                            <div class="friend-name">${user.name}</div>
+                            <div class="friend-status">
+                                <span class="status-dot ${statusClass}"></span>
+                                ${statusText}
+                                ${user.mutualFriends ? ` • ${user.mutualFriends} общих друзей` : ''}
+                            </div>
+                        </div>
+                        <div class="friend-actions">
+                `;
+                
+                if (currentTab === 'friends') {
+                    html += `
+                        <button class="btn-message" onclick="sendMessage(${user.id}, '${user.name}')">💬</button>
+                        <button class="btn-unfriend" onclick="removeFriend(${user.id}, '${user.name}')">Удалить</button>
+                    `;
+                } else if (currentTab === 'followers') {
+                    if (user.isFriend) {
+                        html += `
+                            <button class="btn-message" onclick="sendMessage(${user.id}, '${user.name}')">💬</button>
+                            <button class="btn-unfriend" onclick="removeFollower(${user.id}, '${user.name}')">Удалить</button>
+                        `;
+                    } else {
+                        html += `
+                            <button class="btn-add-friend" onclick="addFriend(${user.id}, '${user.name}')">Добавить в друзья</button>
+                            <button class="btn-remove-follower" onclick="removeFollower(${user.id}, '${user.name}')">Удалить</button>
+                        `;
+                    }
+                } else if (currentTab === 'following') {
+                    if (user.isFriend) {
+                        html += `
+                            <button class="btn-message" onclick="sendMessage(${user.id}, '${user.name}')">💬</button>
+                            <button class="btn-unfriend" onclick="unsubscribe(${user.id}, '${user.name}')">Отписаться</button>
+                        `;
+                    } else {
+                        html += `
+                            <button class="btn-add-friend" onclick="addFriend(${user.id}, '${user.name}')">Добавить в друзья</button>
+                            <button class="btn-unfriend" onclick="unsubscribe(${user.id}, '${user.name}')">Отписаться</button>
+                        `;
+                    }
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        window.addEventListener('load', () => {
+            setupTabs();
+            setupSearch();
+            renderFriends();
+        });
+        
+        window.removeFriend = removeFriend;
+        window.removeFollower = removeFollower;
+        window.unsubscribe = unsubscribe;
+        window.addFriend = addFriend;
+        window.sendMessage = sendMessage;
+    </script>
+</body>
+</html>
