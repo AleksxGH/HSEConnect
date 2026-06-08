@@ -1,7 +1,7 @@
 const LOCAL_API = "http://localhost:8080";
 const SERVER_API = "https://hseconnect.onrender.com";
 
-const API_BASE =
+const API_URL =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1"
         ? LOCAL_API
