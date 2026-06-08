@@ -41,11 +41,13 @@
 
     <div class="page">
         <hse-sidebar></hse-sidebar>
-        
+
         <main class="content">
             <div class="chat-container">
                 <div class="dialogs-panel">
-                    <div class="dialogs-header"><h3>Диалоги</h3></div>
+                    <div class="dialogs-header">
+                        <h3>Диалоги</h3>
+                    </div>
                     <div class="dialogs-list" id="dialogsList"></div>
                 </div>
 
@@ -73,60 +75,64 @@
     </div>
 
     <script>
-        const contacts = [
-            { id: 1, name: "Алексей Смирнов", avatarInitial: "А", status: "онлайн" },
-            { id: 2, name: "Мария Ковальчук", avatarInitial: "М", status: "была вчера" },
-            { id: 3, name: "Даниил Воробьёв", avatarInitial: "Д", status: "печатает..." },
-            { id: 4, name: "Екатерина Тихонова", avatarInitial: "Е", status: "онлайн" }
-        ];
+        const API_BASE = "http://localhost:8080/api/chats";
 
-        let messagesDB = {
-            1: [
-                { id: "m1", text: "Привет! Как дела с проектом?", sender: "incoming", time: "12:45", files: [] },
-                { id: "m2", text: "Всё отлично, сегодня обсудим архитектуру", sender: "outgoing", time: "12:47", files: [] }
-            ],
-            2: [
-                { id: "m21", text: "Привет! Зацени статью по нейросетям", sender: "incoming", time: "10:20", files: [] }
-            ],
-            3: [
-                { id: "m31", text: "В субботу футбол в 18:00, будешь?", sender: "incoming", time: "вчера", files: [] }
-            ],
-            4: [
-                { id: "m41", text: "Хей! Нашёл баги в коде?", sender: "incoming", time: "15:12", files: [] }
-            ]
-        };
-
-        let currentContactId = 1;
+        let chats = [];
+        let messagesDB = {};
+        let currentChatId = null;
         let currentFileList = [];
+
+        async function loadChats() {
+            const response = await fetch(API_BASE);
+
+            if (!response.ok) {
+                throw new Error("Не удалось загрузить диалоги");
+            }
+
+            chats = await response.json();
+
+            if (chats.length > 0 && currentChatId === null) {
+                currentChatId = chats[0].id;
+            }
+        }
+
+        async function loadMessages(chatId) {
+            const response = await fetch(`${API_BASE}/${chatId}/messages`);
+
+            if (!response.ok) {
+                throw new Error("Не удалось загрузить сообщения");
+            }
+
+            messagesDB[chatId] = await response.json();
+        }
 
         function renderDialogs() {
             const container = document.getElementById("dialogsList");
             if (!container) return;
+
             container.innerHTML = "";
-            
-            contacts.forEach(contact => {
-                const msgs = messagesDB[contact.id] || [];
-                const lastMsgObj = msgs.length ? msgs[msgs.length - 1] : null;
-                let preview = "Нет сообщений";
-                
-                if (lastMsgObj && lastMsgObj.text) {
-                    preview = lastMsgObj.text.substring(0, 35);
-                }
-                
+
+            chats.forEach(chat => {
+                const preview = chat.lastMessage || "Нет сообщений";
+
                 const div = document.createElement("div");
-                div.className = `dialog-item ${currentContactId === contact.id ? "active" : ""}`;
-                div.setAttribute("data-id", contact.id);
+                div.className = `dialog-item ${currentChatId === chat.id ? "active" : ""}`;
+
                 div.innerHTML = `
-                    <div class="dialog-avatar">${contact.avatarInitial}</div>
-                    <div class="dialog-info">
-                        <div class="dialog-name">${escapeHtml(contact.name)}</div>
-                        <div class="dialog-last">${escapeHtml(preview)}</div>
-                    </div>
-                `;
-                
-                div.addEventListener("click", () => {
-                    if (currentContactId === contact.id) return;
-                    currentContactId = contact.id;
+                <div class="dialog-avatar">${escapeHtml(chat.avatarInitial)}</div>
+                <div class="dialog-info">
+                    <div class="dialog-name">${escapeHtml(chat.name)}</div>
+                    <div class="dialog-last">${escapeHtml(preview)}</div>
+                </div>
+            `;
+
+                div.addEventListener("click", async () => {
+                    if (currentChatId === chat.id) return;
+
+                    currentChatId = chat.id;
+
+                    await loadMessages(currentChatId);
+
                     renderDialogs();
                     renderMessages();
                     updateChatHeader();
@@ -139,94 +145,101 @@
         }
 
         function updateChatHeader() {
-            const contact = contacts.find(c => c.id === currentContactId);
-            if (contact) {
-                document.getElementById("chatName").innerText = contact.name;
-                document.getElementById("chatStatus").innerText = contact.status;
-                document.getElementById("chatAvatar").innerText = contact.avatarInitial;
-            }
+            const chat = chats.find(c => c.id === currentChatId);
+            if (!chat) return;
+
+            document.getElementById("chatName").innerText = chat.name;
+            document.getElementById("chatStatus").innerText = chat.status;
+            document.getElementById("chatAvatar").innerText = chat.avatarInitial;
         }
 
         function renderMessages() {
             const messagesContainer = document.getElementById("messagesList");
             if (!messagesContainer) return;
+
             messagesContainer.innerHTML = "";
-            
-            const msgs = messagesDB[currentContactId] || [];
-            msgs.forEach(msg => {
+
+            const messages = messagesDB[currentChatId] || [];
+
+            messages.forEach(msg => {
                 const msgDiv = document.createElement("div");
                 msgDiv.className = `message ${msg.sender === "outgoing" ? "outgoing" : "incoming"}`;
-                
+
                 msgDiv.innerHTML = `
-                    <div class="bubble">
-                        ${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}
-                        <div class="msg-meta">${msg.time || "только что"}</div>
-                    </div>
-                `;
-                
+                <div class="bubble">
+                    ${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}
+                    <div class="msg-meta">${escapeHtml(msg.time || "только что")}</div>
+                </div>
+            `;
+
                 messagesContainer.appendChild(msgDiv);
             });
-            
+
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function sendCurrentMessage() {
+            const inputEl = document.getElementById("messageInput");
+            const text = inputEl.value.trim();
+
+            if (!text || currentChatId === null) return;
+
+            const response = await fetch(`${API_BASE}/${currentChatId}/messages`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ text })
+            });
+
+            if (!response.ok) {
+                alert("Не удалось отправить сообщение");
+                return;
+            }
+
+            inputEl.value = "";
+
+            await loadChats();
+            await loadMessages(currentChatId);
+
+            renderDialogs();
+            renderMessages();
+            updateChatHeader();
+            clearFilePreview();
         }
 
         function escapeHtml(str) {
             if (!str) return "";
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
+
+            return String(str).replace(/[&<>]/g, function (m) {
+                if (m === "&") return "&amp;";
+                if (m === "<") return "&lt;";
+                if (m === ">") return "&gt;";
                 return m;
             });
-        }
-
-        function addMessage(contactId, messageText) {
-            const now = new Date();
-            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-            
-            const newMsg = {
-                id: Date.now(),
-                text: messageText,
-                sender: "outgoing",
-                time: timeStr,
-                files: []
-            };
-            
-            if (!messagesDB[contactId]) messagesDB[contactId] = [];
-            messagesDB[contactId].push(newMsg);
-            
-            if (currentContactId === contactId) renderMessages();
-            renderDialogs();
-        }
-
-        function sendCurrentMessage() {
-            const inputEl = document.getElementById("messageInput");
-            const text = inputEl.value.trim();
-            
-            if (text === "") return;
-            
-            addMessage(currentContactId, text);
-            inputEl.value = "";
-            clearFilePreview();
         }
 
         function clearFilePreview() {
             const previewDiv = document.getElementById("filePreview");
             if (previewDiv) previewDiv.innerHTML = "";
+
             currentFileList = [];
+
+            const fileInput = document.getElementById("fileInput");
+            if (fileInput) fileInput.value = "";
         }
 
         function focusMessageInput() {
-        const input = document.getElementById("messageInput");
-        if (input) {
-            input.focus();
+            const input = document.getElementById("messageInput");
+            if (input) input.focus();
         }
-}
 
         function onFilesSelected(event) {
             const files = Array.from(event.target.files);
+
             if (files.length) {
                 currentFileList = files;
+
                 const previewDiv = document.getElementById("filePreview");
                 if (previewDiv) {
                     previewDiv.innerHTML = `<div class="attachment-preview">📎 Выбрано файлов: ${files.length}</div>`;
@@ -234,16 +247,28 @@
             }
         }
 
-        function initChat() {
-            renderDialogs();
-            renderMessages();
-            updateChatHeader();
-            
+        async function initChat() {
+            try {
+                await loadChats();
+
+                if (currentChatId !== null) {
+                    await loadMessages(currentChatId);
+                }
+
+                renderDialogs();
+                renderMessages();
+                updateChatHeader();
+            } catch (error) {
+                console.error(error);
+                alert("Ошибка загрузки чатов. Проверь, запущен ли backend.");
+            }
+
             const sendBtn = document.getElementById("sendBtn");
             const msgInput = document.getElementById("messageInput");
             const fileInputElem = document.getElementById("fileInput");
-            
+
             if (sendBtn) sendBtn.addEventListener("click", sendCurrentMessage);
+
             if (msgInput) {
                 msgInput.addEventListener("keypress", (e) => {
                     if (e.key === "Enter") {
@@ -252,18 +277,12 @@
                     }
                 });
             }
+
             if (fileInputElem) fileInputElem.addEventListener("change", onFilesSelected);
-            
-            const fileLabel = document.getElementById("fileLabel");
-            if (fileLabel && fileInputElem) {
-                fileLabel.addEventListener("click", () => {
-                    fileInputElem.click();
-                });
-            }
         }
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initChat);
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initChat);
         } else {
             initChat();
         }

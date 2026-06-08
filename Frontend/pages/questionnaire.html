@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HSE Connect — Анкета</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/auth_reg_styles.css">
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #eef3fb;
+        }
+
+        .card-wrap {
+            width: min(1040px, 100%);
+        }
+
+        .auth-card {
+            width: min(980px, 100%);
+        }
+
+        .title {
+            margin-bottom: 22px;
+        }
+
+        .section-title {
+            margin: 20px 0 12px;
+            color: #4a59ff;
+            font-size: 15px;
+            text-transform: uppercase;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .input,
+        .select,
+        .textarea {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+            padding: 13px 15px;
+            border: 1px solid rgba(74, 89, 255, 0.18);
+            border-radius: 16px;
+            outline: none;
+            font: inherit;
+            color: #20244a;
+            background: #f7f8ff;
+        }
+
+        .textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .radio-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 13px 15px;
+            border-radius: 16px;
+            background: #f7f8ff;
+            border: 1px solid rgba(74, 89, 255, 0.18);
+            color: #20244a;
+            cursor: pointer;
+        }
+
+        .radio-card input {
+            margin-right: 8px;
+        }
+
+        .job-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 48px;
+            gap: 10px;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .job-row .input {
+            margin-bottom: 0;
+        }
+
+        .small-btn {
+            border: 0;
+            border-radius: 14px;
+            padding: 12px 15px;
+            color: #4a59ff;
+            background: #eef0ff;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .small-btn.danger {
+            color: #ff3b5f;
+            background: #ffeef2;
+        }
+
+        #addJobBtn {
+            margin: 6px 0 18px;
+        }
+
+        .chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 6px 0 12px;
+        }
+
+        .chip {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #eef0ff;
+            color: #4a59ff;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .hint {
+            margin: -4px 0 12px;
+            font-size: 12px;
+            color: #7b82a8;
+        }
+
+        .error {
+            color: #ff3b5f;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="auth-page">
+        <div class="card-wrap">
+            <div class="logo-wrap">
+                <img src="../icons/logo_with_title.png" alt="HSE Connect" class="logo">
+            </div>
+
+            <section class="auth-card">
+                <h1 class="title">Анкета</h1>
+
+                <form class="form" id="questionnaireForm" novalidate>
+                    <div class="section-title">Основная информация</div>
+
+                    <input class="input" id="lastName" type="text" placeholder="Фамилия">
+                    <input class="input" id="firstName" type="text" placeholder="Имя">
+                    <input class="input" id="middleName" type="text" placeholder="Отчество (если есть)">
+                    <input class="input" id="birthDate" type="date">
+
+                    <select class="select" id="userType">
+                        <option value="">Выберите роль</option>
+                        <option value="student">Студент</option>
+                        <option value="employee">Сотрудник</option>
+                    </select>
+
+                    <div id="studentBlock" class="hidden">
+                        <div class="section-title">Информация о студенте</div>
+
+                        <input class="input" id="campus" type="text" placeholder="Кампус">
+                        <input class="input" id="faculty" type="text" placeholder="Факультет">
+
+                        <div class="radio-group">
+                            <label class="radio-card">
+                                <input type="radio" name="educationForm" value="Бакалавриат">
+                                Бакалавриат
+                            </label>
+
+                            <label class="radio-card">
+                                <input type="radio" name="educationForm" value="Специалитет">
+                                Специалитет
+                            </label>
+
+                            <label class="radio-card">
+                                <input type="radio" name="educationForm" value="Магистратура">
+                                Магистратура
+                            </label>
+                        </div>
+
+                        <input class="input" id="program" type="text" placeholder="ОП">
+                        <input class="input" id="graduationYear" type="number" placeholder="Год конца обучения">
+                        <div id="courseBlock" style="display:none;">
+                            <input class="input" id="course" type="text" placeholder="Курс посчитается автоматически"
+                                disabled>
+                        </div>
+
+                        <select class="select" id="studentStatus">
+                            <option value="">Статус</option>
+                            <option value="Учусь">Учусь</option>
+                            <option value="Не учусь">Не учусь</option>
+                            <option value="В академе">В академе</option>
+                            <option value="Выпускник">Выпускник</option>
+                        </select>
+                    </div>
+
+                    <div id="employeeBlock" class="hidden">
+                        <div class="section-title">Информация о сотруднике</div>
+
+                        <div id="jobsContainer"></div>
+
+                        <button class="small-btn" type="button" id="addJobBtn">+ Добавить должность</button>
+
+                        <input class="input" id="address" type="text" placeholder="Адрес (необязательно)">
+                        <input class="input" id="workPhone" type="tel" placeholder="Рабочий номер (необязательно)">
+                    </div>
+
+                    <div class="section-title">О себе</div>
+
+                    <textarea class="textarea" id="about" maxlength="500"
+                        placeholder="О себе (необязательно)"></textarea>
+                    <div class="hint">До 500 символов</div>
+
+                    <input class="input" id="interestInput" type="text"
+                        placeholder="Интересы: начните вводить и нажмите Enter">
+                    <div class="hint">Если интереса нет в базе, он добавится автоматически</div>
+
+                    <div class="chips" id="interestChips"></div>
+
+                    <div class="error" id="errorText"></div>
+
+                    <button class="primary" type="submit">Сохранить анкету</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script src="../scripts/api.js"></script>
+    <script>
+        const form = document.getElementById("questionnaireForm");
+        const userType = document.getElementById("userType");
+
+        const studentBlock = document.getElementById("studentBlock");
+        const employeeBlock = document.getElementById("employeeBlock");
+
+        const graduationYearInput = document.getElementById("graduationYear");
+        const courseInput = document.getElementById("course");
+
+        const jobsContainer = document.getElementById("jobsContainer");
+        const addJobBtn = document.getElementById("addJobBtn");
+
+        const interestInput = document.getElementById("interestInput");
+        const interestChips = document.getElementById("interestChips");
+        const errorText = document.getElementById("errorText");
+
+        let interestsBase = ["спорт", "программирование", "дизайн", "музыка", "кино", "наука", "стартапы"];
+        let selectedInterests = [];
+
+        userType.addEventListener("change", () => {
+            studentBlock.classList.toggle("hidden", userType.value !== "student");
+            employeeBlock.classList.toggle("hidden", userType.value !== "employee");
+
+            if (userType.value === "employee" && jobsContainer.children.length === 0) {
+                addJobRow();
+            }
+        });
+
+        graduationYearInput.addEventListener("input", calculateCourse);
+
+        document.querySelectorAll('input[name="educationForm"]').forEach(radio => {
+            radio.addEventListener("change", calculateCourse);
+        });
+
+        const courseBlock = document.getElementById("courseBlock");
+
+        function calculateCourse() {
+            const graduationYear = Number(graduationYearInput.value);
+            const educationForm = document.querySelector('input[name="educationForm"]:checked')?.value;
+
+            if (!graduationYear || !educationForm) {
+                courseBlock.style.display = "none";
+                return;
+            }
+
+            let duration = 4;
+
+            if (educationForm === "Бакалавриат") duration = 4;
+            if (educationForm === "Специалитет") duration = 5;
+            if (educationForm === "Магистратура") duration = 2;
+
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const academicYear = today.getMonth() >= 8 ? currentYear : currentYear - 1;
+
+            const startYear = graduationYear - duration;
+            const course = academicYear - startYear + 1;
+
+            if (course >= 1 && course <= duration) {
+                courseBlock.style.display = "block";
+                courseInput.value = `${course} курс`;
+            } else {
+                courseBlock.style.display = "none";
+                courseInput.value = "";
+            }
+        }
+
+        function addJobRow() {
+            const row = document.createElement("div");
+            row.className = "job-row";
+
+            row.innerHTML = `
+      <input class="input" type="text" placeholder="Подразделение">
+      <input class="input" type="text" placeholder="Должность">
+      <button class="small-btn danger" type="button">×</button>
+    `;
+
+            const deleteBtn = row.querySelector("button");
+            deleteBtn.addEventListener("click", () => row.remove());
+
+            jobsContainer.appendChild(row);
+        }
+
+        addJobBtn.addEventListener("click", addJobRow);
+
+        interestInput.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") return;
+
+            event.preventDefault();
+
+            const value = interestInput.value.trim().toLowerCase();
+            if (!value) return;
+
+            if (!interestsBase.includes(value)) {
+                interestsBase.push(value);
+            }
+
+            if (!selectedInterests.includes(value)) {
+                selectedInterests.push(value);
+            }
+
+            interestInput.value = "";
+            renderInterests();
+        });
+
+        function renderInterests() {
+            interestChips.innerHTML = "";
+
+            selectedInterests.forEach((interest) => {
+                const chip = document.createElement("span");
+                chip.className = "chip";
+                chip.textContent = interest;
+
+                chip.addEventListener("click", () => {
+                    selectedInterests = selectedInterests.filter(item => item !== interest);
+                    renderInterests();
+                });
+
+                interestChips.appendChild(chip);
+            });
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            errorText.textContent = "";
+
+            const lastName = document.getElementById("lastName").value.trim();
+            const firstName = document.getElementById("firstName").value.trim();
+            const birthDate = document.getElementById("birthDate").value;
+
+            if (!lastName || !firstName || !birthDate || !userType.value) {
+                errorText.textContent = "Заполните фамилию, имя, дату рождения и роль.";
+                return;
+            }
+
+            const payload = {
+                lastName,
+                firstName,
+                middleName: document.getElementById("middleName").value.trim(),
+                birthDate,
+                type: userType.value,
+                about: document.getElementById("about").value.trim(),
+                interests: selectedInterests
+            };
+
+            if (userType.value === "student") {
+                payload.student = {
+                    campus: document.getElementById("campus").value.trim(),
+                    faculty: document.getElementById("faculty").value.trim(),
+                    educationForm: document.querySelector('input[name="educationForm"]:checked')?.value || "",
+                    program: document.getElementById("program").value.trim(),
+                    graduationYear: graduationYearInput.value,
+                    course: courseInput.value,
+                    status: document.getElementById("studentStatus").value
+                };
+            }
+
+            if (userType.value === "employee") {
+                payload.employee = {
+                    jobs: Array.from(jobsContainer.children).map(row => {
+                        const inputs = row.querySelectorAll("input");
+
+                        return {
+                            department: inputs[0].value.trim(),
+                            position: inputs[1].value.trim()
+                        };
+                    }),
+                    address: document.getElementById("address").value.trim(),
+                    workPhone: document.getElementById("workPhone").value.trim()
+                };
+            }
+
+            try {
+                await saveQuestionnaire(payload);
+                window.location.href = "profile.html";
+            } catch (error) {
+                errorText.textContent = error.message;
+            }
+        });
+    </script>
+</body>
+
+</html>

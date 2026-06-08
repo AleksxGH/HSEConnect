@@ -1,73 +1,181 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
+    <style>
+        .modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(20, 24, 55, 0.45);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            width: min(520px, 100%);
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 28px;
+            box-shadow: 0 24px 70px rgba(30, 40, 120, 0.22);
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .modal-content h2 {
+            margin: 0 0 18px;
+            color: #2936cc;
+            font-size: 24px;
+        }
+
+        .modal-content input,
+        .modal-content select,
+        .modal-content textarea {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+            padding: 13px 15px;
+            border: 1px solid rgba(74, 89, 255, 0.18);
+            border-radius: 16px;
+            outline: none;
+            font: inherit;
+            color: #20244a;
+            background: #f7f8ff;
+        }
+
+        .modal-content textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .modal-content input:disabled,
+        .modal-content select:disabled,
+        .modal-content textarea:disabled {
+            color: #30345f;
+            opacity: 1;
+            background: #f2f4ff;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .cancel-btn,
+        .submit-btn {
+            border: 0;
+            border-radius: 16px;
+            padding: 12px 18px;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            color: #4a59ff;
+            background: #eef0ff;
+        }
+
+        .submit-btn {
+            color: #fff;
+            background: #4a59ff;
+        }
+
+        .event-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 14px;
+            padding: 9px 12px;
+            color: #4a59ff;
+            background: #eef0ff;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn.danger {
+            color: #ff3b5f;
+            background: #ffeef2;
+        }
+
+        .name {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HSE Connect — Профиль</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
-    
-    <!-- Подключаем стили -->
+
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/profile.css">
-    
-    <!-- Подключаем Web Components -->
+
     <script src="../js/components.js" defer></script>
 </head>
+
 <body>
     <hse-header></hse-header>
 
     <div class="page">
         <hse-sidebar></hse-sidebar>
-        
+
         <main class="content">
             <section class="hero">
                 <div class="hero-cover"></div>
+
                 <div class="hero-body">
                     <div class="avatar-wrap">
-                        <img class="avatar" src="../stubs/photo_circle.jpg" alt="Фото профиля" />
+                        <img class="avatar" src="../stubs/photo_circle.svg" alt="Фото профиля" />
                     </div>
 
                     <div class="hero-main">
                         <div class="hero-main-left">
-                            <h1 class="name">ПРАХОВ ДАНИЛ</h1>
-                            <div class="tags">
-                                <span class="tag">ФКН</span>
-                                <span class="tag">ПМИ</span>
-                                <span class="tag">2 КУРС</span>
-                                <span class="tag">ASSIST</span>
-                                <span class="tag">БАЗЫ ДАННЫХ</span>
-                            </div>
+                            <h1 class="name">Загрузка...</h1>
+                            <div class="tags"></div>
                         </div>
 
-                        <a class="edit-floating" href="#">
+                        <button class="edit-floating" id="openEditProfileBtn" type="button">
                             <span>Редактировать</span>
                             <img src="../icons/edit_icon.svg" alt="" aria-hidden="true" />
-                        </a>
+                        </button>
                     </div>
 
                     <div class="row">
                         <section class="card">
                             <h2 class="section-title">ОПИСАНИЕ</h2>
-                            <p class="description">
-                                Увлекаюсь программированием и машинным обучением. Люблю решать интересные задачи и работать над проектами в команде.
-                                В свободное время устанавливаю друзьям лучшую ОС этой Вселенной: Linux Ubuntu.
-                            </p>
+                            <p class="description">Загрузка описания...</p>
                         </section>
 
                         <section class="card">
                             <div class="stats">
                                 <div>
-                                    <div class="stat-value">41</div>
+                                    <div class="stat-value" id="friendsCount">0</div>
                                     <div class="stat-label">друг</div>
                                 </div>
+
                                 <div>
-                                    <div class="stat-value">120</div>
+                                    <div class="stat-value" id="followersCount">0</div>
                                     <div class="stat-label">подписчиков</div>
                                 </div>
+
                                 <div>
-                                    <div class="stat-value" id="eventsCount">3</div>
+                                    <div class="stat-value" id="eventsCount">0</div>
                                     <div class="stat-label">событий</div>
                                 </div>
                             </div>
@@ -76,21 +184,15 @@
 
                     <section class="interests">
                         <h2 class="section-title" style="margin:0; color:#4a59ff;">ИНТЕРЕСЫ</h2>
-                        <div class="chip-list">
-                            <span class="chip">Волейбол</span>
-                            <span class="chip">ML</span>
-                            <span class="chip">Фотография</span>
-                            <span class="chip">Путешествия</span>
-                            <span class="chip">Музыка</span>
-                            <span class="chip">Кино</span>
-                            <span class="chip">Программирование</span>
-                        </div>
+                        <div class="chip-list"></div>
                     </section>
 
                     <section class="events">
-                        <div class="events-tabs" style="display: flex; gap: 18px; padding: 14px 16px 10px; color: var(--blue-strong); font-size: 15px; border-bottom: 1px solid rgba(75,89,255,0.08);">
-                            <span id="myEventsTab" style="cursor: pointer; text-decoration: underline;">МОИ СОБЫТИЯ</span>
-                            <span id="goingEventsTab" style="cursor: pointer;">СОБИРАЮСЬ ПОЙТИ</span>
+                        <div class="events-tabs"
+                            style="display: flex; gap: 18px; padding: 14px 16px 10px; color: var(--blue-strong); font-size: 15px; border-bottom: 1px solid rgba(75,89,255,0.08);">
+                            <span id="myEventsTab" style="cursor: pointer; text-decoration: underline;">МОИ
+                                СОБЫТИЯ</span>
+                            <span id="goingEventsTab" style="cursor: pointer; opacity: 0.6;">СОБИРАЮСЬ ПОЙТИ</span>
                         </div>
 
                         <div id="eventsContainer" class="events-grid"></div>
@@ -100,199 +202,52 @@
         </main>
     </div>
 
-    <script>
-        // Данные событий
-        const myEvents = [
-            {
-                id: 1,
-                type: "Учёба",
-                title: "Подготовка к экзамену по матанализу",
-                date: "15 декабря, 18:00",
-                location: "Покровка",
-                participants: 3,
-                photo: "../stubs/photo_square.svg",
-                badge: "Учёба"
-            },
-            {
-                id: 2,
-                type: "Спорт",
-                title: "Футбол",
-                date: "21 декабря, 20:00",
-                location: "Стадион",
-                participants: 17,
-                photo: "../stubs/photo_square.svg",
-                badge: "Спорт"
-            },
-            {
-                id: 3,
-                type: "Еда",
-                title: "Сходка в БК",
-                date: "31 декабря, 20:00",
-                location: "БК",
-                participants: 5,
-                photo: "../stubs/photo_square.svg",
-                badge: "Еда"
-            }
-        ];
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Событие</h2>
 
-        const goingEvents = [
-            {
-                id: 4,
-                type: "Конференция",
-                title: "IT-лекция: Будущее искусственного интеллекта",
-                date: "18 декабря, 19:00",
-                location: "Центр событий",
-                participants: 45,
-                photo: "../stubs/photo_square.svg",
-                badge: "Образование"
-            },
-            {
-                id: 5,
-                type: "Кино",
-                title: "Просмотр фильма 'Дюна 2'",
-                date: "22 декабря, 20:00",
-                location: "Кинотеатр Октябрь",
-                participants: 12,
-                photo: "../stubs/photo_square.svg",
-                badge: "Развлечения"
-            },
-            {
-                id: 6,
-                type: "Спорт",
-                title: "Йога на свежем воздухе",
-                date: "25 декабря, 10:00",
-                location: "Парк Горького",
-                participants: 8,
-                photo: "../stubs/photo_square.svg",
-                badge: "Здоровье"
-            },
-            {
-                id: 7,
-                type: "Нетворкинг",
-                title: "Встреча выпускников ФКН",
-                date: "28 декабря, 18:30",
-                location: "Атриум",
-                participants: 30,
-                photo: "../stubs/photo_square.svg",
-                badge: "Общение"
-            }
-        ];
+            <input type="text" id="eventTitle" placeholder="Название события">
 
-        let currentTab = "my";
+            <select id="eventType">
+                <option value="Учёба">Учёба</option>
+                <option value="Спорт">Спорт</option>
+                <option value="Вечеринка">Вечеринка</option>
+                <option value="Образование">Образование</option>
+                <option value="Развлечения">Развлечения</option>
+                <option value="Общение">Общение</option>
+            </select>
 
-        function renderEvents() {
-            const container = document.getElementById("eventsContainer");
-            if (!container) return;
-            
-            const events = currentTab === "my" ? myEvents : goingEvents;
-            
-            if (events.length === 0) {
-                container.innerHTML = `<div class="empty-events">Пока нет событий в этой категории</div>`;
-                return;
-            }
-            
-            let eventsHtml = '';
-            events.forEach(event => {
-                eventsHtml += `
-                    <article class="event-card">
-                        <div>
-                            <span class="event-badge">${event.badge}</span>
-                            <h3 class="event-title">${event.title}</h3>
-                            <div class="event-meta">
-                                <span>${event.date}</span>
-                                <span>${event.location}</span>
-                                <span>${event.participants} участника</span>
-                            </div>
-                        </div>
-                        <img class="event-photo" src="${event.photo}" alt="Фото события" />
-                        <div class="event-actions">
-                            ${currentTab === "my" ? 
-                                '<button class="btn" onclick="editEvent(' + event.id + ')">Редактировать</button><button class="btn danger" onclick="deleteEvent(' + event.id + ')">Удалить</button>' :
-                                '<button class="btn" onclick="cancelGoing(' + event.id + ')">Отменить</button><button class="btn" onclick="viewEvent(' + event.id + ')">Подробнее</button>'
-                            }
-                        </div>
-                    </article>
-                `;
-            });
-            
-            container.innerHTML = eventsHtml;
-            updateEventsCount();
-        }
-        
-        function updateEventsCount() {
-            const eventsCountElement = document.getElementById("eventsCount");
-            if (eventsCountElement) {
-                const totalEvents = myEvents.length + goingEvents.length;
-                eventsCountElement.textContent = totalEvents;
-            }
-        }
-        
-        function editEvent(eventId) {
-            alert(`Редактирование события #${eventId}`);
-        }
-        
-        function deleteEvent(eventId) {
-            if (confirm("Вы уверены, что хотите удалить это событие?")) {
-                const index = myEvents.findIndex(e => e.id === eventId);
-                if (index !== -1) {
-                    myEvents.splice(index, 1);
-                    if (currentTab === "my") {
-                        renderEvents();
-                    }
-                    updateEventsCount();
-                    alert("Событие удалено");
-                }
-            }
-        }
-        
-        function cancelGoing(eventId) {
-            if (confirm("Вы уверены, что хотите отменить участие в событии?")) {
-                const index = goingEvents.findIndex(e => e.id === eventId);
-                if (index !== -1) {
-                    goingEvents.splice(index, 1);
-                    if (currentTab === "going") {
-                        renderEvents();
-                    }
-                    updateEventsCount();
-                    alert("Участие отменено");
-                }
-            }
-        }
-        
-        function viewEvent(eventId) {
-            alert(`Просмотр события #${eventId}`);
-        }
-        
-        window.editEvent = editEvent;
-        window.deleteEvent = deleteEvent;
-        window.cancelGoing = cancelGoing;
-        window.viewEvent = viewEvent;
-        
-        function switchTab(tab) {
-            currentTab = tab;
-            
-            const myTab = document.getElementById("myEventsTab");
-            const goingTab = document.getElementById("goingEventsTab");
-            
-            if (currentTab === "my") {
-                myTab.style.textDecoration = "underline";
-                goingTab.style.textDecoration = "none";
-                goingTab.style.opacity = "0.6";
-                myTab.style.opacity = "1";
-            } else {
-                myTab.style.textDecoration = "none";
-                goingTab.style.textDecoration = "underline";
-                myTab.style.opacity = "0.6";
-                goingTab.style.opacity = "1";
-            }
-            
-            renderEvents();
-        }
-        
-        document.getElementById("myEventsTab").addEventListener("click", () => switchTab("my"));
-        document.getElementById("goingEventsTab").addEventListener("click", () => switchTab("going"));
-        
-        renderEvents();
-    </script>
+            <input type="text" id="eventLocation" placeholder="Место проведения">
+            <input type="date" id="eventDate">
+            <input type="time" id="eventTime">
+            <textarea id="eventDescription" placeholder="Описание события"></textarea>
+
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeModalBtn">Закрыть</button>
+                <button class="submit-btn" id="saveEventBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="profileModal">
+        <div class="modal-content">
+            <h2>Редактировать профиль</h2>
+
+            <input type="text" id="editLastName" placeholder="Фамилия">
+            <input type="text" id="editFirstName" placeholder="Имя">
+            <input type="text" id="editMiddleName" placeholder="Отчество">
+
+            <textarea id="editAbout" placeholder="О себе"></textarea>
+
+            <input type="text" id="editInterests" placeholder="Интересы через запятую">
+
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeProfileModalBtn" type="button">Закрыть</button>
+                <button class="submit-btn" id="saveProfileBtn" type="button">Сохранить</button>
+            </div>
+        </div>
+    </div>
+    <script src="../scripts/api.js"></script>
+    <script src="../scripts/profile.js"></script>
 </body>
+
 </html>
