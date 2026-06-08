@@ -8,7 +8,7 @@ import java.util.*;
 @Service
 public class ProfileService {
 
-    private final Map<Long, ProfileDto> profilesByUserId = new HashMap<>();
+    private static final Map<Long, ProfileDto> profilesByUserId = new HashMap<>();
 
     public ProfileDto getProfileByUserId(Long userId) {
         validateUserId(userId);
