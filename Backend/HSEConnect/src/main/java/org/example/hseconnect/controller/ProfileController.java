@@ -2,6 +2,7 @@ package org.example.hseconnect.controller;
 
 import org.example.hseconnect.model.ProfileDto;
 import org.example.hseconnect.services.ProfileService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,23 +17,35 @@ public class ProfileController {
     }
 
     @GetMapping("/{userId}")
-    public ProfileDto getProfile(@PathVariable Long userId) {
-        return profileService.getProfileByUserId(userId);
+    public ResponseEntity<?> getProfile(@PathVariable Long userId) {
+        try {
+            return ResponseEntity.ok(profileService.getProfileByUserId(userId));
+        } catch (RuntimeException error) {
+            return ResponseEntity.status(404).body(error.getMessage());
+        }
     }
 
     @PostMapping("/{userId}/questionnaire")
-    public ProfileDto saveQuestionnaire(
+    public ResponseEntity<?> saveQuestionnaire(
             @PathVariable Long userId,
             @RequestBody ProfileDto profileDto
     ) {
-        return profileService.saveQuestionnaire(userId, profileDto);
+        try {
+            return ResponseEntity.ok(profileService.saveQuestionnaire(userId, profileDto));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @PutMapping("/{userId}")
-    public ProfileDto updateProfile(
+    public ResponseEntity<?> updateProfile(
             @PathVariable Long userId,
             @RequestBody ProfileDto profileDto
     ) {
-        return profileService.updateProfile(userId, profileDto);
+        try {
+            return ResponseEntity.ok(profileService.updateProfile(userId, profileDto));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 }

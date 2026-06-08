@@ -21,21 +21,35 @@ public class ChatController {
     }
 
     @GetMapping
-    public List<ChatDto> getChats() {
-        return chatService.getChats();
+    public ResponseEntity<?> getChats() {
+        try {
+            List<ChatDto> chats = chatService.getChats();
+            return ResponseEntity.ok(chats);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @GetMapping("/{chatId}/messages")
-    public List<MessageDto> getMessages(@PathVariable Long chatId) {
-        return chatService.getMessages(chatId);
+    public ResponseEntity<?> getMessages(@PathVariable Long chatId) {
+        try {
+            List<MessageDto> messages = chatService.getMessages(chatId);
+            return ResponseEntity.ok(messages);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @PostMapping("/{chatId}/messages")
-    public ResponseEntity<MessageDto> sendMessage(
+    public ResponseEntity<?> sendMessage(
             @PathVariable Long chatId,
             @RequestBody SendMessageRequest request
     ) {
-        MessageDto message = chatService.sendMessage(chatId, request.getText());
-        return ResponseEntity.ok(message);
+        try {
+            MessageDto message = chatService.sendMessage(chatId, request.getText());
+            return ResponseEntity.ok(message);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 }

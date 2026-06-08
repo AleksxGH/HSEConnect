@@ -2,94 +2,134 @@ package org.example.hseconnect.services;
 
 import org.example.hseconnect.model.ChatDto;
 import org.example.hseconnect.model.MessageDto;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalTime;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ChatService {
 
-    private final List<ChatDto> chats = new ArrayList<>();
-    private final Map<Long, List<MessageDto>> messages = new HashMap<>();
-    private long messageIdCounter = 100;
+    private static final Long DEFAULT_USER_ID = 1L;
 
-    public ChatService() {
-        chats.add(new ChatDto(1L, "Алексей Смирнов", "А", "онлайн", "Всё отлично, сегодня обсудим архитектуру"));
-        chats.add(new ChatDto(2L, "Мария Ковальчук", "М", "была вчера", "Привет! Зацени статью по нейросетям"));
-        chats.add(new ChatDto(3L, "Даниил Воробьёв", "Д", "печатает...", "В субботу футбол в 18:00, будешь?"));
-        chats.add(new ChatDto(4L, "Екатерина Тихонова", "Е", "онлайн", "Хей! Нашёл баги в коде?"));
+    private final JdbcTemplate jdbcTemplate;
 
-        messages.put(1L, new ArrayList<>(List.of(
-                new MessageDto(1L, 1L, "Привет! Как дела с проектом?", "incoming", "12:45"),
-                new MessageDto(2L, 1L, "Всё отлично, сегодня обсудим архитектуру", "outgoing", "12:47")
-        )));
-
-        messages.put(2L, new ArrayList<>(List.of(
-                new MessageDto(3L, 2L, "Привет! Зацени статью по нейросетям", "incoming", "10:20")
-        )));
-
-        messages.put(3L, new ArrayList<>(List.of(
-                new MessageDto(4L, 3L, "В субботу футбол в 18:00, будешь?", "incoming", "вчера")
-        )));
-
-        messages.put(4L, new ArrayList<>(List.of(
-                new MessageDto(5L, 4L, "Хей! Нашёл баги в коде?", "incoming", "15:12")
-        )));
+    public ChatService(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public List<ChatDto> getChats() {
-        return chats;
+        return jdbcTemplate.query("""
+                SELECT c.chat_id,
+                       COALESCE(e.title, 'Чат #' || c.chat_id) AS name,
+                       COALESCE(last_message.message_text, '') AS last_message
+                FROM app.chat c
+                LEFT JOIN app.event e ON e.event_id = c.event_id
+                LEFT JOIN LATERAL (
+                    SELECT m.message_text
+                    FROM app.message m
+                    WHERE m.chat_id = c.chat_id AND m.deleted_at IS NULL
+                    ORDER BY m.created_at DESC
+                    LIMIT 1
+                ) last_message ON TRUE
+                ORDER BY c.created_at DESC
+                """, (rs, rowNum) -> {
+            String name = rs.getString("name");
+            String avatarInitial = name == null || name.isBlank() ? "?" : name.substring(0, 1).toUpperCase();
+
+            return new ChatDto(
+                    rs.getLong("chat_id"),
+                    name,
+                    avatarInitial,
+                    "онлайн",
+                    rs.getString("last_message")
+            );
+        });
     }
 
     public List<MessageDto> getMessages(Long chatId) {
-        if (!messages.containsKey(chatId)) {
-            throw new RuntimeException("Чат не найден");
-        }
+        validateChatExists(chatId);
 
-        return messages.get(chatId);
+        return jdbcTemplate.query("""
+                SELECT m.message_id,
+                       m.chat_id,
+                       m.sender_id,
+                       m.message_text,
+                       m.created_at
+                FROM app.message m
+                WHERE m.chat_id = ? AND m.deleted_at IS NULL
+                ORDER BY m.created_at
+                """, (rs, rowNum) -> {
+            Long senderId = rs.getLong("sender_id");
+            Timestamp createdAt = rs.getTimestamp("created_at");
+            String time = createdAt == null
+                    ? ""
+                    : createdAt.toLocalDateTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+
+            return new MessageDto(
+                    rs.getLong("message_id"),
+                    rs.getLong("chat_id"),
+                    rs.getString("message_text"),
+                    DEFAULT_USER_ID.equals(senderId) ? "outgoing" : "incoming",
+                    time
+            );
+        }, chatId);
     }
 
+    @Transactional
     public MessageDto sendMessage(Long chatId, String text) {
         if (text == null || text.trim().isEmpty()) {
             throw new RuntimeException("Сообщение не может быть пустым");
         }
 
-        if (!messages.containsKey(chatId)) {
-            throw new RuntimeException("Чат не найден");
-        }
+        validateChatExists(chatId);
 
-        String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
+        LocalDateTime now = LocalDateTime.now();
+        KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        MessageDto newMessage = new MessageDto(
-                ++messageIdCounter,
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement("""
+                    INSERT INTO app.message (chat_id, sender_id, message_text, created_at, edited_at, deleted_at)
+                    VALUES (?, ?, ?, ?, NULL, NULL)
+                    """, Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, chatId);
+            ps.setLong(2, DEFAULT_USER_ID);
+            ps.setString(3, text.trim());
+            ps.setTimestamp(4, Timestamp.valueOf(now));
+            return ps;
+        }, keyHolder);
+
+        return new MessageDto(
+                Objects.requireNonNull(keyHolder.getKey()).longValue(),
                 chatId,
                 text.trim(),
                 "outgoing",
-                time
+                now.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))
         );
-
-        messages.get(chatId).add(newMessage);
-        updateLastMessage(chatId, text.trim());
-
-        return newMessage;
     }
 
-    private void updateLastMessage(Long chatId, String text) {
-        for (int i = 0; i < chats.size(); i++) {
-            ChatDto chat = chats.get(i);
+    private void validateChatExists(Long chatId) {
+        if (chatId == null || chatId <= 0) {
+            throw new RuntimeException("Чат не найден");
+        }
 
-            if (chat.getId().equals(chatId)) {
-                chats.set(i, new ChatDto(
-                        chat.getId(),
-                        chat.getName(),
-                        chat.getAvatarInitial(),
-                        chat.getStatus(),
-                        text
-                ));
-                return;
-            }
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM app.chat WHERE chat_id = ?",
+                Integer.class,
+                chatId
+        );
+
+        if (count == null || count == 0) {
+            throw new RuntimeException("Чат не найден");
         }
     }
 }

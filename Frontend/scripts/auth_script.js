@@ -1,5 +1,3 @@
-const API_URL = 'http://localhost:8080';
-
 const form = document.getElementById('loginForm');
 const emailInput = document.getElementById('emailInput');
 const passwordInput = document.getElementById('passwordInput');
@@ -32,7 +30,7 @@ form.addEventListener('submit', async function(event) {
       return;
     }
 
-    const user = await response.json();
+    const user = await apiPost("/api/auth/login", loginData);
 
     localStorage.setItem('userId', user.userId);
     localStorage.setItem('userEmail', user.email);

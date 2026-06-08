@@ -1,19 +1,18 @@
 package org.example.hseconnect.model;
 
 public class LoginResponse {
-    private String userId;
+    private Long userId;
     private String email;
 
-    public LoginResponse(String userId, String email) {
+    public LoginResponse() {}
+
+    public LoginResponse(Long userId, String email) {
         this.userId = userId;
         this.email = email;
     }
 
-    public String getUserId() {
-        return userId;
-    }
-
-    public String getEmail() {
-        return email;
-    }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 }

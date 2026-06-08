@@ -4,17 +4,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   initProfileEditModal();
 
   try {
-    const userId = localStorage.getItem('userId') || 1;
+    const profile = await getProfile();
 
-    const response = await fetch(`http://localhost:8080/api/profile/${userId}`);
-
-    if (!response.ok) {
-      window.location.href = 'auth.html';
-      return;
-    }
-
-    const profile = await response.json();
-
+    currentProfile = profile;
     renderProfile(profile);
 
   } catch (error) {

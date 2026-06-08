@@ -2,8 +2,8 @@ package org.example.hseconnect.controller;
 
 import org.example.hseconnect.model.EventDto;
 import org.example.hseconnect.services.EventService;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -11,6 +11,9 @@ import java.util.List;
 @RequestMapping("/api/events")
 @CrossOrigin(origins = "*")
 public class EventController {
+
+    private static final Long DEFAULT_USER_ID = 1L;
+
     private final EventService eventService;
 
     public EventController(EventService eventService) {
@@ -18,44 +21,82 @@ public class EventController {
     }
 
     @GetMapping
-    public List<EventDto> getEvents() {
-        return eventService.getAllEvents();
+    public ResponseEntity<?> getEvents() {
+        try {
+            List<EventDto> events = eventService.getAllEvents();
+            return ResponseEntity.ok(events);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @GetMapping("/my")
-    public List<EventDto> getMyEvents() {
-        return eventService.getMyEvents();
+    public ResponseEntity<?> getMyEvents() {
+        try {
+            List<EventDto> events = eventService.getMyEvents();
+            return ResponseEntity.ok(events);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @GetMapping("/going")
-    public List<EventDto> getGoingEvents() {
-        return eventService.getGoingEvents();
+    public ResponseEntity<?> getGoingEvents() {
+        try {
+            List<EventDto> events = eventService.getGoingEvents();
+            return ResponseEntity.ok(events);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @PostMapping
-    public EventDto createEvent(@RequestBody EventDto event) {
-        return eventService.createEvent(event);
+    public ResponseEntity<?> createEvent(@RequestBody EventDto event) {
+        try {
+            return ResponseEntity.ok(eventService.createEvent(event));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @GetMapping("/{eventId}")
-    public EventDto getEventById(@PathVariable Long eventId) {
-        return eventService.getEventById(eventId);
+    public ResponseEntity<?> getEventById(@PathVariable Long eventId) {
+        try {
+            return ResponseEntity.ok(eventService.getEventById(eventId));
+        } catch (RuntimeException error) {
+            return ResponseEntity.status(404).body(error.getMessage());
+        }
     }
 
     @PutMapping("/{eventId}")
-    public EventDto updateEvent(@PathVariable Long eventId, @RequestBody EventDto event) {
-        return eventService.updateEvent(eventId, event);
+    public ResponseEntity<?> updateEvent(
+            @PathVariable Long eventId,
+            @RequestBody EventDto event
+    ) {
+        try {
+            return ResponseEntity.ok(eventService.updateEvent(eventId, event));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @DeleteMapping("/{eventId}")
-    public void deleteEvent(@PathVariable Long eventId) {
-        eventService.deleteEvent(eventId);
+    public ResponseEntity<?> deleteEvent(@PathVariable Long eventId) {
+        try {
+            eventService.deleteEvent(eventId);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
     }
 
     @PostMapping("/{eventId}/respond")
-    public ResponseEntity<?> respondToEvent(@PathVariable Long eventId) {
+    public ResponseEntity<?> respondToEvent(
+            @PathVariable Long eventId,
+            @RequestParam(required = false) Long userId
+    ) {
         try {
-            Long currentUserId = 1L;
+            Long currentUserId = userId == null ? DEFAULT_USER_ID : userId;
             EventDto event = eventService.respondToEvent(eventId, currentUserId);
             return ResponseEntity.ok(event);
         } catch (RuntimeException error) {
@@ -63,4 +104,3 @@ public class EventController {
         }
     }
 }
-
