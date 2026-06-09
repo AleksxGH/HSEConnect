@@ -713,7 +713,6 @@ public class ProfileService {
         List<String> tags = new ArrayList<>();
 
         if ("student".equals(dto.getType()) && dto.getStudent() != null) {
-            tags.add("Студент");
             addIfPresent(tags, dto.getStudent().getFaculty());
             addIfPresent(tags, dto.getStudent().getEducationProgram());
             addIfPresent(tags, dto.getStudent().getEducationLevel());
@@ -723,7 +722,6 @@ public class ProfileService {
         }
 
         if ("employee".equals(dto.getType()) && dto.getEmployee() != null) {
-            tags.add("Сотрудник");
 
             if (dto.getEmployee().getJobs() != null && !dto.getEmployee().getJobs().isEmpty()) {
                 ProfileDto.JobInfo firstJob = dto.getEmployee().getJobs().get(0);
@@ -736,9 +734,9 @@ public class ProfileService {
     }
 
     private void addIfPresent(List<String> values, String value) {
-        if (value != null && !value.isBlank()) {
-            values.add(value);
-        }
+        if (value == null || value.isBlank()) return;
+        if ("Не указано".equalsIgnoreCase(value.trim())) return;
+        values.add(value);
     }
 
     private String calculateCourse(Integer graduationYear, String educationLevel) {
