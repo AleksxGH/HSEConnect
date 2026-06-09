@@ -402,7 +402,7 @@ public class ProfileService {
 
                 Integer graduationYear = rs.getObject("graduation_year", Integer.class);
                 student.setGraduationYear(graduationYear == null ? null : graduationYear.toString());
-                student.setCourse(calculateCourse(graduationYear));
+                student.setCourse(calculateCourse(graduationYear, student.getEducationLevel()));
 
                 return student;
             }, userId);
@@ -713,7 +713,6 @@ public class ProfileService {
         List<String> tags = new ArrayList<>();
 
         if ("student".equals(dto.getType()) && dto.getStudent() != null) {
-            tags.add("Студент");
             addIfPresent(tags, dto.getStudent().getFaculty());
             addIfPresent(tags, dto.getStudent().getEducationProgram());
             addIfPresent(tags, dto.getStudent().getEducationLevel());
@@ -723,7 +722,6 @@ public class ProfileService {
         }
 
         if ("employee".equals(dto.getType()) && dto.getEmployee() != null) {
-            tags.add("Сотрудник");
 
             if (dto.getEmployee().getJobs() != null && !dto.getEmployee().getJobs().isEmpty()) {
                 ProfileDto.JobInfo firstJob = dto.getEmployee().getJobs().get(0);
@@ -736,13 +734,19 @@ public class ProfileService {
     }
 
     private void addIfPresent(List<String> values, String value) {
-        if (value != null && !value.isBlank()) {
-            values.add(value);
-        }
+        if (value == null || value.isBlank()) return;
+        if ("Не указано".equalsIgnoreCase(value.trim())) return;
+        values.add(value);
     }
 
-    private String calculateCourse(Integer graduationYear) {
+    private String calculateCourse(Integer graduationYear, String educationLevel) {
         if (graduationYear == null) return null;
+
+        int duration = 4;
+
+        if ("Специалитет".equalsIgnoreCase(educationLevel)) duration = 5;
+        if ("Магистратура".equalsIgnoreCase(educationLevel)) duration = 2;
+        if ("Бакалавриат".equalsIgnoreCase(educationLevel)) duration = 4;
 
         int currentYear = LocalDate.now().getYear();
         int currentMonth = LocalDate.now().getMonthValue();
@@ -751,9 +755,12 @@ public class ProfileService {
                 ? currentYear
                 : currentYear - 1;
 
-        int course = graduationYear - academicYear;
+        int startYear = graduationYear - duration;
+        int course = academicYear - startYear + 1;
 
-        if (course <= 0) return "Выпускник";
+        if (course < 1) return null;
+        if (course > duration) return "Выпускник";
+
         return course + " курс";
     }
 

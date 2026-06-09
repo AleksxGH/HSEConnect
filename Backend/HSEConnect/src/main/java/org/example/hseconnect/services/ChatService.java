@@ -19,32 +19,47 @@ import java.util.Objects;
 @Service
 public class ChatService {
 
-    private static final Long DEFAULT_USER_ID = 1L;
-
     private final JdbcTemplate jdbcTemplate;
 
     public ChatService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<ChatDto> getChats() {
+    public List<ChatDto> getChats(Long currentUserId) {
         return jdbcTemplate.query("""
-                SELECT c.chat_id,
-                       COALESCE(e.title, 'Чат #' || c.chat_id) AS name,
-                       COALESCE(last_message.message_text, '') AS last_message
-                FROM app.chat c
-                LEFT JOIN app.event e ON e.event_id = c.event_id
-                LEFT JOIN LATERAL (
-                    SELECT m.message_text
-                    FROM app.message m
-                    WHERE m.chat_id = c.chat_id AND m.deleted_at IS NULL
-                    ORDER BY m.created_at DESC
-                    LIMIT 1
-                ) last_message ON TRUE
-                ORDER BY c.created_at DESC
-                """, (rs, rowNum) -> {
+        SELECT c.chat_id,
+               COALESCE(
+                   e.title,
+                   (
+                       SELECT CONCAT(p.first_name, ' ', p.last_name)
+                       FROM app.chat_participant cp_other
+                       JOIN app.profile p ON p.user_id = cp_other.user_id
+                       WHERE cp_other.chat_id = c.chat_id
+                         AND cp_other.user_id <> ?
+                         AND cp_other.left_at IS NULL
+                       LIMIT 1
+                   ),
+                   'Чат #' || c.chat_id
+               ) AS name,
+               COALESCE(last_message.message_text, '') AS last_message
+        FROM app.chat c
+        JOIN app.chat_participant cp_me ON cp_me.chat_id = c.chat_id
+        LEFT JOIN app.event e ON e.event_id = c.event_id
+        LEFT JOIN LATERAL (
+            SELECT m.message_text
+            FROM app.message m
+            WHERE m.chat_id = c.chat_id AND m.deleted_at IS NULL
+            ORDER BY m.created_at DESC
+            LIMIT 1
+        ) last_message ON TRUE
+        WHERE cp_me.user_id = ?
+          AND cp_me.left_at IS NULL
+        ORDER BY c.created_at DESC
+    """, (rs, rowNum) -> {
             String name = rs.getString("name");
-            String avatarInitial = name == null || name.isBlank() ? "?" : name.substring(0, 1).toUpperCase();
+            String avatarInitial = name == null || name.isBlank()
+                    ? "?"
+                    : name.substring(0, 1).toUpperCase();
 
             return new ChatDto(
                     rs.getLong("chat_id"),
@@ -53,68 +68,95 @@ public class ChatService {
                     "онлайн",
                     rs.getString("last_message")
             );
-        });
+        }, currentUserId, currentUserId);
     }
 
-    public List<MessageDto> getMessages(Long chatId) {
+    public List<MessageDto> getMessages(Long chatId, Long currentUserId) {
         validateChatExists(chatId);
+        validateUserInChat(chatId, currentUserId);
 
         return jdbcTemplate.query("""
-                SELECT m.message_id,
-                       m.chat_id,
-                       m.sender_id,
-                       m.message_text,
-                       m.created_at
-                FROM app.message m
-                WHERE m.chat_id = ? AND m.deleted_at IS NULL
-                ORDER BY m.created_at
-                """, (rs, rowNum) -> {
+        SELECT m.message_id,
+               m.chat_id,
+               m.sender_id,
+               m.message_text,
+               m.created_at
+        FROM app.message m
+        WHERE m.chat_id = ? AND m.deleted_at IS NULL
+        ORDER BY m.created_at
+    """, (rs, rowNum) -> {
             Long senderId = rs.getLong("sender_id");
             Timestamp createdAt = rs.getTimestamp("created_at");
+
             String time = createdAt == null
                     ? ""
-                    : createdAt.toLocalDateTime().toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+                    : createdAt.toLocalDateTime()
+                    .toLocalTime()
+                    .format(DateTimeFormatter.ofPattern("HH:mm"));
 
-            return new MessageDto(
+            MessageDto dto = new MessageDto(
                     rs.getLong("message_id"),
                     rs.getLong("chat_id"),
                     rs.getString("message_text"),
-                    DEFAULT_USER_ID.equals(senderId) ? "outgoing" : "incoming",
+                    currentUserId.equals(senderId) ? "outgoing" : "incoming",
                     time
             );
+
+            dto.setSenderId(senderId);
+            return dto;
         }, chatId);
     }
 
     @Transactional
-    public MessageDto sendMessage(Long chatId, String text) {
+    public MessageDto sendMessage(Long chatId, Long currentUserId, String text) {
         if (text == null || text.trim().isEmpty()) {
             throw new RuntimeException("Сообщение не может быть пустым");
         }
 
         validateChatExists(chatId);
+        validateUserInChat(chatId, currentUserId);
 
         LocalDateTime now = LocalDateTime.now();
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement("""
-                    INSERT INTO app.message (chat_id, sender_id, message_text, created_at, edited_at, deleted_at)
-                    VALUES (?, ?, ?, ?, NULL, NULL)
-                    """, Statement.RETURN_GENERATED_KEYS);
+            INSERT INTO app.message 
+            (chat_id, sender_id, message_text, created_at, edited_at, deleted_at)
+            VALUES (?, ?, ?, ?, NULL, NULL)
+        """, new String[]{"message_id"});
+
             ps.setLong(1, chatId);
-            ps.setLong(2, DEFAULT_USER_ID);
+            ps.setLong(2, currentUserId);
             ps.setString(3, text.trim());
             ps.setTimestamp(4, Timestamp.valueOf(now));
             return ps;
         }, keyHolder);
 
-        return new MessageDto(
+        MessageDto dto = new MessageDto(
                 Objects.requireNonNull(keyHolder.getKey()).longValue(),
                 chatId,
                 text.trim(),
                 "outgoing",
                 now.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))
         );
+
+        dto.setSenderId(currentUserId);
+        return dto;
+    }
+
+    private void validateUserInChat(Long chatId, Long userId) {
+        Integer count = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*)
+        FROM app.chat_participant
+        WHERE chat_id = ?
+          AND user_id = ?
+          AND left_at IS NULL
+    """, Integer.class, chatId, userId);
+
+        if (count == null || count == 0) {
+            throw new RuntimeException("У пользователя нет доступа к этому чату");
+        }
     }
 
     private void validateChatExists(Long chatId) {

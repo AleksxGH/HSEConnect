@@ -37,4 +37,14 @@ public class ChatDto {
     public void setStatus(String status) { this.status = status; }
     public String getLastMessage() { return lastMessage; }
     public void setLastMessage(String lastMessage) { this.lastMessage = lastMessage; }
+
+    private Long otherUserId;
+
+    public Long getOtherUserId() {
+        return otherUserId;
+    }
+
+    public void setOtherUserId(Long otherUserId) {
+        this.otherUserId = otherUserId;
+    }
 }

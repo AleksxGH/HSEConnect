@@ -9,12 +9,8 @@ class HseHeader extends HTMLElement {
   }
 
   getBasePath() {
-    // Определяем путь относительно текущей страницы
     const currentPath = window.location.pathname;
-    if (currentPath.includes('/pages/')) {
-      return '../';  // Для страниц в папке pages
-    }
-    return '';  // Для корневых страниц (index.html)
+    return currentPath.includes('/pages/') ? '../' : '';
   }
 
   loadTemplate() {
@@ -102,12 +98,11 @@ class HseHeader extends HTMLElement {
         const logoutBtn = this.querySelector('#logoutBtn');
         if (logoutBtn) {
           logoutBtn.addEventListener('click', () => {
-            const basePath = this.getBasePath();
-
             localStorage.clear();
             sessionStorage.clear();
 
-            window.history.replaceState(null, '', `${basePath}pages/auth.html`);
+            const basePath = this.getBasePath();
+
             window.location.replace(`${basePath}pages/auth.html`);
           });
         }

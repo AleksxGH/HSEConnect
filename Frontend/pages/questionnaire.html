@@ -408,11 +408,19 @@
                 payload.student = {
                     campus: document.getElementById("campus").value.trim(),
                     faculty: document.getElementById("faculty").value.trim(),
-                    educationForm: document.querySelector('input[name="educationForm"]:checked')?.value || "",
-                    program: document.getElementById("program").value.trim(),
+
+                    educationLevel:
+                        document.querySelector('input[name="educationForm"]:checked')?.value || "",
+
+                    educationProgram:
+                        document.getElementById("program").value.trim(),
+
                     graduationYear: graduationYearInput.value,
+
                     course: courseInput.value,
-                    status: document.getElementById("studentStatus").value
+
+                    academicStatus:
+                        document.getElementById("studentStatus").value
                 };
             }
 
@@ -431,10 +439,12 @@
                 };
             }
 
+            console.log(payload);
+
             try {
                 await saveQuestionnaire(payload);
-                saveInterests(userId, dto.getInterests());
                 window.location.href = "profile.html";
+
             } catch (error) {
                 errorText.textContent = error.message;
             }
