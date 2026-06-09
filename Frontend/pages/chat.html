@@ -137,16 +137,16 @@
                             <span id="chatStatus">онлайн</span>
                         </div>
                     </div>
-                    
+
                     <!-- Пустое состояние чата -->
                     <div class="empty-chat-state" id="emptyChatState">
                         <div class="empty-chat-icon">💬</div>
                         <div class="empty-chat-text">Выберите диалог</div>
                         <div class="empty-chat-hint">Нажмите на чат слева, чтобы начать общение</div>
                     </div>
-                    
+
                     <div class="messages-list" id="messagesList" style="display: none;"></div>
-                    
+
                     <div class="input-area" id="inputArea" style="display: none;">
                         <input type="text" class="msg-input" id="messageInput" placeholder="Введите сообщение...">
                         <label class="file-label" id="fileLabel">
@@ -155,7 +155,8 @@
                         </label>
                         <button class="send-btn" id="sendBtn">➤ Отправить</button>
                     </div>
-                    <div id="filePreview" style="padding: 0 18px 8px 18px; font-size: 11px; color:#4b59ff; display: none;"></div>
+                    <div id="filePreview"
+                        style="padding: 0 18px 8px 18px; font-size: 11px; color:#4b59ff; display: none;"></div>
                 </div>
             </div>
         </main>
@@ -173,28 +174,77 @@
 
         requireAuth();
 
+        const currentUserId = Number(localStorage.getItem('userId'));
         const API_BASE = `${API_URL}/api/chats`;
 
         let chats = [];
         let messagesDB = {};
         let currentChatId = null;
+        let typingSocket = null;
+        let typingTimeout = null;
+        const chatUrlParams = new URLSearchParams(window.location.search);
+        const initialChatId = Number(chatUrlParams.get('chatId'));
         let currentFileList = [];
 
+        function connectTypingSocket() {
+            const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+            const host = API_URL.replace(/^https?:\/\//, "");
+
+            typingSocket = new WebSocket(`${wsProtocol}://${host}/ws/typing?userId=${currentUserId}`);
+
+            typingSocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === "typing" && data.chatId === currentChatId) {
+                    document.getElementById("chatStatus").innerText = "печатает...";
+                }
+
+                if (data.type === "stop_typing" && data.chatId === currentChatId) {
+                    document.getElementById("chatStatus").innerText = "онлайн";
+                }
+            };
+        }
+
+        function getCurrentChat() {
+            return chats.find(chat => chat.id === currentChatId);
+        }
+
+        function sendTypingEvent(type) {
+            const chat = getCurrentChat();
+
+            if (!chat || !chat.otherUserId) return;
+            if (!typingSocket || typingSocket.readyState !== WebSocket.OPEN) return;
+
+            typingSocket.send(JSON.stringify({
+                type: type,
+                chatId: currentChatId,
+                fromUserId: currentUserId,
+                toUserId: chat.otherUserId
+            }));
+        }
+
+        function handleTypingInput() {
+            sendTypingEvent("typing");
+
+            clearTimeout(typingTimeout);
+
+            typingTimeout = setTimeout(() => {
+                sendTypingEvent("stop_typing");
+            }, 1200);
+        }
+
         async function loadChats() {
-            const response = await fetch(API_BASE);
+            const response = await fetch(`${API_BASE}/user/${currentUserId}`);
 
             if (!response.ok) {
                 throw new Error("Не удалось загрузить диалоги");
             }
 
             chats = await response.json();
-            
-            // Не устанавливаем currentChatId автоматически
-            // currentChatId остается null
         }
 
         async function loadMessages(chatId) {
-            const response = await fetch(`${API_BASE}/${chatId}/messages`);
+            const response = await fetch(`${API_BASE}/${chatId}/messages/user/${currentUserId}`);
 
             if (!response.ok) {
                 throw new Error("Не удалось загрузить сообщения");
@@ -339,7 +389,7 @@
 
             if (!text || currentChatId === null) return;
 
-            const response = await fetch(`${API_BASE}/${currentChatId}/messages`, {
+            const response = await fetch(`${API_BASE}/${currentChatId}/messages/user/${currentUserId}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -410,13 +460,29 @@
         async function initChat() {
             try {
                 await loadChats();
-                
-                // currentChatId остается null, чат не выбран
+                connectTypingSocket();
                 renderDialogs();
-                
-                // Показываем пустое состояние, скрываем интерфейс чата
-                hideChatInterface();
-                
+
+                if (initialChatId) {
+                    const chatExists = chats.some(chat => chat.id === initialChatId);
+
+                    if (chatExists) {
+                        currentChatId = initialChatId;
+                        await loadMessages(currentChatId);
+
+                        renderDialogs();
+                        renderMessages();
+                        updateChatHeader();
+                        showChatInterface();
+                        clearFilePreview();
+                        focusMessageInput();
+                    } else {
+                        hideChatInterface();
+                    }
+                } else {
+                    hideChatInterface();
+                }
+
             } catch (error) {
                 console.error(error);
                 alert("Ошибка загрузки чатов. Проверь, запущен ли backend.");
@@ -426,6 +492,17 @@
             const msgInput = document.getElementById("messageInput");
             const fileInputElem = document.getElementById("fileInput");
             const selectUserPrompt = document.getElementById("selectUserPrompt");
+
+            if (msgInput) {
+                msgInput.addEventListener("input", handleTypingInput);
+
+                msgInput.addEventListener("keypress", (e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        sendCurrentMessage();
+                    }
+                });
+            }
 
             if (sendBtn) sendBtn.addEventListener("click", sendCurrentMessage);
 
@@ -439,8 +516,7 @@
             }
 
             if (fileInputElem) fileInputElem.addEventListener("change", onFilesSelected);
-            
-            // Обработчик для кнопки выбора пользователя
+
             if (selectUserPrompt) {
                 selectUserPrompt.addEventListener("click", goToFriends);
             }

@@ -141,7 +141,7 @@
 
         function getEndpointByTab() {
             if (currentTab === 'all') {
-                return `${API_URL}/api/users/all`;
+                return `${API_URL}/api/users/all/${currentUserId}`;
             }
 
             if (currentTab === 'friends') {
@@ -240,7 +240,7 @@
         }
 
         function isUserFollowing(user) {
-            return user.isFollowing === true;
+            return user.following === true || user.isFollowing === true;
         }
 
         function getUserName(user) {
@@ -303,7 +303,7 @@
                     : '';
 
                 html += `
-                <div class="friend-card">
+                <div class="friend-card" onclick="openUserProfile(${user.id})">
                     <div class="friend-avatar">
                         ${getUserAvatar(user)}
                     </div>
@@ -317,7 +317,7 @@
                         </div>
                     </div>
 
-                    <div class="friend-actions">
+                    <div class="friend-actions" onclick="event.stopPropagation()">
                         ${getButtonsHtml(user)}
                     </div>
                 </div>
@@ -328,10 +328,17 @@
             container.innerHTML = html;
         }
 
+        function openUserProfile(userId) {
+            if (!userId) return;
+            window.location.href = `./user.html?id=${userId}`;
+        }
+
+        window.openUserProfile = openUserProfile;
+
         function getButtonsHtml(user) {
             const userId = user.id;
             const name = escapeHtml(getUserName(user)).replace(/'/g, "\\'");
-            
+
             // Кнопка чата для всех пользователей
             const chatButton = `<button class="btn-chat" onclick="sendMessage(${userId})">💬 Написать</button>`;
 
@@ -339,27 +346,27 @@
             if (currentTab === 'all') {
                 const isFriend = isUserFriend(user);
                 const isFollowing = isUserFollowing(user);
-                
+
                 if (isFriend) {
                     return `
-                        ${chatButton}
-                        <button class="btn-unfriend" onclick="removeFriend(${userId}, '${name}')">Удалить</button>
-                    `;
-                } else if (isFollowing) {
-                    return `
-                        ${chatButton}
-                        <button class="btn-add-friend" onclick="addFriend(${userId}, '${name}')">Добавить в друзья</button>
-                        <button class="btn-unfriend" onclick="unsubscribe(${userId}, '${name}')">Отписаться</button>
-                    `;
-                } else {
-                    return `
-                        ${chatButton}
-                        <button class="btn-add-friend" onclick="addFriend(${userId}, '${name}')">Добавить в друзья</button>
-                        <button class="btn-follow" onclick="followUser(${userId}, '${name}')">Подписаться</button>
-                    `;
+            ${chatButton}
+            <button class="btn-unfriend" onclick="removeFriend(${userId}, '${name}')">Удалить</button>
+        `;
                 }
-            }
 
+                if (isFollowing) {
+                    return `
+            ${chatButton}
+            <button class="btn-unfriend" onclick="unsubscribe(${userId}, '${name}')">Отписаться</button>
+        `;
+                }
+
+                return `
+        ${chatButton}
+        <button class="btn-add-friend" onclick="addFriend(${userId}, '${name}')">Добавить в друзья</button>
+        <button class="btn-follow" onclick="followUser(${userId}, '${name}')">Подписаться</button>
+    `;
+            }
             // Для вкладки "Друзья"
             if (currentTab === 'friends') {
                 return `
@@ -405,7 +412,7 @@
 
         function escapeHtml(str) {
             if (!str) return '';
-            return String(str).replace(/[&<>]/g, function(m) {
+            return String(str).replace(/[&<>]/g, function (m) {
                 if (m === '&') return '&amp;';
                 if (m === '<') return '&lt;';
                 if (m === '>') return '&gt;';

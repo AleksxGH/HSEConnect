@@ -17,6 +17,16 @@ public class FriendUserDto {
         this.mutualFriends = mutualFriends;
     }
 
+    private boolean isFollowing;
+
+    public boolean isFollowing() {
+        return isFollowing;
+    }
+
+    public void setFollowing(boolean following) {
+        isFollowing = following;
+    }
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getAvatar() { return avatar; }

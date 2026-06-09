@@ -24,9 +24,11 @@ public class EventService {
     private static final String DEFAULT_ACCESS_TYPE = "public";
 
     private final JdbcTemplate jdbcTemplate;
+    private final NotificationService notificationService;
 
-    public EventService(JdbcTemplate jdbcTemplate) {
+    public EventService(JdbcTemplate jdbcTemplate, NotificationService notificationService) {
         this.jdbcTemplate = jdbcTemplate;
+        this.notificationService = notificationService;
     }
 
     public List<EventDto> getAllEvents() {
@@ -255,6 +257,23 @@ public class EventService {
                 VALUES (?, ?, ?, NOW(), NULL)
                 """, eventId, userId, "going");
 
+        Long creatorId = getEventCreatorId(eventId);
+
+        if (!creatorId.equals(userId)) {
+            String userName = getUserName(userId);
+            String eventTitle = getEventTitle(eventId);
+
+            notificationService.createNotification(
+                    creatorId,
+                    "event_going",
+                    "Новый отклик на событие",
+                    userName + " откликнулся на ваше событие «" + eventTitle + "»",
+                    eventId,
+                    userId,
+                    null
+            );
+        }
+
         return getEventById(eventId);
     }
 
@@ -341,5 +360,31 @@ public class EventService {
 
     private String normalize(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value.trim();
+    }
+
+    private Long getEventCreatorId(Long eventId) {
+        return jdbcTemplate.queryForObject("""
+        SELECT creator_id
+        FROM app.event
+        WHERE event_id = ?
+    """, Long.class, eventId);
+    }
+
+    private String getEventTitle(Long eventId) {
+        return jdbcTemplate.queryForObject("""
+        SELECT title
+        FROM app.event
+        WHERE event_id = ?
+    """, String.class, eventId);
+    }
+
+    private String getUserName(Long userId) {
+        List<String> names = jdbcTemplate.queryForList("""
+        SELECT CONCAT_WS(' ', first_name, last_name)
+        FROM app.profile
+        WHERE user_id = ?
+    """, String.class, userId);
+
+        return names.isEmpty() ? "Пользователь" : names.get(0);
     }
 }

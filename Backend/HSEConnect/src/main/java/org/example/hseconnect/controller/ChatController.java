@@ -20,34 +20,35 @@ public class ChatController {
         this.chatService = chatService;
     }
 
-    @GetMapping
-    public ResponseEntity<?> getChats() {
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<?> getChats(@PathVariable Long userId) {
         try {
-            List<ChatDto> chats = chatService.getChats();
-            return ResponseEntity.ok(chats);
+            return ResponseEntity.ok(chatService.getChats(userId));
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
         }
     }
 
-    @GetMapping("/{chatId}/messages")
-    public ResponseEntity<?> getMessages(@PathVariable Long chatId) {
+    @GetMapping("/{chatId}/messages/user/{userId}")
+    public ResponseEntity<?> getMessages(
+            @PathVariable Long chatId,
+            @PathVariable Long userId
+    ) {
         try {
-            List<MessageDto> messages = chatService.getMessages(chatId);
-            return ResponseEntity.ok(messages);
+            return ResponseEntity.ok(chatService.getMessages(chatId, userId));
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
         }
     }
 
-    @PostMapping("/{chatId}/messages")
+    @PostMapping("/{chatId}/messages/user/{userId}")
     public ResponseEntity<?> sendMessage(
             @PathVariable Long chatId,
+            @PathVariable Long userId,
             @RequestBody SendMessageRequest request
     ) {
         try {
-            MessageDto message = chatService.sendMessage(chatId, request.getText());
-            return ResponseEntity.ok(message);
+            return ResponseEntity.ok(chatService.sendMessage(chatId, userId, request.getText()));
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
         }

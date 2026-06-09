@@ -10,9 +10,11 @@ import java.util.List;
 public class FriendsService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final NotificationService notificationService;
 
-    public FriendsService(JdbcTemplate jdbcTemplate) {
+    public FriendsService(JdbcTemplate jdbcTemplate, NotificationService notificationService) {
         this.jdbcTemplate = jdbcTemplate;
+        this.notificationService = notificationService;
     }
 
     public List<FriendUserDto> getFriends(Long userId) {
@@ -117,6 +119,18 @@ public class FriendsService {
             INSERT INTO app.follow (follower_id, following_id, created_at)
             VALUES (?, ?, NOW())
         """, userId, targetUserId);
+
+        String followerName = getUserName(userId);
+
+        notificationService.createNotification(
+                targetUserId,
+                "new_follower",
+                "Новая подписка",
+                followerName + " подписался на вас",
+                null,
+                userId,
+                null
+        );
     }
 
     public void unfollow(Long userId, Long targetUserId) {
@@ -150,7 +164,20 @@ public class FriendsService {
                 INSERT INTO app.friendship (user_id_1, user_id_2, created_at)
                 VALUES (?, ?, NOW())
             """, a, b);
+
+            String senderName = getUserName(userId);
+
+            notificationService.createNotification(
+                    targetUserId,
+                    "friend_request",
+                    "Запрос в друзья",
+                    senderName + " хочет добавить вас в друзья",
+                    null,
+                    userId,
+                    null
+            );
         }
+
     }
 
     public void removeFriend(Long userId, Long targetUserId) {
@@ -184,6 +211,65 @@ public class FriendsService {
         return count != null && count > 0;
     }
 
+    public List<FriendUserDto> getAllUsers(Long currentUserId) {
+        String sql = """
+        SELECT
+            u.user_id,
+            CONCAT_WS(' ', p.first_name, p.last_name) AS name,
+            p.avatar_url,
+
+            EXISTS (
+                SELECT 1
+                FROM app.friendship fr
+                WHERE 
+                    (fr.user_id_1 = ? AND fr.user_id_2 = u.user_id)
+                    OR
+                    (fr.user_id_1 = u.user_id AND fr.user_id_2 = ?)
+            ) AS is_friend,
+
+            EXISTS (
+                SELECT 1
+                FROM app.follow fl
+                WHERE fl.follower_id = ?
+                  AND fl.following_id = u.user_id
+            ) AS is_following
+
+        FROM app.users u
+        JOIN app.profile p ON p.user_id = u.user_id
+        WHERE u.user_id <> ?
+          AND u.is_active = true
+        ORDER BY p.first_name, p.last_name
+    """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Long userId = rs.getLong("user_id");
+            String name = rs.getString("name");
+
+            FriendUserDto dto = new FriendUserDto(
+                    userId,
+                    name,
+                    makeAvatar(name),
+                    "offline",
+                    rs.getBoolean("is_friend"),
+                    countMutualFriends(currentUserId, userId)
+            );
+
+            dto.setFollowing(rs.getBoolean("is_following"));
+
+            return dto;
+        }, currentUserId, currentUserId, currentUserId, currentUserId);
+    }
+
+    private boolean isFollowing(Long userId, Long targetUserId) {
+        Integer count = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*)
+        FROM app.follow
+        WHERE follower_id = ? AND following_id = ?
+    """, Integer.class, userId, targetUserId);
+
+        return count != null && count > 0;
+    }
+
     private int countMutualFriends(Long userId, Long otherUserId) {
         Integer count = jdbcTemplate.queryForObject("""
             SELECT COUNT(*)
@@ -213,5 +299,15 @@ public class FriendsService {
             return "?";
         }
         return name.substring(0, 1).toUpperCase();
+    }
+
+    private String getUserName(Long userId) {
+        List<String> names = jdbcTemplate.queryForList("""
+        SELECT CONCAT_WS(' ', first_name, last_name)
+        FROM app.profile
+        WHERE user_id = ?
+    """, String.class, userId);
+
+        return names.isEmpty() ? "Пользователь" : names.get(0);
     }
 }
