@@ -90,10 +90,10 @@ public class AuthController {
 
             jdbcTemplate.update(connection -> {
                 PreparedStatement ps = connection.prepareStatement("""
-                        INSERT INTO app.users
-                        (email, password_hash, is_active, is_email_verified, created_at, updated_at)
-                        VALUES (?, ?, true, false, ?, ?)
-                        """, Statement.RETURN_GENERATED_KEYS);
+        INSERT INTO app.users
+        (email, password_hash, is_active, is_email_verified, created_at, updated_at)
+        VALUES (?, ?, true, false, ?, ?)
+        """, new String[]{"user_id"});
                 ps.setString(1, email);
                 ps.setString(2, request.getPassword());
                 ps.setTimestamp(3, Timestamp.valueOf(now));

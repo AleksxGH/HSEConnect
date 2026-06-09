@@ -342,7 +342,7 @@ public class ProfileService {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
                     "INSERT INTO app." + tableName + " (name) VALUES (?)",
-                    Statement.RETURN_GENERATED_KEYS
+                    new String[]{idColumn}
             );
             ps.setString(1, name);
             return ps;
@@ -363,7 +363,7 @@ public class ProfileService {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
                     "INSERT INTO app.campus (name, city) VALUES (?, '')",
-                    Statement.RETURN_GENERATED_KEYS
+                    new String[]{"campus_id"}
             );
             ps.setString(1, name);
             return ps;
@@ -386,7 +386,7 @@ public class ProfileService {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO app.education_program (faculty_id, education_level_id, name, code)
                     VALUES (?, ?, ?, NULL)
-                    """, Statement.RETURN_GENERATED_KEYS);
+                    """, new String[]{"education_program_id"});
             ps.setLong(1, facultyId);
             ps.setLong(2, levelId);
             ps.setString(3, name);
