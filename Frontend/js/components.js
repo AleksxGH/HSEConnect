@@ -5,6 +5,7 @@ class HseHeader extends HTMLElement {
     super();
     this.loadTemplate();
     this.initDropdown();
+    this.loadUserAvatar();
   }
 
   getBasePath() {
@@ -22,8 +23,13 @@ class HseHeader extends HTMLElement {
                 </a>
 
                 <div class="topbar-right">
-                    <img class="mini-avatar" src="${basePath}stubs/photo_circle.jpg" alt="Фото профиля" />
-                    <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
+                    <div class="user-menu-trigger" id="userMenuTrigger">
+                        <div class="avatar-container" id="headerAvatar">
+                            <img class="mini-avatar" src="${basePath}stubs/photo_circle.jpg" alt="Фото профиля" style="display: none;" />
+                            <div class="mini-avatar-initials" style="display: none;"></div>
+                        </div>
+                        <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
+                    </div>
                     <div class="dropdown-menu" id="userDropdown">
                         <div class="dropdown-item" id="logoutBtn">
                             <svg class="dropdown-icon-svg" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -39,23 +45,56 @@ class HseHeader extends HTMLElement {
         `;
   }
 
+  async loadUserAvatar() {
+    // Ждем загрузки avatarAPI
+    if (!window.avatarAPI) {
+      setTimeout(() => this.loadUserAvatar(), 100);
+      return;
+    }
+
+    const userId = localStorage.getItem('userId');
+    if (!userId) return;
+
+    try {
+      // Загружаем данные пользователя для получения имени
+      const response = await fetch(`${API_URL}/api/profile/${userId}`);
+      if (response.ok) {
+        const profile = await response.json();
+        const firstName = profile.firstName || '';
+        const lastName = profile.lastName || '';
+        
+        const avatarContainer = this.querySelector('#headerAvatar');
+        if (avatarContainer) {
+          await window.avatarAPI.renderMiniAvatar(avatarContainer, userId, firstName, lastName);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки аватарки в header:', error);
+    }
+  }
+
   initDropdown() {
     setTimeout(() => {
-      const dropdownIcon = this.querySelector('.dropdown-icon');
-      const dropdownMenu = this.querySelector('.dropdown-menu');
+      const userMenuTrigger = this.querySelector('#userMenuTrigger');
+      const dropdownMenu = this.querySelector('#userDropdown');
 
-      if (dropdownIcon && dropdownMenu) {
-        dropdownIcon.addEventListener('click', (e) => {
+      if (userMenuTrigger && dropdownMenu) {
+        // Клик по триггеру (аватарка + иконка) открывает/закрывает меню
+        userMenuTrigger.addEventListener('click', (e) => {
           e.stopPropagation();
           dropdownMenu.classList.toggle('show');
         });
 
+        // Закрытие при клике вне меню
         document.addEventListener('click', (e) => {
-          if (!dropdownIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
+          if (userMenuTrigger && dropdownMenu && 
+              !userMenuTrigger.contains(e.target) && 
+              !dropdownMenu.contains(e.target)) {
             dropdownMenu.classList.remove('show');
           }
         });
 
+        // Кнопка выхода
         const logoutBtn = this.querySelector('#logoutBtn');
         if (logoutBtn) {
           logoutBtn.addEventListener('click', () => {
@@ -127,6 +166,10 @@ class HseSidebar extends HTMLElement {
       currentPage = 'chat';
     else if (currentPath === '/' || currentPath.includes('index.html'))
       currentPage = 'home';
+    else if (currentPath.includes('friends.html'))
+      currentPage = 'friends';
+    else if (currentPath.includes('notifications.html'))
+      currentPage = 'notifications';
 
     setTimeout(() => {
       const links = this.querySelectorAll('.menu-item');

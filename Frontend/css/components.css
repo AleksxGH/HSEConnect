@@ -43,7 +43,7 @@ body {
     min-width: 0;
 }
 
-/* Стили для topbar */
+/* ========== Стили для topbar ========== */
 .topbar {
     height: 54px;
     background: linear-gradient(180deg, #7c90de 0%, #7f92e2 100%);
@@ -74,32 +74,129 @@ body {
     display: block; 
 }
 
+/* Правая часть topbar с меню пользователя */
 .topbar-right {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: rgba(255,255,255,0.92);
-    font-size: 13px;
+    position: relative;
 }
 
+/* Кнопка-триггер для выпадающего меню (аватарка + стрелка) */
+.user-menu-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 40px;
+    transition: background-color 0.2s;
+}
+
+.user-menu-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Контейнер для аватарки */
+.avatar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Стили для мини-аватарки в хедере */
 .mini-avatar {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    display: block;
     object-fit: cover;
 }
 
-.caret {
-    width: 8px;
-    height: 8px;
-    border-right: 2px solid rgba(255,255,255,0.85);
-    border-bottom: 2px solid rgba(255,255,255,0.85);
-    transform: rotate(45deg);
-    margin-top: -2px;
+/* Стили для аватарки с инициалами в хедере */
+.mini-avatar-initials {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
 }
 
-/* Стили для sidebar */
+/* Стрелка выпадающего меню */
+.dropdown-icon {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    filter: brightness(0) invert(1); /* Делает иконку белой */
+}
+
+
+/* ========== Выпадающее меню ========== */
+.dropdown-menu {
+    position: absolute;
+    top: 45px;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Стрелка меню (треугольник сверху) */
+.dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 15px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid white;
+}
+
+/* Пункты выпадающего меню */
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    color: #24304a;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background: #f5f7fd;
+}
+
+.dropdown-icon-svg {
+    flex-shrink: 0;
+    color: #4b59ff;
+}
+
+.dropdown-item span {
+    flex: 1;
+}
+
+/* ========== Стили для sidebar ========== */
 .sidebar {
     padding-top: 10px;
 }
@@ -143,7 +240,7 @@ body {
     margin-left: -6px;
 }
 
-/* Адаптивность */
+/* ========== Адаптивность ========== */
 @media (max-width: 900px) {
     .page {
         grid-template-columns: 1fr;
@@ -151,86 +248,4 @@ body {
     .sidebar {
         display: none;
     }
-}
-
-/* Стили для dropdown иконки и меню */
-.topbar-right {
-    position: relative;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.dropdown-icon {
-    width: 14px;  
-    height: 14px;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    filter: brightness(0) invert(1); /* Делает иконку белой */
-}
-
-.dropdown-icon:hover {
-    transform: scale(1.1);
-}
-
-/* Выпадающее меню */
-.dropdown-menu {
-    position: absolute;
-    top: 45px;
-    right: 0;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    min-width: 180px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.2s ease;
-    z-index: 1000;
-    overflow: hidden;
-}
-
-.dropdown-menu.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    color: #24304a;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.dropdown-item:hover {
-    background: #f5f7fd;
-}
-
-.dropdown-icon-svg {
-    flex-shrink: 0;
-    color: #4b59ff;
-}
-
-.dropdown-item span {
-    flex: 1;
-}
-
-/* Стрелка меню (треугольник сверху) */
-.dropdown-menu::before {
-    content: '';
-    position: absolute;
-    top: -8px;
-    right: 15px;
-    width: 0;
-    height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-bottom: 8px solid white;
 }
