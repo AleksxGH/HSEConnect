@@ -356,9 +356,10 @@
 
                 if (isFollowing) {
                     return `
-            ${chatButton}
-            <button class="btn-unfriend" onclick="unsubscribe(${userId}, '${name}')">Отписаться</button>
-        `;
+        ${chatButton}
+        <button class="btn-add-friend" onclick="addFriend(${userId}, '${name}')">Добавить в друзья</button>
+        <button class="btn-unfriend" onclick="unsubscribe(${userId}, '${name}')">Отписаться</button>
+    `;
                 }
 
                 return `
@@ -451,7 +452,7 @@
                     return;
                 }
 
-                alert(`${userName} добавлен в друзья`);
+                alert("Ваша заявка отправлена");
                 await loadFriendsData();
 
             } catch (error) {

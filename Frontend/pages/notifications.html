@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,144 +13,166 @@
 </head>
 
 <body>
-<hse-header></hse-header>
+    <hse-header></hse-header>
 
-<div class="page">
-    <hse-sidebar></hse-sidebar>
+    <div class="page">
+        <hse-sidebar></hse-sidebar>
 
-    <main class="content">
-        <div class="notifications-section">
-            <div class="notifications-header">
-                <h1>Уведомления</h1>
+        <main class="content">
+            <div class="notifications-section">
+                <div class="notifications-header">
+                    <h1>Уведомления</h1>
+                </div>
+
+                <div class="notifications-tabs">
+                    <button class="tab-btn active" data-tab="new">Новые</button>
+                    <button class="tab-btn" data-tab="viewed">Просмотренные</button>
+                </div>
+
+                <div class="notifications-list-container" id="notificationsContainer"></div>
             </div>
+        </main>
+    </div>
 
-            <div class="notifications-tabs">
-                <button class="tab-btn active" data-tab="new">Новые</button>
-                <button class="tab-btn" data-tab="viewed">Просмотренные</button>
-            </div>
+    <script>
+        let currentTab = 'new';
+        let notifications = [];
 
-            <div class="notifications-list-container" id="notificationsContainer"></div>
-        </div>
-    </main>
-</div>
+        const LOCAL_API = "http://localhost:8080";
+        const SERVER_API = "https://hseconnect.onrender.com";
 
-<script>
-    let currentTab = 'new';
-    let notifications = [];
+        const API_URL =
+            window.location.hostname === "localhost" ||
+                window.location.hostname === "127.0.0.1"
+                ? LOCAL_API
+                : SERVER_API;
 
-    const LOCAL_API = "http://localhost:8080";
-    const SERVER_API = "https://hseconnect.onrender.com";
+        const currentUserId = localStorage.getItem('userId');
 
-    const API_URL =
-        window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1"
-            ? LOCAL_API
-            : SERVER_API;
+        if (!currentUserId) {
+            window.location.replace('auth.html');
+        }
 
-    const currentUserId = localStorage.getItem('userId');
-
-    if (!currentUserId) {
-        window.location.replace('auth.html');
-    }
-
-    function setupTabs() {
-        document.querySelectorAll('.tab-btn').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                currentTab = tab.dataset.tab;
-                loadNotifications();
+        function setupTabs() {
+            document.querySelectorAll('.tab-btn').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentTab = tab.dataset.tab;
+                    loadNotifications();
+                });
             });
-        });
-    }
+        }
 
-    async function loadNotifications() {
-        const read = currentTab === 'viewed';
+        async function loadNotifications() {
+            const read = currentTab === 'viewed';
 
-        try {
-            const response = await fetch(`${API_URL}/api/notifications/${currentUserId}?read=${read}`);
+            try {
+                const response = await fetch(`${API_URL}/api/notifications/${currentUserId}?read=${read}`);
 
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
 
-            const data = await response.json();
+                const data = await response.json();
 
-            notifications = data.map(n => ({
-                id: n.id,
-                type: n.type,
-                text: n.body,
-                time: formatTime(n.createdAt),
-                read: n.isRead
-            }));
+                notifications = data.map(n => ({
+                    id: n.id,
+                    type: n.type,
+                    text: n.body,
+                    time: formatTime(n.createdAt),
+                    read: n.isRead,
+                    relatedUserId: n.relatedUserId
+                }));
 
-            renderNotifications();
-        } catch (error) {
-            console.error(error);
-            document.getElementById('notificationsContainer').innerHTML = `
+                renderNotifications();
+            } catch (error) {
+                console.error(error);
+                document.getElementById('notificationsContainer').innerHTML = `
                 <div class="empty-notifications">
                     <p>Не удалось загрузить уведомления</p>
                 </div>
             `;
+            }
         }
-    }
 
-    function formatTime(dateString) {
-        if (!dateString) return '';
-        return new Date(dateString).toLocaleString('ru-RU');
-    }
+        function formatTime(dateString) {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleString('ru-RU');
+        }
 
-    function getIconSvg(type) {
-        switch (type) {
-            case 'friend_request':
-                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        async function acceptFriendRequest(notificationId, senderUserId) {
+            try {
+                const response = await fetch(`${API_URL}/api/friends/${currentUserId}/accept/${senderUserId}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    alert(await response.text());
+                    return;
+                }
+
+                await markNotificationAsRead(notificationId);
+                alert('Запрос в друзья принят');
+                loadNotifications();
+
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка соединения с сервером');
+            }
+        }
+
+        function getIconSvg(type) {
+            switch (type) {
+                case 'friend_request':
+                    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                 </svg>`;
-            case 'new_follower':
-                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                case 'new_follower':
+                    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                 </svg>`;
-            case 'event_going':
-                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                case 'event_going':
+                    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                     <polyline points="22 4 12 14.01 9 11.01"/>
                 </svg>`;
-            default:
-                return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                default:
+                    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>`;
+            }
         }
-    }
 
-    async function markNotificationAsRead(notificationId) {
-        try {
-            await fetch(`${API_URL}/api/notifications/${notificationId}/read/${currentUserId}`, {
-                method: 'PUT'
-            });
+        async function markNotificationAsRead(notificationId) {
+            try {
+                await fetch(`${API_URL}/api/notifications/${notificationId}/read/${currentUserId}`, {
+                    method: 'PUT'
+                });
 
-            loadNotifications();
-        } catch (error) {
-            console.error(error);
+                loadNotifications();
+            } catch (error) {
+                console.error(error);
+            }
         }
-    }
 
-    function renderNotifications() {
-        const container = document.getElementById('notificationsContainer');
+        function renderNotifications() {
+            const container = document.getElementById('notificationsContainer');
 
-        if (!notifications.length) {
-            container.innerHTML = `
+            if (!notifications.length) {
+                container.innerHTML = `
                 <div class="empty-notifications">
                     <p>${currentTab === 'new' ? 'Нет новых уведомлений' : 'Нет просмотренных уведомлений'}</p>
                 </div>
             `;
-            return;
-        }
+                return;
+            }
 
-        container.innerHTML = `
+            container.innerHTML = `
             <div class="notification-list">
                 ${notifications.map(notification => `
                     <div class="notification-item ${!notification.read ? 'unread' : ''}">
@@ -163,24 +186,32 @@
                         </div>
 
                         ${!notification.read ? `
-                            <div class="notification-actions">
-                                <button class="btn-accept" onclick="markNotificationAsRead(${notification.id})">
-                                    Прочитано
-                                </button>
-                            </div>
-                        ` : ''}
+    <div class="notification-actions">
+        ${notification.type === 'friend_request' ? `
+            <button class="btn-accept" onclick="acceptFriendRequest(${notification.id}, ${notification.relatedUserId})">
+                Принять
+            </button>
+        ` : ''}
+
+        <button class="btn-accept" onclick="markNotificationAsRead(${notification.id})">
+            Прочитано
+        </button>
+    </div>
+` : ''}
                     </div>
                 `).join('')}
             </div>
         `;
-    }
+        }
 
-    window.addEventListener('load', () => {
-        setupTabs();
-        loadNotifications();
-    });
+        window.addEventListener('load', () => {
+            setupTabs();
+            loadNotifications();
+        });
 
-    window.markNotificationAsRead = markNotificationAsRead;
-</script>
+        window.markNotificationAsRead = markNotificationAsRead;
+        window.acceptFriendRequest = acceptFriendRequest;
+    </script>
 </body>
+
 </html>
