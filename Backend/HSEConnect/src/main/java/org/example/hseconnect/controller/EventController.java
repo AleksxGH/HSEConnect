@@ -31,9 +31,9 @@ public class EventController {
     }
 
     @GetMapping("/my")
-    public ResponseEntity<?> getMyEvents() {
+    public ResponseEntity<?> getMyEvents(@RequestParam Long userId) {
         try {
-            List<EventDto> events = eventService.getMyEvents();
+            List<EventDto> events = eventService.getMyEvents(userId);
             return ResponseEntity.ok(events);
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
@@ -41,9 +41,9 @@ public class EventController {
     }
 
     @GetMapping("/going")
-    public ResponseEntity<?> getGoingEvents() {
+    public ResponseEntity<?> getGoingEvents(@RequestParam Long userId) {
         try {
-            List<EventDto> events = eventService.getGoingEvents();
+            List<EventDto> events = eventService.getGoingEvents(userId);
             return ResponseEntity.ok(events);
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
@@ -98,6 +98,19 @@ public class EventController {
         try {
             Long currentUserId = userId == null ? DEFAULT_USER_ID : userId;
             EventDto event = eventService.respondToEvent(eventId, currentUserId);
+            return ResponseEntity.ok(event);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{eventId}/respond")
+    public ResponseEntity<?> cancelRespondToEvent(
+            @PathVariable Long eventId,
+            @RequestParam Long userId
+    ) {
+        try {
+            EventDto event = eventService.cancelRespondToEvent(eventId, userId);
             return ResponseEntity.ok(event);
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());

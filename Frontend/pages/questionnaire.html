@@ -414,6 +414,7 @@
 
             try {
                 await saveQuestionnaire(payload);
+                saveInterests(userId, dto.getInterests());
                 window.location.href = "profile.html";
             } catch (error) {
                 errorText.textContent = error.message;

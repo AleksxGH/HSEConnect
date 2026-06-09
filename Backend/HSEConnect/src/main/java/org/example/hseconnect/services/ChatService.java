@@ -132,4 +132,84 @@ public class ChatService {
             throw new RuntimeException("Чат не найден");
         }
     }
+
+    public ChatDto getOrCreatePrivateChat(Long userId, Long targetUserId) {
+        if (userId.equals(targetUserId)) {
+            throw new RuntimeException("Нельзя открыть чат с самим собой");
+        }
+
+        List<Long> existing = jdbcTemplate.queryForList("""
+        SELECT c.chat_id
+        FROM app.chat c
+        JOIN app.chat_participant cp1 ON cp1.chat_id = c.chat_id
+        JOIN app.chat_participant cp2 ON cp2.chat_id = c.chat_id
+        WHERE c.chat_type = 'PRIVATE'
+          AND cp1.user_id = ?
+          AND cp2.user_id = ?
+          AND cp1.left_at IS NULL
+          AND cp2.left_at IS NULL
+        LIMIT 1
+    """, Long.class, userId, targetUserId);
+
+        Long chatId;
+
+        if (!existing.isEmpty()) {
+            chatId = existing.get(0);
+        } else {
+            chatId = jdbcTemplate.queryForObject("""
+            INSERT INTO app.chat (chat_type, event_id, created_at)
+            VALUES ('PRIVATE', NULL, NOW())
+            RETURNING chat_id
+        """, Long.class);
+
+            jdbcTemplate.update("""
+            INSERT INTO app.chat_participant (chat_id, user_id, joined_at)
+            VALUES (?, ?, NOW()), (?, ?, NOW())
+        """, chatId, userId, chatId, targetUserId);
+        }
+
+        return getChatById(chatId, userId);
+    }
+
+    private ChatDto getChatById(Long chatId, Long currentUserId) {
+        return jdbcTemplate.queryForObject("""
+        SELECT c.chat_id,
+               COALESCE(
+                   e.title,
+                   (
+                       SELECT CONCAT(p.first_name, ' ', p.last_name)
+                       FROM app.chat_participant cp
+                       JOIN app.profile p ON p.user_id = cp.user_id
+                       WHERE cp.chat_id = c.chat_id
+                         AND cp.user_id <> ?
+                       LIMIT 1
+                   ),
+                   'Чат #' || c.chat_id
+               ) AS name,
+               COALESCE(last_message.message_text, '') AS last_message
+        FROM app.chat c
+        LEFT JOIN app.event e ON e.event_id = c.event_id
+        LEFT JOIN LATERAL (
+            SELECT m.message_text
+            FROM app.message m
+            WHERE m.chat_id = c.chat_id AND m.deleted_at IS NULL
+            ORDER BY m.created_at DESC
+            LIMIT 1
+        ) last_message ON TRUE
+        WHERE c.chat_id = ?
+    """, (rs, rowNum) -> {
+            String name = rs.getString("name");
+            String avatarInitial = name == null || name.isBlank()
+                    ? "?"
+                    : name.substring(0, 1).toUpperCase();
+
+            return new ChatDto(
+                    rs.getLong("chat_id"),
+                    name,
+                    avatarInitial,
+                    "онлайн",
+                    rs.getString("last_message")
+            );
+        }, currentUserId, chatId);
+    }
 }

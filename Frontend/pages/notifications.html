@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,48 +8,49 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/notifications.css">
-    
+
     <script src="../js/components.js" defer></script>
-    
+
     <style>
-        html, body {
+        html,
+        body {
             height: 100%;
         }
-        
+
         body {
             display: flex;
             flex-direction: column;
         }
-        
+
         .page {
             display: grid;
             grid-template-columns: 210px 1fr;
             gap: 18px;
             padding: 14px 16px 18px;
-            flex: 1;           
-            min-height: 0;      
+            flex: 1;
+            min-height: 0;
         }
-        
+
         .content {
             min-width: 0;
             display: flex;
             flex-direction: column;
             height: 100%;
         }
-        
+
         .notifications-section {
             flex: 1;
             display: flex;
             flex-direction: column;
         }
-        
+
         .notifications-list-container {
             flex: 1;
         }
-        
+
         @media (max-width: 900px) {
             .page {
                 grid-template-columns: 1fr;
@@ -56,23 +58,24 @@
         }
     </style>
 </head>
+
 <body>
     <hse-header></hse-header>
-    
+
     <div class="page">
         <hse-sidebar></hse-sidebar>
-        
+
         <main class="content">
             <div class="notifications-section">
                 <div class="notifications-header">
                     <h1>Уведомления</h1>
                 </div>
-                
+
                 <div class="notifications-tabs">
                     <button class="tab-btn active" data-tab="new">Новые</button>
                     <button class="tab-btn" data-tab="viewed">Просмотренные</button>
                 </div>
-                
+
                 <div class="notifications-list-container" id="notificationsContainer">
                     <!-- Уведомления будут загружены через JavaScript -->
                 </div>
@@ -82,7 +85,17 @@
 
     <script>
         let currentTab = 'new';
-        
+
+        function requireAuth() {
+            const userId = localStorage.getItem('userId');
+
+            if (!userId) {
+                window.location.replace('auth.html');
+            }
+        }
+
+        requireAuth();
+
         // Данные уведомлений
         let notifications = [
             {
@@ -178,7 +191,7 @@
                 eventName: "Вечеринка в БК"
             }
         ];
-        
+
         function setupTabs() {
             const tabs = document.querySelectorAll('.tab-btn');
             tabs.forEach(tab => {
@@ -190,9 +203,9 @@
                 });
             });
         }
-        
+
         function getIconSvg(type) {
-            switch(type) {
+            switch (type) {
                 case 'friend_request':
                     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -232,7 +245,7 @@
                             </svg>`;
             }
         }
-        
+
         function acceptFriendRequest(notificationId, userName) {
             const notification = notifications.find(n => n.id === notificationId);
             if (notification) {
@@ -245,7 +258,7 @@
                 alert(`Вы приняли запрос в друзья от ${userName}`);
             }
         }
-        
+
         function declineFriendRequest(notificationId, userName) {
             const index = notifications.findIndex(n => n.id === notificationId);
             if (index !== -1) {
@@ -254,7 +267,7 @@
                 alert(`Вы отклонили запрос от ${userName}`);
             }
         }
-        
+
         function acceptEventInvite(notificationId, eventName) {
             const notification = notifications.find(n => n.id === notificationId);
             if (notification) {
@@ -267,7 +280,7 @@
                 alert(`Вы приняли приглашение на событие "${eventName}"`);
             }
         }
-        
+
         function declineEventInvite(notificationId, eventName) {
             const index = notifications.findIndex(n => n.id === notificationId);
             if (index !== -1) {
@@ -276,18 +289,18 @@
                 alert(`Вы отклонили приглашение на событие "${eventName}"`);
             }
         }
-        
+
         function renderNotifications() {
             const container = document.getElementById('notificationsContainer');
             if (!container) return;
-            
+
             let filteredNotifications;
             if (currentTab === 'new') {
                 filteredNotifications = notifications.filter(n => !n.viewed);
             } else {
                 filteredNotifications = notifications.filter(n => n.viewed);
             }
-            
+
             if (filteredNotifications.length === 0) {
                 const emptyText = currentTab === 'new' ? 'Нет новых уведомлений' : 'Нет просмотренных уведомлений';
                 container.innerHTML = `
@@ -301,7 +314,7 @@
                 `;
                 return;
             }
-            
+
             let html = '<div class="notification-list">';
             filteredNotifications.forEach(notification => {
                 const unreadClass = !notification.read && !notification.viewed ? 'unread' : '';
@@ -332,16 +345,17 @@
             html += '</div>';
             container.innerHTML = html;
         }
-        
+
         window.addEventListener('load', () => {
             setupTabs();
             renderNotifications();
         });
-        
+
         window.acceptFriendRequest = acceptFriendRequest;
         window.declineFriendRequest = declineFriendRequest;
         window.acceptEventInvite = acceptEventInvite;
         window.declineEventInvite = declineEventInvite;
     </script>
 </body>
+
 </html>

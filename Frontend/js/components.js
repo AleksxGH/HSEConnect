@@ -1,24 +1,24 @@
 // js/components.js - Web Components для header и sidebar
 
 class HseHeader extends HTMLElement {
-    constructor() {
-        super();
-        this.loadTemplate();
-        this.initDropdown();
+  constructor() {
+    super();
+    this.loadTemplate();
+    this.initDropdown();
+  }
+
+  getBasePath() {
+    // Определяем путь относительно текущей страницы
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/pages/')) {
+      return '../';  // Для страниц в папке pages
     }
-    
-    getBasePath() {
-        // Определяем путь относительно текущей страницы
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('/pages/')) {
-            return '../'; // Для страниц в папке pages
-        }
-        return ''; // Для корневых страниц (index.html)
-    }
-    
-    loadTemplate() {
-        const basePath = this.getBasePath();
-        this.innerHTML = `
+    return '';  // Для корневых страниц (index.html)
+  }
+
+  loadTemplate() {
+    const basePath = this.getBasePath();
+    this.innerHTML = `
             <header class="topbar">
                 <a class="brand" href="${basePath}index.html" aria-label="HSE Connect">
                     <img class="brand-icon" src="${basePath}icons/logo.png" alt="logo" />
@@ -41,55 +41,60 @@ class HseHeader extends HTMLElement {
                 </div>
             </header>
         `;
-    }
-    
-    initDropdown() {
-        setTimeout(() => {
-            const dropdownIcon = this.querySelector('.dropdown-icon');
-            const dropdownMenu = this.querySelector('.dropdown-menu');
-            
-            if (dropdownIcon && dropdownMenu) {
-                dropdownIcon.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    dropdownMenu.classList.toggle('show');
-                });
-                
-                document.addEventListener('click', (e) => {
-                    if (!dropdownIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                        dropdownMenu.classList.remove('show');
-                    }
-                });
-                
-                const logoutBtn = this.querySelector('#logoutBtn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', () => {
-                        const basePath = this.getBasePath();
-                        window.location.href = `${basePath}pages/auth.html`;
-                    });
-                }
-            }
-        }, 0);
-    }
+  }
+
+  initDropdown() {
+    setTimeout(() => {
+      const dropdownIcon = this.querySelector('.dropdown-icon');
+      const dropdownMenu = this.querySelector('.dropdown-menu');
+
+      if (dropdownIcon && dropdownMenu) {
+        dropdownIcon.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('show');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!dropdownIcon.contains(e.target) && !dropdownMenu.contains(e.target)) {
+            dropdownMenu.classList.remove('show');
+          }
+        });
+
+        const logoutBtn = this.querySelector('#logoutBtn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', () => {
+            const basePath = this.getBasePath();
+
+            localStorage.clear();
+            sessionStorage.clear();
+
+            window.history.replaceState(null, '', `${basePath}pages/auth.html`);
+            window.location.replace(`${basePath}pages/auth.html`);
+          });
+        }
+      }
+    }, 0);
+  }
 }
 
 class HseSidebar extends HTMLElement {
-    constructor() {
-        super();
-        this.loadTemplate();
-        this.highlightActivePage();
+  constructor() {
+    super();
+    this.loadTemplate();
+    this.highlightActivePage();
+  }
+
+  getBasePath() {
+    const currentPath = window.location.pathname;
+    if (currentPath.includes('/pages/')) {
+      return '../';
     }
-    
-    getBasePath() {
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('/pages/')) {
-            return '../';
-        }
-        return '';
-    }
-    
-    loadTemplate() {
-        const basePath = this.getBasePath();
-        this.innerHTML = `
+    return '';
+  }
+
+  loadTemplate() {
+    const basePath = this.getBasePath();
+    this.innerHTML = `
             <aside class="sidebar">
                 <nav class="menu" aria-label="Боковое меню">
                     <a class="menu-item" href="${basePath}pages/profile.html" data-page="profile">
@@ -115,28 +120,31 @@ class HseSidebar extends HTMLElement {
                 </nav>
             </aside>
         `;
-    }
-    
-    highlightActivePage() {
-        const currentPath = window.location.pathname;
-        let currentPage = '';
-        
-        if (currentPath.includes('profile.html')) currentPage = 'profile';
-        else if (currentPath.includes('chat.html')) currentPage = 'chat';
-        else if (currentPath === '/' || currentPath.includes('index.html')) currentPage = 'home';
-        
-        setTimeout(() => {
-            const links = this.querySelectorAll('.menu-item');
-            links.forEach(link => {
-                const pageAttr = link.getAttribute('data-page');
-                if (pageAttr === currentPage) {
-                    link.classList.add('active');
-                } else {
-                    link.classList.remove('active');
-                }
-            });
-        }, 0);
-    }
+  }
+
+  highlightActivePage() {
+    const currentPath = window.location.pathname;
+    let currentPage = '';
+
+    if (currentPath.includes('profile.html'))
+      currentPage = 'profile';
+    else if (currentPath.includes('chat.html'))
+      currentPage = 'chat';
+    else if (currentPath === '/' || currentPath.includes('index.html'))
+      currentPage = 'home';
+
+    setTimeout(() => {
+      const links = this.querySelectorAll('.menu-item');
+      links.forEach(link => {
+        const pageAttr = link.getAttribute('data-page');
+        if (pageAttr === currentPage) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+    }, 0);
+  }
 }
 
 customElements.define('hse-header', HseHeader);

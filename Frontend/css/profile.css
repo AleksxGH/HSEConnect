@@ -222,17 +222,22 @@
     overflow: hidden;
 }
 
-.events-tabs {
-    display: flex;
-    gap: 18px;
-    padding: 14px 16px 10px;
+.events-tabs span {
+    cursor: pointer;
+    opacity: 0.6;
+    text-decoration: none;
     color: var(--blue-strong);
-    font-size: 15px;
-    border-bottom: 1px solid rgba(75, 89, 255, 0.08);
+    transition: 0.2s ease;
 }
 
-.events-tabs span:first-child {
+.events-tabs span.active {
+    opacity: 1;
     text-decoration: underline;
+}
+
+.events-tabs span.inactive {
+    opacity: 0.6;
+    text-decoration: none;
 }
 
 .events-grid {

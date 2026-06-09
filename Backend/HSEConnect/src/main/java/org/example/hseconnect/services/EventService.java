@@ -21,7 +21,6 @@ import java.util.Objects;
 @Service
 public class EventService {
 
-    private static final Long DEFAULT_CREATOR_ID = 1L;
     private static final String DEFAULT_ACCESS_TYPE = "public";
 
     private final JdbcTemplate jdbcTemplate;
@@ -33,11 +32,17 @@ public class EventService {
     public List<EventDto> getAllEvents() {
         return jdbcTemplate.query("""
                 SELECT e.event_id,
-                       e.title,
-                       COALESCE(ec.name, '') AS type,
-                       COALESCE(a.full_address, '') AS location,
-                       e.starts_at,
-                       e.description
+                                           e.title,
+                                           COALESCE(ec.name, '') AS type,
+                                           COALESCE(a.full_address, '') AS location,
+                                           e.starts_at,
+                                           e.description,
+                                           (
+                                               SELECT COUNT(*)
+                                               FROM app.event_participant ep
+                                               WHERE ep.event_id = e.event_id
+                                                 AND ep.cancelled_at IS NULL
+                                           ) AS participants_count
                 FROM app.event e
                 LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
                 LEFT JOIN app.address a ON a.address_id = e.address_id
@@ -45,37 +50,49 @@ public class EventService {
                 """, eventMapper());
     }
 
-    public List<EventDto> getMyEvents() {
+    public List<EventDto> getMyEvents(Long userId) {
         return jdbcTemplate.query("""
                 SELECT e.event_id,
-                       e.title,
-                       COALESCE(ec.name, '') AS type,
-                       COALESCE(a.full_address, '') AS location,
-                       e.starts_at,
-                       e.description
+                                           e.title,
+                                           COALESCE(ec.name, '') AS type,
+                                           COALESCE(a.full_address, '') AS location,
+                                           e.starts_at,
+                                           e.description,
+                                           (
+                                               SELECT COUNT(*)
+                                               FROM app.event_participant ep
+                                               WHERE ep.event_id = e.event_id
+                                                 AND ep.cancelled_at IS NULL
+                                           ) AS participants_count
                 FROM app.event e
                 LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
                 LEFT JOIN app.address a ON a.address_id = e.address_id
                 WHERE e.creator_id = ?
                 ORDER BY e.starts_at
-                """, eventMapper(), DEFAULT_CREATOR_ID);
+                """, eventMapper(), userId);
     }
 
-    public List<EventDto> getGoingEvents() {
+    public List<EventDto> getGoingEvents(Long userId) {
         return jdbcTemplate.query("""
                 SELECT e.event_id,
-                       e.title,
-                       COALESCE(ec.name, '') AS type,
-                       COALESCE(a.full_address, '') AS location,
-                       e.starts_at,
-                       e.description
+                                           e.title,
+                                           COALESCE(ec.name, '') AS type,
+                                           COALESCE(a.full_address, '') AS location,
+                                           e.starts_at,
+                                           e.description,
+                                           (
+                                               SELECT COUNT(*)
+                                               FROM app.event_participant ep
+                                               WHERE ep.event_id = e.event_id
+                                                 AND ep.cancelled_at IS NULL
+                                           ) AS participants_count
                 FROM app.event e
                 JOIN app.event_participant ep ON ep.event_id = e.event_id
                 LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
                 LEFT JOIN app.address a ON a.address_id = e.address_id
                 WHERE ep.user_id = ?
                 ORDER BY e.starts_at
-                """, eventMapper(), DEFAULT_CREATOR_ID);
+                """, eventMapper(), userId);
     }
 
     @Transactional
@@ -90,15 +107,19 @@ public class EventService {
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
+        if (event.getCreatorId() == null || event.getCreatorId() <= 0) {
+            throw new RuntimeException("Пользователь не авторизован");
+        }
+
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO app.event
                     (creator_id, category_id, access_type_id, address_id, title, description,
                      starts_at, ends_at, max_participants, status, visibility, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?)
-                    """, Statement.RETURN_GENERATED_KEYS);
+                    """, new String[]{"event_id"});
 
-            ps.setLong(1, DEFAULT_CREATOR_ID);
+            ps.setLong(1, event.getCreatorId());
             ps.setLong(2, categoryId);
             ps.setLong(3, accessTypeId);
             if (addressId == null) ps.setObject(4, null); else ps.setLong(4, addressId);
@@ -156,14 +177,48 @@ public class EventService {
         }
     }
 
+    @Transactional
+    public EventDto cancelRespondToEvent(Long eventId, Long userId) {
+
+        Integer exists = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM app.event_participant
+            WHERE event_id = ? AND user_id = ? AND cancelled_at IS NULL
+            """,
+                Integer.class,
+                eventId,
+                userId
+        );
+
+        if (exists == null || exists == 0) {
+            throw new RuntimeException("Вы не откликались на это событие");
+        }
+
+        jdbcTemplate.update("""
+            DELETE FROM app.event_participant
+            WHERE event_id = ? AND user_id = ?
+            """,
+                eventId,
+                userId
+        );
+
+        return getEventById(eventId);
+    }
+
     public EventDto getEventById(Long eventId) {
         List<EventDto> result = jdbcTemplate.query("""
                 SELECT e.event_id,
-                       e.title,
-                       COALESCE(ec.name, '') AS type,
-                       COALESCE(a.full_address, '') AS location,
-                       e.starts_at,
-                       e.description
+                                           e.title,
+                                           COALESCE(ec.name, '') AS type,
+                                           COALESCE(a.full_address, '') AS location,
+                                           e.starts_at,
+                                           e.description,
+                                           (
+                                               SELECT COUNT(*)
+                                               FROM app.event_participant ep
+                                               WHERE ep.event_id = e.event_id
+                                                 AND ep.cancelled_at IS NULL
+                                           ) AS participants_count
                 FROM app.event e
                 LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
                 LEFT JOIN app.address a ON a.address_id = e.address_id
@@ -246,7 +301,7 @@ public class EventService {
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(
                     "INSERT INTO app." + tableName + " (name) VALUES (?)",
-                    Statement.RETURN_GENERATED_KEYS
+                    new String[]{idColumn}
             );
             ps.setString(1, name);
             return ps;
@@ -263,7 +318,7 @@ public class EventService {
             PreparedStatement ps = connection.prepareStatement("""
                     INSERT INTO app.address (campus_id, city, street, building, room, full_address, latitude, longitude)
                     VALUES (NULL, '', NULL, NULL, NULL, ?, NULL, NULL)
-                    """, Statement.RETURN_GENERATED_KEYS);
+                    """, new String[]{"address_id"});
             ps.setString(1, location.trim());
             return ps;
         }, keyHolder);

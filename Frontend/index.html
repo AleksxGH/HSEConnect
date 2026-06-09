@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -7,20 +8,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Подключаем стили -->
     <link rel="stylesheet" href="css/components.css">
     <link rel="stylesheet" href="css/home.css">
-    
+
     <!-- Подключаем Web Components -->
     <script src="js/components.js" defer></script>
 </head>
+
 <body>
     <hse-header></hse-header>
-    
+
     <div class="page">
         <hse-sidebar></hse-sidebar>
-        
+
         <main class="content">
             <!-- Приветственный баннер -->
             <div class="welcome-banner">
@@ -30,13 +32,13 @@
                 </div>
                 <button class="create-event-btn" id="openModalBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                     Создать событие
                 </button>
             </div>
-            
+
             <!-- Ближайшие события -->
             <div class="events-section">
                 <div class="events-header">
@@ -47,7 +49,7 @@
             </div>
         </main>
     </div>
-    
+
     <!-- Модальное окно для создания события -->
     <div class="modal" id="eventModal">
         <div class="modal-content">
@@ -95,6 +97,16 @@
     <script>
         let events = [];
         let selectedEventId = null;
+
+        function requireAuth() {
+            const userId = localStorage.getItem('userId');
+
+            if (!userId) {
+                window.location.replace('auth.html');
+            }
+        }
+
+        requireAuth();
 
         async function loadUserName() {
             try {
@@ -201,6 +213,14 @@
             const time = document.getElementById('eventTime').value;
             const description = document.getElementById('eventDescription').value.trim();
 
+            const userId = localStorage.getItem("userId");
+
+            if (!userId) {
+                alert("Пользователь не авторизован");
+                window.location.href = "auth.html";
+                return;
+            }
+
             if (!title || !location || !date || !time) {
                 alert('Пожалуйста, заполните название, место, дату и время');
                 return;
@@ -212,7 +232,8 @@
                 location,
                 date,
                 time,
-                description
+                description,
+                creatorId: Number(userId)
             };
 
             try {
@@ -222,7 +243,7 @@
                 alert('Событие успешно создано!');
             } catch (error) {
                 console.error("Ошибка создания события:", error);
-                alert("Не удалось создать событие");
+                alert(error.message || "Не удалось создать событие");
             }
         }
 
@@ -251,7 +272,8 @@
             if (!selectedEventId) return;
 
             try {
-                await apiPost(`/api/events/${selectedEventId}/respond`, {});
+                const userId = localStorage.getItem("userId");
+                await apiPost(`/api/events/${selectedEventId}/respond?userId=${userId}`, {});
 
                 closeDetailsModal();
                 alert("Вы откликнулись на событие!");

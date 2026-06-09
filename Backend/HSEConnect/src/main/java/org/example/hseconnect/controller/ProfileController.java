@@ -48,4 +48,16 @@ public class ProfileController {
             return ResponseEntity.badRequest().body(error.getMessage());
         }
     }
+
+    @GetMapping("/suggest/{dictionary}")
+    public ResponseEntity<?> suggest(
+            @PathVariable String dictionary,
+            @RequestParam(defaultValue = "") String q
+    ) {
+        try {
+            return ResponseEntity.ok(profileService.suggest(dictionary, q));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
 }
