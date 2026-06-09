@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HSE Connect — Регистрация</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/auth_reg_styles.css">
+</head>
+
+<body>
+  <main class="auth-page">
+    <div class="card-wrap">
+      <div class="logo-wrap">
+        <img src="../icons/logo_with_title.png" alt="HSE Connect" class="logo">
+      </div>
+      <section class="auth-card">
+        <h1 class="title">Регистрация</h1>
+
+        <form class="form" id="registerForm" novalidate>
+          <label class="label">
+            <span class="vis">Электронная почта</span>
+            <input class="input" type="email" placeholder="Электронная почта">
+          </label>
+
+          <label class="label">
+            <span class="vis">Пароль</span>
+            <input class="input" type="password" placeholder="Пароль">
+          </label>
+
+          <label class="label">
+            <span class="vis">Повторите пароль</span>
+            <input class="input" type="password" placeholder="Повторите пароль">
+          </label>
+
+          <div class="error password-mismatch" role="status" aria-live="polite" style="display:none">Пароли не совпадают
+          </div>
+
+          <button class="primary" type="submit" disabled>Далее</button>
+        </form>
+      </section>
+
+      <a class="muted-link" href="../pages/auth.html">Уже есть аккаунт?</a>
+
+    </div>
+  </main>
+
+  <script src="../scripts/api.js"></script>
+  <script src="../scripts/register_script.js"></script>
+</body>
+
+</html>
