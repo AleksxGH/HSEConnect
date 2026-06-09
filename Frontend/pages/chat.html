@@ -35,6 +35,75 @@
         body {
             height: 100%;
         }
+
+        /* Стили для пустого состояния */
+        .empty-chat-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #adb5bd;
+            padding: 40px;
+        }
+
+        .empty-chat-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-chat-text {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .empty-chat-hint {
+            font-size: 13px;
+            color: #ced4da;
+        }
+
+        /* Стили для подсказки выбора пользователя */
+        .select-user-prompt {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin: 8px;
+            background: linear-gradient(135deg, #4b59ff 0%, #6c7aff 100%);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            color: white;
+        }
+
+        .select-user-prompt:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(75, 89, 255, 0.3);
+        }
+
+        .select-user-prompt:active {
+            transform: translateY(0);
+        }
+
+        .prompt-icon {
+            font-size: 20px;
+        }
+
+        .prompt-text {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Разделитель */
+        .dialogs-divider {
+            height: 1px;
+            background: #e9ecef;
+            margin: 8px 0;
+        }
     </style>
 </head>
 
@@ -51,28 +120,42 @@
                     <div class="dialogs-header">
                         <h3>Диалоги</h3>
                     </div>
+                    <!-- Подсказка для выбора пользователя -->
+                    <div class="select-user-prompt" id="selectUserPrompt">
+                        <span class="prompt-icon">🔎</span>
+                        <span class="prompt-text">Найти пользователя</span>
+                    </div>
+                    <div class="dialogs-divider"></div>
                     <div class="dialogs-list" id="dialogsList"></div>
                 </div>
 
                 <div class="messages-area">
-                    <div class="chat-header" id="chatHeader">
+                    <div class="chat-header" id="chatHeader" style="display: none;">
                         <div class="chat-header-avatar" id="chatAvatar">А</div>
                         <div class="chat-header-info">
                             <h4 id="chatName">Алексей Смирнов</h4>
                             <span id="chatStatus">онлайн</span>
                         </div>
                     </div>
-                    <div class="messages-list" id="messagesList"></div>
-                    <div class="input-area">
-                        <input type="text" class="msg-input" id="messageInput" placeholder="Введите сообщение..."
-                            autofocus>
+                    
+                    <!-- Пустое состояние чата -->
+                    <div class="empty-chat-state" id="emptyChatState">
+                        <div class="empty-chat-icon">💬</div>
+                        <div class="empty-chat-text">Выберите диалог</div>
+                        <div class="empty-chat-hint">Нажмите на чат слева, чтобы начать общение</div>
+                    </div>
+                    
+                    <div class="messages-list" id="messagesList" style="display: none;"></div>
+                    
+                    <div class="input-area" id="inputArea" style="display: none;">
+                        <input type="text" class="msg-input" id="messageInput" placeholder="Введите сообщение...">
                         <label class="file-label" id="fileLabel">
                             <img src="../icons/clip_icon.svg" alt="Прикрепить файл" class="clip-icon">
                             <input type="file" id="fileInput" style="display: none;" multiple>
                         </label>
                         <button class="send-btn" id="sendBtn">➤ Отправить</button>
                     </div>
-                    <div id="filePreview" style="padding: 0 18px 8px 18px; font-size: 11px; color:#4b59ff;"></div>
+                    <div id="filePreview" style="padding: 0 18px 8px 18px; font-size: 11px; color:#4b59ff; display: none;"></div>
                 </div>
             </div>
         </main>
@@ -105,10 +188,9 @@
             }
 
             chats = await response.json();
-
-            if (chats.length > 0 && currentChatId === null) {
-                currentChatId = chats[0].id;
-            }
+            
+            // Не устанавливаем currentChatId автоматически
+            // currentChatId остается null
         }
 
         async function loadMessages(chatId) {
@@ -126,6 +208,20 @@
             if (!container) return;
 
             container.innerHTML = "";
+
+            if (chats.length === 0) {
+                const emptyDiv = document.createElement("div");
+                emptyDiv.className = "empty-dialogs";
+                emptyDiv.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #adb5bd;">
+                        <div style="font-size: 48px; margin-bottom: 12px;">💬</div>
+                        <div style="font-size: 13px;">Нет диалогов</div>
+                        <div style="font-size: 11px; margin-top: 8px;">Начните общение с другом</div>
+                    </div>
+                `;
+                container.appendChild(emptyDiv);
+                return;
+            }
 
             chats.forEach(chat => {
                 const preview = chat.lastMessage || "Нет сообщений";
@@ -151,12 +247,43 @@
                     renderDialogs();
                     renderMessages();
                     updateChatHeader();
+                    showChatInterface(); // Показываем интерфейс чата
                     clearFilePreview();
                     focusMessageInput();
                 });
 
                 container.appendChild(div);
             });
+        }
+
+        // Функция для показа интерфейса чата (скрываем пустое состояние)
+        function showChatInterface() {
+            const emptyState = document.getElementById("emptyChatState");
+            const messagesList = document.getElementById("messagesList");
+            const inputArea = document.getElementById("inputArea");
+            const chatHeader = document.getElementById("chatHeader");
+            const filePreview = document.getElementById("filePreview");
+
+            if (emptyState) emptyState.style.display = "none";
+            if (messagesList) messagesList.style.display = "flex";
+            if (inputArea) inputArea.style.display = "flex";
+            if (chatHeader) chatHeader.style.display = "flex";
+            if (filePreview) filePreview.style.display = "block";
+        }
+
+        // Функция для скрытия интерфейса чата (показываем пустое состояние)
+        function hideChatInterface() {
+            const emptyState = document.getElementById("emptyChatState");
+            const messagesList = document.getElementById("messagesList");
+            const inputArea = document.getElementById("inputArea");
+            const chatHeader = document.getElementById("chatHeader");
+            const filePreview = document.getElementById("filePreview");
+
+            if (emptyState) emptyState.style.display = "flex";
+            if (messagesList) messagesList.style.display = "none";
+            if (inputArea) inputArea.style.display = "none";
+            if (chatHeader) chatHeader.style.display = "none";
+            if (filePreview) filePreview.style.display = "none";
         }
 
         function updateChatHeader() {
@@ -176,19 +303,32 @@
 
             const messages = messagesDB[currentChatId] || [];
 
-            messages.forEach(msg => {
-                const msgDiv = document.createElement("div");
-                msgDiv.className = `message ${msg.sender === "outgoing" ? "outgoing" : "incoming"}`;
+            if (messages.length === 0) {
+                const emptyMsg = document.createElement("div");
+                emptyMsg.className = "empty-messages";
+                emptyMsg.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #adb5bd;">
+                        <div style="font-size: 48px; margin-bottom: 12px;">💭</div>
+                        <div style="font-size: 13px;">Нет сообщений</div>
+                        <div style="font-size: 11px; margin-top: 8px;">Напишите что-нибудь</div>
+                    </div>
+                `;
+                messagesContainer.appendChild(emptyMsg);
+            } else {
+                messages.forEach(msg => {
+                    const msgDiv = document.createElement("div");
+                    msgDiv.className = `message ${msg.sender === "outgoing" ? "outgoing" : "incoming"}`;
 
-                msgDiv.innerHTML = `
-                <div class="bubble">
-                    ${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}
-                    <div class="msg-meta">${escapeHtml(msg.time || "только что")}</div>
-                </div>
-            `;
+                    msgDiv.innerHTML = `
+                    <div class="bubble">
+                        ${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}
+                        <div class="msg-meta">${escapeHtml(msg.time || "только что")}</div>
+                    </div>
+                `;
 
-                messagesContainer.appendChild(msgDiv);
-            });
+                    messagesContainer.appendChild(msgDiv);
+                });
+            }
 
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
@@ -262,17 +402,21 @@
             }
         }
 
+        // Функция для перехода на страницу друзей
+        function goToFriends() {
+            window.location.href = 'friends.html';
+        }
+
         async function initChat() {
             try {
                 await loadChats();
-
-                if (currentChatId !== null) {
-                    await loadMessages(currentChatId);
-                }
-
+                
+                // currentChatId остается null, чат не выбран
                 renderDialogs();
-                renderMessages();
-                updateChatHeader();
+                
+                // Показываем пустое состояние, скрываем интерфейс чата
+                hideChatInterface();
+                
             } catch (error) {
                 console.error(error);
                 alert("Ошибка загрузки чатов. Проверь, запущен ли backend.");
@@ -281,6 +425,7 @@
             const sendBtn = document.getElementById("sendBtn");
             const msgInput = document.getElementById("messageInput");
             const fileInputElem = document.getElementById("fileInput");
+            const selectUserPrompt = document.getElementById("selectUserPrompt");
 
             if (sendBtn) sendBtn.addEventListener("click", sendCurrentMessage);
 
@@ -294,6 +439,11 @@
             }
 
             if (fileInputElem) fileInputElem.addEventListener("change", onFilesSelected);
+            
+            // Обработчик для кнопки выбора пользователя
+            if (selectUserPrompt) {
+                selectUserPrompt.addEventListener("click", goToFriends);
+            }
         }
 
         if (document.readyState === "loading") {
