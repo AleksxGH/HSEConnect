@@ -250,7 +250,7 @@
     color: #f44336;
 }
 
-.btn-add-friend {
+.btn-add-friend, .btn-follow, .btn-chat {
     background: linear-gradient(135deg, #7c90de 0%, #4b59ff 100%);
     color: white;
     border: none;
@@ -261,27 +261,11 @@
     font-size: 12px;
     cursor: pointer;
     transition: all 0.2s;
+    margin: 5px;
 }
 
-.btn-add-friend:hover {
+.btn-add-friend, .btn-follow, .btn-chat:hover {
     transform: scale(1.05);
-}
-
-.btn-message {
-    background: #f0f2f8;
-    color: var(--blue-strong);
-    border: none;
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-family: inherit;
-    font-weight: 600;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-message:hover {
-    background: #e0e4f0;
 }
 
 /* Пустое состояние */
