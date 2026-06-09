@@ -186,6 +186,8 @@
         const chatUrlParams = new URLSearchParams(window.location.search);
         const initialChatId = Number(chatUrlParams.get('chatId'));
         let currentFileList = [];
+        let isSendingMessage = false;
+        let chatSocket = null;
 
         function connectTypingSocket() {
             const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -203,6 +205,37 @@
                 if (data.type === "stop_typing" && data.chatId === currentChatId) {
                     document.getElementById("chatStatus").innerText = "онлайн";
                 }
+            };
+        }
+
+        function connectChatSocket() {
+            const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+            const host = API_URL.replace(/^https?:\/\//, "");
+
+            chatSocket = new WebSocket(`${wsProtocol}://${host}/ws/chat?userId=${currentUserId}`);
+
+            chatSocket.onmessage = async (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type !== "message") return;
+
+                const message = data.message;
+
+                if (!messagesDB[message.chatId]) {
+                    messagesDB[message.chatId] = [];
+                }
+
+                const alreadyExists = messagesDB[message.chatId].some(m => m.id === message.id);
+                if (!alreadyExists) {
+                    messagesDB[message.chatId].push(message);
+                }
+
+                if (message.chatId === currentChatId) {
+                    renderMessages();
+                }
+
+                await loadChats();
+                renderDialogs();
             };
         }
 
@@ -354,28 +387,55 @@
 
             const messages = messagesDB[currentChatId] || [];
 
-            if (messages.length === 0) {
+            const uniqueMessages = Array.from(
+                new Map(messages.map((msg) => {
+                    const key =
+                        msg.id ||
+                        msg.messageId ||
+                        `${msg.senderId || msg.fromUserId || msg.sender}-${msg.text || msg.content || msg.message || msg.body}-${msg.time || msg.createdAt || msg.sentAt}`;
+
+                    return [key, msg];
+                })).values()
+            );
+
+            uniqueMessages.sort((a, b) => {
+                return (a.id || a.messageId || 0) - (b.id || b.messageId || 0);
+            });
+
+            if (uniqueMessages.length === 0) {
                 const emptyMsg = document.createElement("div");
                 emptyMsg.className = "empty-messages";
                 emptyMsg.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #adb5bd;">
-                        <div style="font-size: 48px; margin-bottom: 12px;">💭</div>
-                        <div style="font-size: 13px;">Нет сообщений</div>
-                        <div style="font-size: 11px; margin-top: 8px;">Напишите что-нибудь</div>
-                    </div>
-                `;
+            <div style="text-align: center; padding: 40px; color: #adb5bd;">
+                <div style="font-size: 48px; margin-bottom: 12px;">💭</div>
+                <div style="font-size: 13px;">Нет сообщений</div>
+                <div style="font-size: 11px; margin-top: 8px;">Напишите что-нибудь</div>
+            </div>
+        `;
                 messagesContainer.appendChild(emptyMsg);
             } else {
-                messages.forEach(msg => {
+                uniqueMessages.forEach(msg => {
+                    const text = msg.text || msg.content || msg.message || msg.body || "";
+                    const time = msg.createdAt
+                        ? new Date(msg.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        })
+                        : (msg.time || "только что");
+                    const isOutgoing =
+                        msg.sender === "outgoing" ||
+                        msg.senderId === currentUserId ||
+                        msg.fromUserId === currentUserId;
+
                     const msgDiv = document.createElement("div");
-                    msgDiv.className = `message ${msg.sender === "outgoing" ? "outgoing" : "incoming"}`;
+                    msgDiv.className = `message ${isOutgoing ? "outgoing" : "incoming"}`;
 
                     msgDiv.innerHTML = `
-                    <div class="bubble">
-                        ${msg.text ? `<div>${escapeHtml(msg.text)}</div>` : ""}
-                        <div class="msg-meta">${escapeHtml(msg.time || "только что")}</div>
-                    </div>
-                `;
+                <div class="bubble">
+                    ${text ? `<div>${escapeHtml(text)}</div>` : ""}
+                    <div class="msg-meta">${escapeHtml(time)}</div>
+                </div>
+            `;
 
                     messagesContainer.appendChild(msgDiv);
                 });
@@ -385,33 +445,41 @@
         }
 
         async function sendCurrentMessage() {
+            if (isSendingMessage) return;
+
             const inputEl = document.getElementById("messageInput");
             const text = inputEl.value.trim();
 
             if (!text || currentChatId === null) return;
 
-            const response = await fetch(`${API_BASE}/${currentChatId}/messages/user/${currentUserId}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ text })
-            });
+            isSendingMessage = true;
 
-            if (!response.ok) {
-                alert("Не удалось отправить сообщение");
-                return;
+            try {
+                const response = await fetch(`${API_BASE}/${currentChatId}/messages/user/${currentUserId}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ text })
+                });
+
+                if (!response.ok) {
+                    alert("Не удалось отправить сообщение");
+                    return;
+                }
+
+                inputEl.value = "";
+
+                await loadChats();
+                await loadMessages(currentChatId);
+
+                renderDialogs();
+                renderMessages();
+                updateChatHeader();
+                clearFilePreview();
+            } finally {
+                isSendingMessage = false;
             }
-
-            inputEl.value = "";
-
-            await loadChats();
-            await loadMessages(currentChatId);
-
-            renderDialogs();
-            renderMessages();
-            updateChatHeader();
-            clearFilePreview();
         }
 
         function escapeHtml(str) {
@@ -462,6 +530,7 @@
             try {
                 await loadChats();
                 connectTypingSocket();
+                connectChatSocket();
                 renderDialogs();
 
                 if (initialChatId) {
@@ -497,7 +566,7 @@
             if (msgInput) {
                 msgInput.addEventListener("input", handleTypingInput);
 
-                msgInput.addEventListener("keypress", (e) => {
+                msgInput.addEventListener("keydown", (e) => {
                     if (e.key === "Enter") {
                         e.preventDefault();
                         sendCurrentMessage();
@@ -506,15 +575,6 @@
             }
 
             if (sendBtn) sendBtn.addEventListener("click", sendCurrentMessage);
-
-            if (msgInput) {
-                msgInput.addEventListener("keypress", (e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        sendCurrentMessage();
-                    }
-                });
-            }
 
             if (fileInputElem) fileInputElem.addEventListener("change", onFilesSelected);
 

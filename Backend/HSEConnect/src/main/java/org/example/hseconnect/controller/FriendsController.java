@@ -70,7 +70,7 @@ public class FriendsController {
     public ResponseEntity<?> addFriend(@PathVariable Long userId, @PathVariable Long targetUserId) {
         try {
             friendsService.addFriend(userId, targetUserId);
-            return ResponseEntity.ok("Пользователь добавлен в друзья");
+            return ResponseEntity.ok("Ваша заявка отправлена");
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
         }
@@ -91,6 +91,31 @@ public class FriendsController {
         try {
             friendsService.removeFollower(userId, followerId);
             return ResponseEntity.ok("Подписчик удалён");
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @GetMapping("/{userId}/status/{targetUserId}")
+    public ResponseEntity<?> getRelationStatus(
+            @PathVariable Long userId,
+            @PathVariable Long targetUserId
+    ) {
+        try {
+            return ResponseEntity.ok(friendsService.getRelationStatus(userId, targetUserId));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @PostMapping("/{userId}/accept/{senderUserId}")
+    public ResponseEntity<?> acceptFriendRequest(
+            @PathVariable Long userId,
+            @PathVariable Long senderUserId
+    ) {
+        try {
+            friendsService.acceptFriendRequest(userId, senderUserId);
+            return ResponseEntity.ok("Запрос принят");
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
         }

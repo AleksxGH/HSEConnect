@@ -1,6 +1,7 @@
 package org.example.hseconnect.services;
 
 import org.example.hseconnect.model.FriendUserDto;
+import org.example.hseconnect.model.RelationStatusDto;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -149,35 +150,44 @@ public class FriendsService {
             throw new RuntimeException("Пользователь уже у вас в друзьях");
         }
 
-        follow(userId, targetUserId);
+        Integer exists = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*) FROM app.follow
+        WHERE follower_id = ? AND following_id = ?
+    """, Integer.class, userId, targetUserId);
+
+        if (exists == null || exists == 0) {
+            jdbcTemplate.update("""
+            INSERT INTO app.follow (follower_id, following_id, created_at)
+            VALUES (?, ?, NOW())
+        """, userId, targetUserId);
+        }
 
         Integer targetFollowsMe = jdbcTemplate.queryForObject("""
-            SELECT COUNT(*) FROM app.follow
-            WHERE follower_id = ? AND following_id = ?
-        """, Integer.class, targetUserId, userId);
+        SELECT COUNT(*) FROM app.follow
+        WHERE follower_id = ? AND following_id = ?
+    """, Integer.class, targetUserId, userId);
 
         if (targetFollowsMe != null && targetFollowsMe > 0) {
             Long a = Math.min(userId, targetUserId);
             Long b = Math.max(userId, targetUserId);
 
             jdbcTemplate.update("""
-                INSERT INTO app.friendship (user_id_1, user_id_2, created_at)
-                VALUES (?, ?, NOW())
-            """, a, b);
-
-            String senderName = getUserName(userId);
-
-            notificationService.createNotification(
-                    targetUserId,
-                    "friend_request",
-                    "Запрос в друзья",
-                    senderName + " хочет добавить вас в друзья",
-                    null,
-                    userId,
-                    null
-            );
+            INSERT INTO app.friendship (user_id_1, user_id_2, created_at)
+            VALUES (?, ?, NOW())
+        """, a, b);
         }
 
+        String senderName = getUserName(userId);
+
+        notificationService.createNotification(
+                targetUserId,
+                "friend_request",
+                "Запрос в друзья",
+                senderName + " отправил вам запрос в друзья",
+                null,
+                userId,
+                null
+        );
     }
 
     public void removeFriend(Long userId, Long targetUserId) {
@@ -309,5 +319,55 @@ public class FriendsService {
     """, String.class, userId);
 
         return names.isEmpty() ? "Пользователь" : names.get(0);
+    }
+
+    public void acceptFriendRequest(Long userId, Long senderUserId) {
+        validateDifferentUsers(userId, senderUserId);
+
+        if (areFriends(userId, senderUserId)) {
+            throw new RuntimeException("Вы уже друзья");
+        }
+
+        Integer requestExists = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*)
+        FROM app.follow
+        WHERE follower_id = ?
+          AND following_id = ?
+    """, Integer.class, senderUserId, userId);
+
+        if (requestExists == null || requestExists == 0) {
+            throw new RuntimeException("Запрос в друзья не найден");
+        }
+
+        Integer myFollowExists = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*)
+        FROM app.follow
+        WHERE follower_id = ?
+          AND following_id = ?
+    """, Integer.class, userId, senderUserId);
+
+        if (myFollowExists == null || myFollowExists == 0) {
+            jdbcTemplate.update("""
+            INSERT INTO app.follow (follower_id, following_id, created_at)
+            VALUES (?, ?, NOW())
+        """, userId, senderUserId);
+        }
+
+        Long a = Math.min(userId, senderUserId);
+        Long b = Math.max(userId, senderUserId);
+
+        jdbcTemplate.update("""
+        INSERT INTO app.friendship (user_id_1, user_id_2, created_at)
+        VALUES (?, ?, NOW())
+    """, a, b);
+    }
+
+    public RelationStatusDto getRelationStatus(Long userId, Long targetUserId) {
+        RelationStatusDto dto = new RelationStatusDto();
+
+        dto.setFriend(areFriends(userId, targetUserId));
+        dto.setFollowing(isFollowing(userId, targetUserId));
+
+        return dto;
     }
 }
