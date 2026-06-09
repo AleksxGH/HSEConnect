@@ -402,7 +402,7 @@ public class ProfileService {
 
                 Integer graduationYear = rs.getObject("graduation_year", Integer.class);
                 student.setGraduationYear(graduationYear == null ? null : graduationYear.toString());
-                student.setCourse(calculateCourse(graduationYear));
+                student.setCourse(calculateCourse(graduationYear, student.getEducationLevel()));
 
                 return student;
             }, userId);
@@ -741,8 +741,14 @@ public class ProfileService {
         }
     }
 
-    private String calculateCourse(Integer graduationYear) {
+    private String calculateCourse(Integer graduationYear, String educationLevel) {
         if (graduationYear == null) return null;
+
+        int duration = 4;
+
+        if ("Специалитет".equalsIgnoreCase(educationLevel)) duration = 5;
+        if ("Магистратура".equalsIgnoreCase(educationLevel)) duration = 2;
+        if ("Бакалавриат".equalsIgnoreCase(educationLevel)) duration = 4;
 
         int currentYear = LocalDate.now().getYear();
         int currentMonth = LocalDate.now().getMonthValue();
@@ -751,9 +757,12 @@ public class ProfileService {
                 ? currentYear
                 : currentYear - 1;
 
-        int course = graduationYear - academicYear;
+        int startYear = graduationYear - duration;
+        int course = academicYear - startYear + 1;
 
-        if (course <= 0) return "Выпускник";
+        if (course < 1) return null;
+        if (course > duration) return "Выпускник";
+
         return course + " курс";
     }
 
