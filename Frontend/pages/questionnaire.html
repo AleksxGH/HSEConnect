@@ -412,7 +412,13 @@
                     educationLevel:
                         document.querySelector('input[name="educationForm"]:checked')?.value || "",
 
+                    studyForm:
+                        document.querySelector('input[name="studyFormat"]:checked')?.value || "",
+
                     educationProgram:
+                        document.getElementById("program").value.trim(),
+
+                    program:
                         document.getElementById("program").value.trim(),
 
                     graduationYear: graduationYearInput.value,
@@ -420,6 +426,9 @@
                     course: courseInput.value,
 
                     academicStatus:
+                        document.getElementById("studentStatus").value,
+
+                    status:
                         document.getElementById("studentStatus").value
                 };
             }
@@ -437,6 +446,16 @@
                     address: document.getElementById("address").value.trim(),
                     workPhone: document.getElementById("workPhone").value.trim()
                 };
+            }
+
+            if (userType.value === "student") {
+                const educationLevel = document.querySelector('input[name="educationForm"]:checked')?.value;
+                const studyForm = document.querySelector('input[name="studyFormat"]:checked')?.value;
+
+                if (!educationLevel || !studyForm) {
+                    errorText.textContent = "Выберите ступень и форму обучения.";
+                    return;
+                }
             }
 
             console.log(payload);
