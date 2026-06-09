@@ -102,7 +102,7 @@
             const userId = localStorage.getItem('userId');
 
             if (!userId) {
-                window.location.replace('auth.html');
+                window.location.replace('pages/auth.html');
             }
         }
 
@@ -217,7 +217,7 @@
 
             if (!userId) {
                 alert("Пользователь не авторизован");
-                window.location.href = "auth.html";
+                window.location.href = "pages/auth.html";
                 return;
             }
 
