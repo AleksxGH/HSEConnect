@@ -52,4 +52,18 @@ public class ChatController {
             return ResponseEntity.badRequest().body(error.getMessage());
         }
     }
+
+    @PostMapping("/private/{userId}/{targetUserId}")
+    public ResponseEntity<?> getOrCreatePrivateChat(
+            @PathVariable Long userId,
+            @PathVariable Long targetUserId
+    ) {
+        try {
+            ChatDto chat = chatService.getOrCreatePrivateChat(userId, targetUserId);
+            return ResponseEntity.ok(chat);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
 }
