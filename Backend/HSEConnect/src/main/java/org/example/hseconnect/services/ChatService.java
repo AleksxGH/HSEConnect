@@ -49,15 +49,15 @@ public class ChatService {
         JOIN app.chat_participant cp_me ON cp_me.chat_id = c.chat_id
         LEFT JOIN app.event e ON e.event_id = c.event_id
         LEFT JOIN LATERAL (
-            SELECT m.message_text
-            FROM app.message m
-            WHERE m.chat_id = c.chat_id AND m.deleted_at IS NULL
-            ORDER BY m.created_at DESC
-            LIMIT 1
-        ) last_message ON TRUE
+                                  SELECT m.message_text, m.created_at
+                                  FROM app.message m
+                                  WHERE m.chat_id = c.chat_id AND m.deleted_at IS NULL
+                                  ORDER BY m.created_at DESC
+                                  LIMIT 1
+                              ) last_message ON TRUE
         WHERE cp_me.user_id = ?
           AND cp_me.left_at IS NULL
-        ORDER BY c.created_at DESC
+        ORDER BY COALESCE(last_message.created_at, c.created_at) DESC
     """, (rs, rowNum) -> {
             String name = rs.getString("name");
             String avatarInitial = name == null || name.isBlank()
@@ -106,6 +106,11 @@ public class ChatService {
             );
 
             dto.setSenderId(senderId);
+
+            if (createdAt != null) {
+                dto.setCreatedAt(createdAt.toInstant().toString());
+            }
+
             return dto;
         }, chatId);
     }
@@ -145,6 +150,7 @@ public class ChatService {
         );
 
         dto.setSenderId(currentUserId);
+        dto.setCreatedAt(Timestamp.valueOf(now).toInstant().toString());
 
         List<Long> receiverIds = jdbcTemplate.queryForList("""
     SELECT user_id

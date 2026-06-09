@@ -415,8 +415,12 @@
             } else {
                 uniqueMessages.forEach(msg => {
                     const text = msg.text || msg.content || msg.message || msg.body || "";
-                    const time = msg.time || msg.createdAt || msg.sentAt || "только что";
-
+                    const time = msg.createdAt
+                        ? new Date(msg.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit"
+                        })
+                        : (msg.time || "только что");
                     const isOutgoing =
                         msg.sender === "outgoing" ||
                         msg.senderId === currentUserId ||
