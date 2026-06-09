@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HSE Connect — Профиль пользователя</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/profile.css">
+
+    <script src="../js/components.js" defer></script>
+    
+    <style>
+        .user-profile-header {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: start;
+            column-gap: 18px;
+            padding-top: 42px;
+            padding-left: 128px;
+        }
+        
+        /* Кнопка "Написать" в стиле кнопки редактирования */
+        .message-floating {
+            border: 0;
+            border-radius: 10px;
+            height: 36px;
+            width: auto;
+            margin-top: 10px;
+            margin-right: 10px;
+            padding: 0 16px;
+            color: #fff;
+            font-size: 13px;
+            font-family: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            background: #4b59ff;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        
+        .message-floating:hover {
+            background: #3a48e8;
+            transform: translateY(-1px);
+        }
+        
+        .message-floating img {
+            width: 16px;
+            height: 16px;
+            filter: invert(100%) sepia(100%) grayscale(100%) brightness(200%);
+        }
+        
+        /* Блок с кнопками действий (3 кнопки) */
+        .actions-block {
+            display: flex;
+            gap: 10px;
+            justify-content: space-around;
+            margin-top: 16px;
+            padding: 16px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-family: inherit;
+            width: 100%;
+        }
+        
+        .action-btn img {
+            width: 18px;
+            height: 18px;
+            display: block;
+        }
+        
+        .action-label {
+            font-size: 11px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .btn-follow {
+            background: white;
+            color: #4b59ff;
+            border: 1px solid #4b59ff;
+        }
+        
+        .btn-follow:hover {
+            background: #f0f2ff;
+            transform: translateY(-1px);
+        }
+        
+        .btn-friend {
+            background: white;
+            color: #28a745;
+            border: 1px solid #28a745;
+        }
+        
+        .btn-friend:hover {
+            background: #f0fff4;
+            transform: translateY(-1px);
+        }
+        
+        .btn-block {
+            background: white;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+        }
+        
+        .btn-block:hover {
+            background: #fff5f5;
+            transform: translateY(-1px);
+        }
+        
+        .btn-unfollow {
+            background: #6c757d;
+            color: white;
+            border: none;
+        }
+        
+        .btn-unfollow:hover {
+            background: #5a6268;
+        }
+        
+        .btn-unfriend {
+            background: #dc3545;
+            color: white;
+            border: none;
+        }
+        
+        .btn-unfriend:hover {
+            background: #c82333;
+        }
+        
+        .btn-unblock {
+            background: #28a745;
+            color: white;
+            border: none;
+        }
+        
+        .btn-unblock:hover {
+            background: #218838;
+        }
+        
+        .interests-compact {
+            margin-top: 24px;
+            padding-top: 8px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .interests-compact .section-title {
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .interests-compact .chip-list {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <hse-header></hse-header>
+
+    <div class="page">
+        <hse-sidebar></hse-sidebar>
+
+        <main class="content">
+            <section class="hero">
+                <div class="hero-cover"></div>
+
+                <div class="hero-body">
+                    <div class="avatar-wrap">
+                        <img class="avatar" src="../stubs/photo_circle.svg" alt="Фото профиля" />
+                    </div>
+
+                    <div class="user-profile-header">
+                        <div class="hero-main-left">
+                            <h1 class="name" id="profileName">Загрузка...</h1>
+                            <div class="tags" id="profileTags"></div>
+                        </div>
+                        
+                        <button class="message-floating" id="messageBtn" type="button">
+                            <img src="../icons/chat_icon.svg" alt="" aria-hidden="true" />
+                            <span>Написать</span>
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <section class="card">
+                            <h2 class="section-title">ОПИСАНИЕ</h2>
+                            <p class="description" id="profileDescription">Загрузка описания...</p>
+                        </section>
+
+                        <section class="card">
+                            <div class="stats">
+                                <div>
+                                    <div class="stat-value" id="friendsCount">0</div>
+                                    <div class="stat-label">друзей</div>
+                                </div>
+
+                                <div>
+                                    <div class="stat-value" id="followersCount">0</div>
+                                    <div class="stat-label">подписчиков</div>
+                                </div>
+
+                                <div>
+                                    <div class="stat-value" id="eventsCount">0</div>
+                                    <div class="stat-label">событий</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                    
+                    <div class="actions-block" id="actionsBlock">
+                        <div class="action-item">
+                            <button class="action-btn" id="followBtn">
+                                <img src="../icons/follow_icon.svg" alt="" id="followIcon">
+                                <span id="followText">Загрузка...</span>
+                            </button>
+                        </div>
+                        
+                        <div class="action-item">
+                            <button class="action-btn" id="friendBtn">
+                                <img src="../icons/friend_icon.svg" alt="" id="friendIcon">
+                                <span id="friendText">Загрузка...</span>
+                            </button>
+                        </div>
+                        
+                        <div class="action-item">
+                            <button class="action-btn" id="blockBtn">
+                                <img src="../icons/block_icon.svg" alt="" id="blockIcon">
+                                <span id="blockText">Загрузка...</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Интересы (компактные) -->
+                    <div class="interests interests-compact">
+                        <h2 class="section-title" style="margin:0; color:#4a59ff;">ИНТЕРЕСЫ</h2>
+                        <div class="chip-list" id="interestsList"></div>
+                    </div>
+
+                    <!-- События -->
+                    <section class="events">
+                        <div class="events-tabs"
+                             style="display:flex; gap:18px; padding:14px 16px 10px; color:var(--blue-strong); font-size:15px; border-bottom:1px solid rgba(75,89,255,0.08);">
+                            <span id="myEventsTab" class="active" style="cursor:pointer;">СОБЫТИЯ ПОЛЬЗОВАТЕЛЯ</span>
+                            <span id="goingEventsTab" class="inactive" style="cursor:pointer;">ПОЛЬЗОВАТЕЛЬ СОБИРАЕТСЯ ПОЙТИ</span>
+                        </div>
+
+                        <div id="eventsContainer" class="events-grid"></div>
+                    </section>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальное окно события -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Событие</h2>
+            <input type="text" id="eventTitle" placeholder="Название события">
+            <select id="eventType">
+                <option value="Учёба">Учёба</option>
+                <option value="Спорт">Спорт</option>
+                <option value="Вечеринка">Вечеринка</option>
+                <option value="Образование">Образование</option>
+                <option value="Развлечения">Развлечения</option>
+                <option value="Общение">Общение</option>
+            </select>
+            <input type="text" id="eventLocation" placeholder="Место проведения">
+            <input type="date" id="eventDate">
+            <input type="time" id="eventTime">
+            <textarea id="eventDescription" placeholder="Описание события"></textarea>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeModalBtn">Закрыть</button>
+                <button class="submit-btn" id="saveEventBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно деталей события -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content">
+            <h2 id="detailsTitle">Название события</h2>
+            <p><b>Тип:</b> <span id="detailsType"></span></p>
+            <p><b>Место:</b> <span id="detailsLocation"></span></p>
+            <p><b>Дата:</b> <span id="detailsDate"></span></p>
+            <p><b>Время:</b> <span id="detailsTime"></span></p>
+            <p><b>Описание:</b></p>
+            <p id="detailsDescription"></p>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeDetailsBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../scripts/api.js"></script>
+    <script>
+        // ========== НАСТРОЙКА ИКОНОК ==========
+        const ICON_PATHS = {
+            message: '../icons/message_icon.svg',
+            follow: '../icons/follow_icon.svg',
+            unfollow: '../icons/unfollow_icon.svg',
+            friend: '../icons/friend_icon.svg',
+            unfriend: '../icons/unfriend_icon.svg',
+            block: '../icons/block_icon.svg',
+            unblock: '../icons/unblock_icon.svg'
+        };
+        
+        // const urlParams = new URLSearchParams(window.location.search);
+        // const userId = urlParams.get('id');
+        // const currentUserId = localStorage.getItem('userId');
+        
+        // let currentProfile = null;
+        // let currentEvents = [];
+        // let currentGoingEvents = [];
+        // let currentEventsTab = 'my';
+        
+        // // Функции для работы с API
+        // async function getUserProfile() {
+        //     if (!userId) {
+        //         alert('ID пользователя не указан');
+        //         window.location.href = 'friends.html';
+        //         return;
+        //     }
+            
+        //     try {
+        //         const response = await fetch(`${API_URL}/api/profile/${userId}`);
+        //         if (!response.ok) throw new Error('Профиль не найден');
+        //         currentProfile = await response.json();
+        //         renderUserProfile();
+        //     } catch (error) {
+        //         console.error(error);
+        //         alert('Ошибка загрузки профиля');
+        //     }
+        // }
+        
+        // async function getUserEvents() {
+        //     try {
+        //         const response = await fetch(`${API_URL}/api/events/user/${userId}`);
+        //         if (response.ok) {
+        //             currentEvents = await response.json();
+        //         }
+        //     } catch (error) {
+        //         console.error('Ошибка загрузки событий:', error);
+        //         currentEvents = [];
+        //     }
+        // }
+        
+        // async function getUserGoingEvents() {
+        //     try {
+        //         const response = await fetch(`${API_URL}/api/events/${userId}/going`);
+        //         if (response.ok) {
+        //             currentGoingEvents = await response.json();
+        //         }
+        //     } catch (error) {
+        //         console.error('Ошибка загрузки событий (собирается пойти):', error);
+        //         currentGoingEvents = [];
+        //     }
+        // }
+        
+        // function buildName(profile) {
+        //     return [profile.lastName, profile.firstName, profile.middleName]
+        //         .filter(item => item && item.trim() !== '')
+        //         .join(' ') || profile.name || 'Пользователь';
+        // }
+        
+        // function formatEventDate(event) {
+        //     const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+        //                     'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+            
+        //     if (event.date && event.time) {
+        //         const [year, month, day] = event.date.split('-');
+        //         return `${parseInt(day)} ${months[parseInt(month) - 1]} ${year}, ${event.time}`;
+        //     }
+            
+        //     if (event.startsAt) {
+        //         const date = new Date(event.startsAt);
+        //         const day = date.getDate();
+        //         const month = months[date.getMonth()];
+        //         const year = date.getFullYear();
+        //         const hours = date.getHours().toString().padStart(2, '0');
+        //         const minutes = date.getMinutes().toString().padStart(2, '0');
+        //         return `${day} ${month} ${year}, ${hours}:${minutes}`;
+        //     }
+            
+        //     return 'Дата не указана';
+        // }
+        
+        // function renderEvents() {
+        //     const container = document.getElementById('eventsContainer');
+        //     if (!container) return;
+            
+        //     const events = currentEventsTab === 'my' ? currentEvents : currentGoingEvents;
+            
+        //     if (!events || events.length === 0) {
+        //         container.innerHTML = '<div class="empty-events">Нет событий</div>';
+        //         return;
+        //     }
+            
+        //     let html = '<div class="events-grid">';
+        //     events.forEach(event => {
+        //         html += `
+        //             <div class="event-card" onclick="showEventDetails(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+        //                 <h3>${escapeHtml(event.title || 'Без названия')}</h3>
+        //                 <p class="event-date">${formatEventDate(event)}</p>
+        //                 <p class="event-type">${escapeHtml(event.type || '')}</p>
+        //                 <p class="event-location">${escapeHtml(event.location || '')}</p>
+        //             </div>
+        //         `;
+        //     });
+        //     html += '</div>';
+        //     container.innerHTML = html;
+        // }
+        
+        // function renderUserProfile() {
+        //     const name = buildName(currentProfile);
+        //     document.getElementById('profileName').textContent = name;
+        //     document.getElementById('profileDescription').textContent = currentProfile.about || 'Пользователь не добавил описание';
+        //     document.getElementById('friendsCount').textContent = currentProfile.friendsCount || 0;
+        //     document.getElementById('followersCount').textContent = currentProfile.followersCount || 0;
+        //     document.getElementById('eventsCount').textContent = currentProfile.eventsCount || 0;
+            
+        //     // Обновляем заголовки событий с именем
+        //     const firstName = currentProfile.firstName || name.split(' ')[0] || 'Пользователь';
+        //     document.querySelector('#myEventsTab').textContent = `СОБЫТИЯ ${firstName.toUpperCase()}`;
+        //     document.querySelector('#goingEventsTab').textContent = `${firstName.toUpperCase()} СОБИРАЕТСЯ ПОЙТИ`;
+            
+        //     // Рендерим теги (образование и работа)
+        //     renderTags();
+            
+        //     // Рендерим интересы
+        //     renderInterests();
+            
+        //     // Обновляем кнопки действий
+        //     updateActionButtons();
+            
+        //     // Загружаем и рендерим события
+        //     getUserEvents().then(() => renderEvents());
+        //     getUserGoingEvents();
+        // }
+        
+        // function renderTags() {
+        //     const tagsContainer = document.getElementById('profileTags');
+        //     if (!tagsContainer) return;
+            
+        //     const tags = [];
+            
+        //     if (currentProfile.student) {
+        //         const studentParts = [];
+        //         if (currentProfile.student.faculty) studentParts.push(currentProfile.student.faculty);
+        //         if (currentProfile.student.program) studentParts.push(currentProfile.student.program);
+        //         if (currentProfile.student.course) studentParts.push(currentProfile.student.course);
+        //         if (studentParts.length) tags.push(studentParts.join(', '));
+        //     }
+            
+        //     if (currentProfile.employee?.jobs) {
+        //         currentProfile.employee.jobs.forEach(job => {
+        //             const jobParts = [];
+        //             if (job.department) jobParts.push(job.department);
+        //             if (job.position) jobParts.push(job.position);
+        //             if (jobParts.length) tags.push(jobParts.join(', '));
+        //         });
+        //     }
+            
+        //     if (tags.length === 0) {
+        //         tagsContainer.innerHTML = '<span class="tag">Нет данных</span>';
+        //         return;
+        //     }
+            
+        //     tagsContainer.innerHTML = tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('');
+        // }
+        
+        // function renderInterests() {
+        //     const container = document.getElementById('interestsList');
+        //     if (!container) return;
+            
+        //     const interests = currentProfile.interests || [];
+            
+        //     if (interests.length === 0) {
+        //         container.innerHTML = '<span class="chip">Нет интересов</span>';
+        //         return;
+        //     }
+            
+        //     container.innerHTML = interests.map(interest => 
+        //         `<span class="chip">${escapeHtml(interest)}</span>`
+        //     ).join('');
+        // }
+        
+        // function updateActionButtons() {
+        //     // Кнопка подписки
+        //     const followBtn = document.getElementById('followBtn');
+        //     const followText = document.getElementById('followText');
+        //     const followIcon = document.getElementById('followIcon');
+        //     const isFollowing = currentProfile.isFollowing || false;
+        //     followText.textContent = isFollowing ? 'Отписаться' : 'Подписаться';
+        //     followBtn.className = `action-btn ${isFollowing ? 'btn-unfollow' : 'btn-follow'}`;
+        //     followIcon.src = isFollowing ? ICON_PATHS.unfollow : ICON_PATHS.follow;
+        //     followBtn.onclick = () => toggleFollow();
+            
+        //     // Кнопка дружбы
+        //     const friendBtn = document.getElementById('friendBtn');
+        //     const friendText = document.getElementById('friendText');
+        //     const friendIcon = document.getElementById('friendIcon');
+        //     const isFriend = currentProfile.isFriend || false;
+        //     friendText.textContent = isFriend ? 'Удалить из друзей' : 'Добавить в друзья';
+        //     friendBtn.className = `action-btn ${isFriend ? 'btn-unfriend' : 'btn-friend'}`;
+        //     friendIcon.src = isFriend ? ICON_PATHS.unfriend : ICON_PATHS.friend;
+        //     friendBtn.onclick = () => toggleFriend();
+            
+        //     // Кнопка блокировки
+        //     const blockBtn = document.getElementById('blockBtn');
+        //     const blockText = document.getElementById('blockText');
+        //     const blockIcon = document.getElementById('blockIcon');
+        //     const isBlocked = currentProfile.isBlocked || false;
+        //     blockText.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
+        //     blockBtn.className = `action-btn ${isBlocked ? 'btn-unblock' : 'btn-block'}`;
+        //     blockIcon.src = isBlocked ? ICON_PATHS.unblock : ICON_PATHS.block;
+        //     blockBtn.onclick = () => toggleBlock();
+        // }
+        
+        // async function toggleFollow() {
+        //     const isFollowing = currentProfile.isFollowing;
+        //     const url = `${API_URL}/api/friends/${currentUserId}/follow/${userId}`;
+        //     const method = isFollowing ? 'DELETE' : 'POST';
+            
+        //     try {
+        //         const response = await fetch(url, { method });
+        //         if (!response.ok) throw new Error('Ошибка');
+                
+        //         currentProfile.isFollowing = !isFollowing;
+        //         updateActionButtons();
+        //     } catch (error) {
+        //         console.error(error);
+        //         alert('Ошибка при изменении подписки');
+        //     }
+        // }
+        
+        // async function toggleFriend() {
+        //     const isFriend = currentProfile.isFriend;
+        //     const url = isFriend 
+        //         ? `${API_URL}/api/friends/${currentUserId}/friend/${userId}`
+        //         : `${API_URL}/api/friends/${currentUserId}/add/${userId}`;
+        //     const method = isFriend ? 'DELETE' : 'POST';
+            
+        //     try {
+        //         const response = await fetch(url, { method });
+        //         if (!response.ok) throw new Error('Ошибка');
+                
+        //         currentProfile.isFriend = !isFriend;
+        //         updateActionButtons();
+                
+        //         if (isFriend) {
+        //             currentProfile.friendsCount = Math.max(0, (currentProfile.friendsCount || 0) - 1);
+        //         } else {
+        //             currentProfile.friendsCount = (currentProfile.friendsCount || 0) + 1;
+        //         }
+        //         document.getElementById('friendsCount').textContent = currentProfile.friendsCount;
+        //     } catch (error) {
+        //         console.error(error);
+        //         alert('Ошибка при изменении статуса друга');
+        //     }
+        // }
+        
+        // async function toggleBlock() {
+        //     const isBlocked = currentProfile.isBlocked;
+        //     const url = `${API_URL}/api/users/${currentUserId}/block/${userId}`;
+        //     const method = isBlocked ? 'DELETE' : 'POST';
+            
+        //     try {
+        //         const response = await fetch(url, { method });
+        //         if (!response.ok) throw new Error('Ошибка');
+                
+        //         currentProfile.isBlocked = !isBlocked;
+        //         updateActionButtons();
+        //     } catch (error) {
+        //         console.error(error);
+        //         alert('Ошибка при изменении статуса блокировки');
+        //     }
+        // }
+        
+        // async function sendMessage() {
+        //     try {
+        //         const response = await fetch(`${API_URL}/api/chats/private/${currentUserId}/${userId}`, {
+        //             method: 'POST'
+        //         });
+                
+        //         if (!response.ok) throw new Error('Не удалось создать чат');
+                
+        //         const chat = await response.json();
+        //         window.location.href = `chat.html?chatId=${chat.id}`;
+        //     } catch (error) {
+        //         console.error(error);
+        //         alert('Ошибка при создании чата');
+        //     }
+        // }
+        
+        // function showEventDetails(event) {
+        //     document.getElementById('detailsTitle').textContent = event.title || 'Событие';
+        //     document.getElementById('detailsType').textContent = event.type || 'Не указан';
+        //     document.getElementById('detailsLocation').textContent = event.location || 'Не указано';
+        //     document.getElementById('detailsDate').textContent = event.date || 'Не указана';
+        //     document.getElementById('detailsTime').textContent = event.time || 'Не указано';
+        //     document.getElementById('detailsDescription').textContent = event.description || 'Нет описания';
+        //     document.getElementById('detailsModal').classList.add('active');
+        // }
+        
+        // function escapeHtml(str) {
+        //     if (!str) return '';
+        //     return String(str).replace(/[&<>]/g, function(m) {
+        //         if (m === '&') return '&amp;';
+        //         if (m === '<') return '&lt;';
+        //         if (m === '>') return '&gt;';
+        //         return m;
+        //     });
+        // }
+        
+        // // Настройка обработчиков
+        // function setupEventListeners() {
+        //     document.getElementById('messageBtn')?.addEventListener('click', sendMessage);
+            
+        //     document.getElementById('myEventsTab')?.addEventListener('click', () => {
+        //         currentEventsTab = 'my';
+        //         document.getElementById('myEventsTab').className = 'active';
+        //         document.getElementById('goingEventsTab').className = 'inactive';
+        //         renderEvents();
+        //     });
+            
+        //     document.getElementById('goingEventsTab')?.addEventListener('click', () => {
+        //         currentEventsTab = 'going';
+        //         document.getElementById('myEventsTab').className = 'inactive';
+        //         document.getElementById('goingEventsTab').className = 'active';
+        //         renderEvents();
+        //     });
+            
+        //     document.getElementById('closeDetailsBtn')?.addEventListener('click', () => {
+        //         document.getElementById('detailsModal').classList.remove('active');
+        //     });
+            
+        //     document.getElementById('detailsModal')?.addEventListener('click', (e) => {
+        //         if (e.target === document.getElementById('detailsModal')) {
+        //             document.getElementById('detailsModal').classList.remove('active');
+        //         }
+        //     });
+        // }
+        
+        // // Инициализация
+        // window.showEventDetails = showEventDetails;
+        
+        // document.addEventListener('DOMContentLoaded', () => {
+        //     setupEventListeners();
+        //     getUserProfile();
+        // });
+    </script>
+</body>
+</html>
