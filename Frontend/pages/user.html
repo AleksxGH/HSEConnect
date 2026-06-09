@@ -337,9 +337,6 @@
         };
     </script>
     <script>
-        let currentTab = 'new';
-        let notifications = [];
-
         const LOCAL_API = "http://localhost:8080";
         const SERVER_API = "https://hseconnect.onrender.com";
 
@@ -349,7 +346,11 @@
                 ? LOCAL_API
                 : SERVER_API;
 
-        const currentUserId = localStorage.getItem('userId');
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = Number(urlParams.get('id'));
+        const currentUserId = Number(localStorage.getItem('userId'));
+
+        let currentProfile = null;
 
         function requireAuth() {
             if (!currentUserId) {
@@ -357,161 +358,280 @@
             }
         }
 
-        requireAuth();
-
-        function setupTabs() {
-            const tabs = document.querySelectorAll('.tab-btn');
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-
-                    currentTab = tab.getAttribute('data-tab');
-                    loadNotifications();
-                });
-            });
+        function buildName(profile) {
+            return [profile.lastName, profile.firstName, profile.middleName]
+                .filter(item => item && item.trim() !== '')
+                .join(' ') || profile.name || 'Пользователь';
         }
 
-        async function loadNotifications() {
-            const read = currentTab === 'viewed';
-
-            try {
-                const response = await fetch(`${API_URL}/api/notifications/${currentUserId}?read=${read}`);
-
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
-
-                const data = await response.json();
-
-                notifications = data.map(n => ({
-                    id: n.id,
-                    type: n.type,
-                    text: n.body,
-                    time: formatTime(n.createdAt),
-                    read: n.isRead,
-                    viewed: n.isRead,
-                    actionable: false,
-                    userId: n.relatedUserId,
-                    eventId: n.relatedEventId,
-                    friendRequestId: n.relatedFriendRequestId
-                }));
-
-                renderNotifications();
-            } catch (error) {
-                console.error(error);
-                document.getElementById('notificationsContainer').innerHTML = `
-                <div class="empty-notifications">
-                    <p>Не удалось загрузить уведомления</p>
-                </div>
-            `;
-            }
-        }
-
-        function formatTime(dateString) {
-            if (!dateString) return '';
-
-            const date = new Date(dateString);
-            return date.toLocaleString('ru-RU');
-        }
-
-        function getIconSvg(type) {
-            switch (type) {
-                case 'friend_request':
-                    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>`;
-                case 'new_follower':
-                    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>`;
-                case 'event_going':
-                    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>`;
-                default:
-                    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>`;
-            }
-        }
-
-        async function markNotificationAsRead(notificationId) {
-            try {
-                await fetch(`${API_URL}/api/notifications/${notificationId}/read/${currentUserId}`, {
-                    method: 'PUT'
-                });
-
-                loadNotifications();
-            } catch (error) {
-                console.error(error);
-            }
-        }
-
-        function renderNotifications() {
-            const container = document.getElementById('notificationsContainer');
-            if (!container) return;
-
-            if (notifications.length === 0) {
-                const emptyText = currentTab === 'new'
-                    ? 'Нет новых уведомлений'
-                    : 'Нет просмотренных уведомлений';
-
-                container.innerHTML = `
-                <div class="empty-notifications">
-                    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="#8792b0" stroke-width="1.5">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                    </svg>
-                    <p>${emptyText}</p>
-                </div>
-            `;
+        async function loadUserProfile() {
+            if (!userId) {
+                document.getElementById('profileName').textContent = 'Профиль не найден';
+                document.getElementById('profileDescription').textContent = 'ID пользователя не указан';
                 return;
             }
 
-            let html = '<div class="notification-list">';
+            try {
+                const response = await fetch(`${API_URL}/api/profile/${userId}`);
 
-            notifications.forEach(notification => {
-                const unreadClass = !notification.read ? 'unread' : '';
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    document.getElementById('profileName').textContent = 'Профиль не найден';
+                    document.getElementById('profileDescription').textContent = errorText;
+                    return;
+                }
 
-                html += `
-                <div class="notification-item ${unreadClass}">
-                    <div class="notification-icon">
-                        ${getIconSvg(notification.type)}
-                    </div>
+                currentProfile = await response.json();
 
-                    <div class="notification-content">
-                        <div class="notification-text">${notification.text}</div>
-                        <div class="notification-time">${notification.time}</div>
-                    </div>
+                if (currentUserId !== userId) {
+                    await loadRelationStatus();
+                }
 
-                    ${!notification.read ? `
-                        <div class="notification-actions">
-                            <button class="btn-accept" onclick="markNotificationAsRead(${notification.id})">
-                                Прочитано
-                            </button>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-            });
+                renderUserProfile();
 
-            html += '</div>';
-            container.innerHTML = html;
+            } catch (error) {
+                console.error(error);
+                document.getElementById('profileName').textContent = 'Ошибка загрузки';
+                document.getElementById('profileDescription').textContent = 'Проверь подключение к серверу';
+            }
         }
 
-        window.addEventListener('load', () => {
-            setupTabs();
-            loadNotifications();
-        });
+        async function loadRelationStatus() {
+            try {
+                const response = await fetch(`${API_URL}/api/friends/${currentUserId}/status/${userId}`);
 
-        window.markNotificationAsRead = markNotificationAsRead;
+                if (!response.ok) {
+                    currentProfile.isFriend = false;
+                    currentProfile.isFollowing = false;
+                    return;
+                }
+
+                const relation = await response.json();
+
+                currentProfile.isFriend = relation.friend === true || relation.isFriend === true;
+                currentProfile.isFollowing = relation.following === true || relation.isFollowing === true;
+
+            } catch (error) {
+                console.error('Ошибка загрузки статуса отношений:', error);
+                currentProfile.isFriend = false;
+                currentProfile.isFollowing = false;
+            }
+        }
+
+        function renderUserProfile() {
+            const name = buildName(currentProfile);
+
+            document.getElementById('profileName').textContent = name;
+            document.getElementById('profileDescription').textContent =
+                currentProfile.about || currentProfile.description || 'Пользователь не добавил описание';
+
+            document.getElementById('friendsCount').textContent = currentProfile.friendsCount || 0;
+            document.getElementById('followersCount').textContent = currentProfile.followersCount || 0;
+            document.getElementById('eventsCount').textContent = currentProfile.eventsCount || 0;
+
+            renderTags();
+            renderInterests();
+            updateActionButtons();
+        }
+
+        function updateActionButtons() {
+            const actionsBlock = document.getElementById('actionsBlock');
+
+            if (currentUserId === userId) {
+                actionsBlock.style.display = 'none';
+                document.getElementById('messageBtn').style.display = 'none';
+                return;
+            }
+
+            actionsBlock.style.display = 'flex';
+
+            const followText = document.getElementById('followText');
+            const friendText = document.getElementById('friendText');
+            const blockText = document.getElementById('blockText');
+
+            const followBtn = document.getElementById('followBtn');
+            const friendBtn = document.getElementById('friendBtn');
+            const blockBtn = document.getElementById('blockBtn');
+
+            const followIcon = document.getElementById('followIcon');
+            const friendIcon = document.getElementById('friendIcon');
+            const blockIcon = document.getElementById('blockIcon');
+
+            const isFollowing = currentProfile.isFollowing === true || currentProfile.following === true;
+            const isFriend = currentProfile.isFriend === true || currentProfile.friend === true;
+
+            followText.textContent = isFollowing ? 'Отписаться' : 'Подписаться';
+            friendText.textContent = isFriend ? 'Удалить из друзей' : 'Добавить в друзья';
+            blockText.textContent = 'Заблокировать';
+
+            followBtn.className = `action-btn ${isFollowing ? 'btn-unfollow' : 'btn-follow'}`;
+            friendBtn.className = `action-btn ${isFriend ? 'btn-unfriend' : 'btn-friend'}`;
+            blockBtn.className = 'action-btn btn-block';
+
+            followIcon.src = isFollowing ? ICON_PATHS.unfollow : ICON_PATHS.follow;
+            friendIcon.src = isFriend ? ICON_PATHS.unfriend : ICON_PATHS.friend;
+            blockIcon.src = ICON_PATHS.block;
+
+            followBtn.onclick = toggleFollow;
+            friendBtn.onclick = toggleFriend;
+            blockBtn.onclick = toggleBlock;
+        }
+
+        async function toggleFollow() {
+            const isFollowing = currentProfile.isFollowing === true || currentProfile.following === true;
+
+            try {
+                const response = await fetch(`${API_URL}/api/friends/${currentUserId}/follow/${userId}`, {
+                    method: isFollowing ? 'DELETE' : 'POST'
+                });
+
+                if (!response.ok) {
+                    alert(await response.text());
+                    return;
+                }
+
+                currentProfile.isFollowing = !isFollowing;
+                currentProfile.following = !isFollowing;
+
+                updateActionButtons();
+
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка соединения с сервером');
+            }
+        }
+
+        async function toggleFriend() {
+            const isFriend = currentProfile.isFriend === true || currentProfile.friend === true;
+
+            const url = isFriend
+                ? `${API_URL}/api/friends/${currentUserId}/friend/${userId}`
+                : `${API_URL}/api/friends/${currentUserId}/add/${userId}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: isFriend ? 'DELETE' : 'POST'
+                });
+
+                if (!response.ok) {
+                    alert(await response.text());
+                    return;
+                }
+
+                currentProfile.isFriend = !isFriend;
+                currentProfile.friend = !isFriend;
+
+                if (!isFriend) {
+                    currentProfile.isFollowing = true;
+                    currentProfile.following = true;
+                }
+
+                updateActionButtons();
+
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка соединения с сервером');
+            }
+        }
+
+        function toggleBlock() {
+            alert('Блокировка пока не реализована на бэке');
+        }
+
+        function renderTags() {
+            const container = document.getElementById('profileTags');
+
+            const student = currentProfile.student;
+            const employee = currentProfile.employee;
+
+            let tags = [];
+
+            if (student) {
+                const mainInfo = [
+                    student.course,
+                    student.educationProgram || student.program,
+                    student.faculty
+                ].filter(Boolean).join(' · ');
+
+                if (mainInfo) tags.push(mainInfo);
+                if (student.campus) tags.push(student.campus);
+                if (student.academicStatus || student.status) {
+                    tags.push(student.academicStatus || student.status);
+                }
+            } else if (employee) {
+                const jobs = employee.jobs || [];
+
+                jobs.forEach(job => {
+                    const jobInfo = [
+                        job.department,
+                        job.position
+                    ].filter(Boolean).join(' · ');
+
+                    if (jobInfo) tags.push(jobInfo);
+                });
+
+                if (employee.address) tags.push(employee.address);
+            }
+
+            if (!tags.length) {
+                container.innerHTML = '<span class="tag">Нет данных</span>';
+                return;
+            }
+
+            container.innerHTML = tags
+                .map(tag => `<span class="tag">${escapeHtml(tag)}</span>`)
+                .join('');
+        }
+
+        function renderInterests() {
+            const container = document.getElementById('interestsList');
+            const interests = currentProfile.interests || [];
+
+            if (!interests.length) {
+                container.innerHTML = '<span class="chip">Нет интересов</span>';
+                return;
+            }
+
+            container.innerHTML = interests
+                .map(interest => `<span class="chip">${escapeHtml(interest)}</span>`)
+                .join('');
+        }
+
+        async function sendMessage() {
+            try {
+                const response = await fetch(`${API_URL}/api/chats/private/${currentUserId}/${userId}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    alert(await response.text());
+                    return;
+                }
+
+                const chat = await response.json();
+                window.location.href = `chat.html?chatId=${chat.id}`;
+
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка при создании чата');
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            requireAuth();
+            document.getElementById('messageBtn')?.addEventListener('click', sendMessage);
+            loadUserProfile();
+        });
     </script>
 </body>
 

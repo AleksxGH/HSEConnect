@@ -25,7 +25,8 @@ class HseHeader extends HTMLElement {
                 <div class="topbar-right">
                     <div class="user-menu-trigger" id="userMenuTrigger">
                         <div class="avatar-container" id="headerAvatar">
-                            <img class="mini-avatar" src="${basePath}stubs/photo_circle.jpg" alt="Фото профиля" style="display: none;" />
+                            <img class="mini-avatar" src="${
+        basePath}stubs/photo_circle.jpg" alt="Фото профиля" style="display: none;" />
                             <div class="mini-avatar-initials" style="display: none;"></div>
                         </div>
                         <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
@@ -53,7 +54,8 @@ class HseHeader extends HTMLElement {
     }
 
     const userId = localStorage.getItem('userId');
-    if (!userId) return;
+    if (!userId)
+      return;
 
     try {
       // Загружаем данные пользователя для получения имени
@@ -62,7 +64,7 @@ class HseHeader extends HTMLElement {
         const profile = await response.json();
         const firstName = profile.firstName || '';
         const lastName = profile.lastName || '';
-        
+
         const avatarContainer = this.querySelector('#headerAvatar');
         if (avatarContainer) {
           await window.avatarAPI.renderMiniAvatar(avatarContainer, userId, firstName, lastName);
@@ -87,8 +89,7 @@ class HseHeader extends HTMLElement {
 
         // Закрытие при клике вне меню
         document.addEventListener('click', (e) => {
-          if (userMenuTrigger && dropdownMenu && 
-              !userMenuTrigger.contains(e.target) && 
+          if (userMenuTrigger && dropdownMenu && !userMenuTrigger.contains(e.target) &&
               !dropdownMenu.contains(e.target)) {
             dropdownMenu.classList.remove('show');
           }
@@ -98,12 +99,10 @@ class HseHeader extends HTMLElement {
         const logoutBtn = this.querySelector('#logoutBtn');
         if (logoutBtn) {
           logoutBtn.addEventListener('click', () => {
-            localStorage.clear();
+            localStorage.removeItem('userId');
             sessionStorage.clear();
 
-            const basePath = this.getBasePath();
-
-            window.location.replace(`${basePath}pages/auth.html`);
+            window.location.replace('/pages/auth.html');
           });
         }
       }

@@ -84,7 +84,8 @@
                     type: n.type,
                     text: n.body,
                     time: formatTime(n.createdAt),
-                    read: n.isRead
+                    read: n.isRead,
+                    relatedUserId: n.relatedUserId
                 }));
 
                 renderNotifications();
@@ -101,6 +102,27 @@
         function formatTime(dateString) {
             if (!dateString) return '';
             return new Date(dateString).toLocaleString('ru-RU');
+        }
+
+        async function acceptFriendRequest(notificationId, senderUserId) {
+            try {
+                const response = await fetch(`${API_URL}/api/friends/${currentUserId}/accept/${senderUserId}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    alert(await response.text());
+                    return;
+                }
+
+                await markNotificationAsRead(notificationId);
+                alert('Запрос в друзья принят');
+                loadNotifications();
+
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка соединения с сервером');
+            }
         }
 
         function getIconSvg(type) {
@@ -167,12 +189,18 @@
                         </div>
 
                         ${!notification.read ? `
-                            <div class="notification-actions">
-                                <button class="btn-accept" onclick="markNotificationAsRead(${notification.id})">
-                                    Прочитано
-                                </button>
-                            </div>
-                        ` : ''}
+    <div class="notification-actions">
+        ${notification.type === 'friend_request' ? `
+            <button class="btn-accept" onclick="acceptFriendRequest(${notification.id}, ${notification.relatedUserId})">
+                Принять
+            </button>
+        ` : ''}
+
+        <button class="btn-accept" onclick="markNotificationAsRead(${notification.id})">
+            Прочитано
+        </button>
+    </div>
+` : ''}
                     </div>
                 `).join('')}
             </div>
@@ -185,6 +213,7 @@
         });
 
         window.markNotificationAsRead = markNotificationAsRead;
+        window.acceptFriendRequest = acceptFriendRequest;
     </script>
 </body>
 
