@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HSE Connect — Главная</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/home.css">
+
+    <script src="js/components.js" defer></script>
+    
+    <style>
+        /* Стили для вкладок */
+        .events-tabs-container {
+            margin-top: 24px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .section-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--blue-strong);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8f9ff;
+            border-radius: 40px;
+            padding: 4px 12px;
+            border: 1px solid var(--stroke);
+        }
+        
+        .section-search input {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            border: none;
+            background: none;
+            padding: 8px 0;
+            font-size: 13px;
+            outline: none;
+            width: 200px;
+        }
+        
+        .section-search button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--muted);
+        }
+        
+        .toggle-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--blue-strong);
+            padding: 4px 10px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .toggle-btn:hover {
+            background: rgba(75, 89, 255, 0.08);
+        }
+        
+        .events-list {
+            padding-top: 16px;
+        }
+
+        .events-list.collapsed {
+            display: none;
+        }
+        
+        /* Вкладки - белый блок как у ближайших событий */
+        .tabs-wrapper {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--stroke);
+            overflow: hidden;
+            margin-top: 24px;
+        }
+        
+        .content-tabs {
+            display: flex;
+            gap: 4px;
+            padding: 16px 20px 0 20px;
+            border-bottom: 1px solid var(--stroke);
+            background: white;
+        }
+        
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 10px 24px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 20px 20px 0 0;
+            position: relative;
+        }
+        
+        .tab-btn:hover {
+            color: var(--blue-strong);
+            background: rgba(75, 89, 255, 0.05);
+        }
+        
+        .tab-btn.active {
+            color: var(--blue-strong);
+            background: rgba(75, 89, 255, 0.08);
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--blue-strong);
+            border-radius: 2px;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content .section-header {
+            margin-bottom: 16px;
+        }
+        
+        .tab-content .section-header h3 {
+            font-size: 16px;
+            margin: 0;
+        }
+        
+        /* Приглашение друзей */
+        .invite-friends-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--stroke);
+        }
+        
+        .friends-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .friend-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f8f9ff;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .friend-checkbox:hover {
+            background: #eef0ff;
+        }
+        
+        .privacy-group {
+            margin: 15px 0;
+        }
+        
+        .privacy-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 20px;
+            cursor: pointer;
+        }
+        
+        .empty-events {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <hse-header></hse-header>
+
+    <div class="page">
+        <hse-sidebar></hse-sidebar>
+
+        <main class="content">
+            <!-- Приветственный баннер -->
+            <div class="welcome-banner">
+                <div class="welcome-text">
+                    <h1 id="welcomeTitle">Добро пожаловать! 👋</h1>
+                    <p>Создавай события и приглашай друзей</p>
+                </div>
+                <button class="create-event-btn" id="openModalBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Создать событие
+                </button>
+            </div>
+
+            <!-- Ближайшие события (отдельный блок) -->
+            <div class="events-section">
+                <div class="section-header">
+                    <h3>📅 Ближайшие события</h3>
+                    <button class="toggle-btn" data-toggle="upcomingEventsList">▼</button>
+                </div>
+                <div class="events-list" id="upcomingEventsList"></div>
+            </div>
+
+            <!-- Вкладки с белой подложкой -->
+            <div class="tabs-wrapper">
+                <div class="content-tabs">
+                    <button class="tab-btn active" data-tab="all">Все события</button>
+                    <button class="tab-btn" data-tab="friends">События знакомых</button>
+                    <button class="tab-btn" data-tab="archive">Архив событий</button>
+                </div>
+
+                <!-- Все события -->
+                <div class="tab-content active" data-content="all">
+                    <div class="section-header">
+                        <h3>🌍 Все публичные события</h3>
+                        <div class="section-search">
+                            <input type="text" id="allEventsSearch" placeholder="Поиск...">
+                            <button id="clearAllEventsSearch">✖</button>
+                        </div>
+                    </div>
+                    <div class="events-list" id="allEventsList"></div>
+                </div>
+
+                <!-- События знакомых -->
+                <div class="tab-content" data-content="friends">
+                    <div class="section-header">
+                        <h3>👥 События друзей и подписок</h3>
+                        <div class="section-search">
+                            <input type="text" id="friendsEventsSearch" placeholder="Поиск...">
+                            <button id="clearFriendsEventsSearch">✖</button>
+                        </div>
+                    </div>
+                    <div class="events-list" id="friendsEventsList"></div>
+                </div>
+
+                <!-- Архив событий -->
+                <div class="tab-content" data-content="archive">
+                    <div class="section-header">
+                        <h3>📦 Завершённые события</h3>
+                        <div class="section-search">
+                            <input type="text" id="archiveEventsSearch" placeholder="Поиск...">
+                            <button id="clearArchiveEventsSearch">✖</button>
+                        </div>
+                    </div>
+                    <div class="events-list" id="archiveEventsList"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно для создания события -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <h2>Создать новое событие</h2>
+            <input type="text" id="eventTitle" placeholder="Название события">
+            <select id="eventType">
+                <option value="Учёба">Учёба</option>
+                <option value="Спорт">Спорт</option>
+                <option value="Вечеринка">Вечеринка</option>
+                <option value="Образование">Образование</option>
+                <option value="Развлечения">Развлечения</option>
+                <option value="Общение">Общение</option>
+            </select>
+            <input type="text" id="eventLocation" placeholder="Место проведения">
+            <input type="date" id="eventDate">
+            <input type="time" id="eventTime">
+            <textarea id="eventDescription" placeholder="Описание события"></textarea>
+            
+            <div class="privacy-group">
+                <label>
+                    <input type="radio" name="privacy" value="public" checked> Публичное
+                </label>
+                <label>
+                    <input type="radio" name="privacy" value="private"> Закрытое (только по приглашениям)
+                </label>
+            </div>
+            
+            <div class="invite-friends-section" id="inviteFriendsSection" style="display: none;">
+                <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px;">Пригласить друзей</div>
+                <div class="friends-select" id="friendsSelectList"></div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeModalBtn">Отмена</button>
+                <button class="submit-btn" id="createEventBtn">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно деталей события -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content">
+            <h2 id="detailsTitle">Название события</h2>
+            <p><b>Тип:</b> <span id="detailsType"></span></p>
+            <p><b>Место:</b> <span id="detailsLocation"></span></p>
+            <p><b>Дата:</b> <span id="detailsDate"></span></p>
+            <p><b>Время:</b> <span id="detailsTime"></span></p>
+            <p><b>Описание:</b></p>
+            <p id="detailsDescription"></p>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeDetailsBtn">Закрыть</button>
+                <button class="submit-btn" id="respondEventBtn">Откликнуться</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/api.js"></script>
+    <script>
+        let upcomingEvents = [];
+        let allEvents = [];
+        let friendsEvents = [];
+        let archiveEvents = [];
+        let friendsList = [];
+        let currentTab = 'all';
+        
+        let collapsedState = {
+            upcoming: false
+        };
+        
+        let searchQueries = {
+            all: '',
+            friends: '',
+            archive: ''
+        };
+
+        function requireAuth() {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                window.location.replace('pages/auth.html');
+            }
+        }
+
+        requireAuth();
+
+        async function loadUserName() {
+            try {
+                const userId = localStorage.getItem("userId");
+                if (!userId) return;
+                const profile = await apiGet(`/api/profile/${userId}`);
+                const firstName = profile.firstName || "";
+                document.getElementById("welcomeTitle").textContent = firstName
+                    ? `Добро пожаловать, ${firstName}! 👋`
+                    : "Добро пожаловать! 👋";
+            } catch (error) {
+                console.error("Ошибка загрузки имени пользователя:", error);
+            }
+        }
+        
+        async function loadFriendsList() {
+            try {
+                const userId = localStorage.getItem("userId");
+                const response = await fetch(`${API_URL}/api/friends/${userId}`);
+                if (response.ok) {
+                    friendsList = await response.json();
+                    renderFriendsSelect();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки друзей:", error);
+            }
+        }
+        
+        function renderFriendsSelect() {
+            const container = document.getElementById('friendsSelectList');
+            if (!container) return;
+            
+            if (friendsList.length === 0) {
+                container.innerHTML = '<div style="padding: 12px; color: var(--muted);">У вас пока нет друзей</div>';
+                return;
+            }
+            
+            container.innerHTML = friendsList.map(friend => `
+                <label class="friend-checkbox">
+                    <input type="checkbox" value="${friend.id}">
+                    <span>${escapeHtml(friend.name || friend.firstName || 'Пользователь')}</span>
+                </label>
+            `).join('');
+        }
+        
+        async function loadAllEventsData() {
+            try {
+                const userId = localStorage.getItem("userId");
+                const events = await apiGet("/api/events");
+                const currentDate = new Date().toISOString().split('T')[0];
+                
+                // Ближайшие события (будущие, первые 5)
+                upcomingEvents = events
+                    .filter(e => e.date >= currentDate)
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    .slice(0, 5);
+                
+                // Все публичные события
+                allEvents = events
+                    .filter(e => e.date >= currentDate && (e.privacy === 'public' || e.privacy === null))
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                // События знакомых (друзья)
+                const friendsIds = friendsList.map(f => f.id);
+                friendsEvents = events
+                    .filter(e => e.date >= currentDate && friendsIds.includes(e.creatorId))
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                // Архив (прошедшие события)
+                archiveEvents = events
+                    .filter(e => e.date < currentDate)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                renderUpcomingEvents();
+                renderAllEvents();
+                renderFriendsEvents();
+                renderArchiveEvents();
+            } catch (error) {
+                console.error("Ошибка загрузки событий:", error);
+            }
+        }
+        
+        function renderEventsList(events, containerId, searchQuery = '') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            let filteredEvents = [...events];
+            if (searchQuery) {
+                filteredEvents = filteredEvents.filter(event =>
+                    event.title.toLowerCase().includes(searchQuery) ||
+                    (event.location && event.location.toLowerCase().includes(searchQuery))
+                );
+            }
+            
+            if (filteredEvents.length === 0) {
+                container.innerHTML = '<div class="empty-events">Нет событий</div>';
+                return;
+            }
+            
+            container.innerHTML = filteredEvents.map(event => {
+                const dateObj = new Date(event.date);
+                const day = dateObj.getDate().toString();
+                const month = dateObj.toLocaleString('ru', { month: 'short' }).replace('.', '');
+                
+                return `
+                    <div class="event-item" onclick="openEventDetails(${event.id})">
+                        <div class="event-date">
+                            <div class="event-day">${day}</div>
+                            <div class="event-month">${month}</div>
+                        </div>
+                        <div class="event-info">
+                            <div class="event-title">${escapeHtml(event.title)}</div>
+                            <div class="event-location">${escapeHtml(event.location || '')}, ${escapeHtml(event.time || '')}</div>
+                        </div>
+                        <div class="event-badge">${escapeHtml(event.type || 'Событие')}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderUpcomingEvents() {
+            renderEventsList(upcomingEvents, 'upcomingEventsList');
+        }
+        
+        function renderAllEvents() {
+            renderEventsList(allEvents, 'allEventsList', searchQueries.all);
+        }
+        
+        function renderFriendsEvents() {
+            renderEventsList(friendsEvents, 'friendsEventsList', searchQueries.friends);
+        }
+        
+        function renderArchiveEvents() {
+            renderEventsList(archiveEvents, 'archiveEventsList', searchQueries.archive);
+        }
+        
+        async function createNewEvent() {
+            const title = document.getElementById('eventTitle').value.trim();
+            const type = document.getElementById('eventType').value;
+            const location = document.getElementById('eventLocation').value.trim();
+            const date = document.getElementById('eventDate').value;
+            const time = document.getElementById('eventTime').value;
+            const description = document.getElementById('eventDescription').value.trim();
+            const privacy = document.querySelector('input[name="privacy"]:checked')?.value || 'public';
+            
+            const invitedFriends = Array.from(document.querySelectorAll('#friendsSelectList input:checked'))
+                .map(cb => Number(cb.value));
+            
+            const userId = localStorage.getItem("userId");
+            if (!userId) {
+                alert("Пользователь не авторизован");
+                window.location.href = "pages/auth.html";
+                return;
+            }
+            
+            if (!title || !location || !date || !time) {
+                alert('Пожалуйста, заполните название, место, дату и время');
+                return;
+            }
+            
+            const newEvent = {
+                title,
+                type,
+                location,
+                date,
+                time,
+                description,
+                privacy,
+                invitedFriends,
+                creatorId: Number(userId)
+            };
+            
+            try {
+                await apiPost("/api/events", newEvent);
+                await loadAllEventsData();
+                closeModal();
+                alert('Событие успешно создано!');
+            } catch (error) {
+                console.error("Ошибка создания события:", error);
+                alert(error.message || "Не удалось создать событие");
+            }
+        }
+        
+        function openEventDetails(eventId) {
+            const event = [...upcomingEvents, ...allEvents, ...friendsEvents, ...archiveEvents].find(e => e.id === eventId);
+            if (!event) return;
+            
+            document.getElementById("detailsTitle").textContent = event.title || "Событие";
+            document.getElementById("detailsType").textContent = event.type || "";
+            document.getElementById("detailsLocation").textContent = event.location || "";
+            document.getElementById("detailsDate").textContent = event.date || "";
+            document.getElementById("detailsTime").textContent = event.time || "";
+            document.getElementById("detailsDescription").textContent = event.description || "Описание отсутствует";
+            document.getElementById("detailsModal").classList.add("active");
+            
+            const respondBtn = document.getElementById("respondEventBtn");
+            respondBtn.onclick = () => respondToEvent(event.id);
+        }
+        
+        async function respondToEvent(eventId) {
+            try {
+                const userId = localStorage.getItem("userId");
+                await apiPost(`/api/events/${eventId}/respond?userId=${userId}`, {});
+                document.getElementById("detailsModal").classList.remove("active");
+                alert("Вы откликнулись на событие!");
+            } catch (error) {
+                console.error("Ошибка отклика на событие:", error);
+                alert(error.message || "Не удалось откликнуться на событие");
+            }
+        }
+        
+        function setupTabs() {
+            const tabs = document.querySelectorAll('.tab-btn');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentTab = tab.getAttribute('data-tab');
+                    
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.querySelector(`.tab-content[data-content="${currentTab}"]`).classList.add('active');
+                });
+            });
+        }
+        
+        function setupToggleButtons() {
+            const upcomingBtn = document.querySelector('[data-toggle="upcomingEventsList"]');
+            const upcomingTarget = document.getElementById('upcomingEventsList');
+            if (upcomingBtn && upcomingTarget) {
+                upcomingBtn.addEventListener('click', () => {
+                    upcomingTarget.classList.toggle('collapsed');
+                    upcomingBtn.textContent = upcomingTarget.classList.contains('collapsed') ? '▶' : '▼';
+                });
+            }
+        }
+        
+        function setupSearch() {
+            // Поиск во всех событиях
+            const allInput = document.getElementById('allEventsSearch');
+            const allClear = document.getElementById('clearAllEventsSearch');
+            if (allInput) {
+                allInput.addEventListener('input', (e) => {
+                    searchQueries.all = e.target.value.trim().toLowerCase();
+                    renderAllEvents();
+                });
+            }
+            if (allClear) {
+                allClear.addEventListener('click', () => {
+                    if (allInput) allInput.value = '';
+                    searchQueries.all = '';
+                    renderAllEvents();
+                });
+            }
+            
+            // Поиск в событиях знакомых
+            const friendsInput = document.getElementById('friendsEventsSearch');
+            const friendsClear = document.getElementById('clearFriendsEventsSearch');
+            if (friendsInput) {
+                friendsInput.addEventListener('input', (e) => {
+                    searchQueries.friends = e.target.value.trim().toLowerCase();
+                    renderFriendsEvents();
+                });
+            }
+            if (friendsClear) {
+                friendsClear.addEventListener('click', () => {
+                    if (friendsInput) friendsInput.value = '';
+                    searchQueries.friends = '';
+                    renderFriendsEvents();
+                });
+            }
+            
+            // Поиск в архиве
+            const archiveInput = document.getElementById('archiveEventsSearch');
+            const archiveClear = document.getElementById('clearArchiveEventsSearch');
+            if (archiveInput) {
+                archiveInput.addEventListener('input', (e) => {
+                    searchQueries.archive = e.target.value.trim().toLowerCase();
+                    renderArchiveEvents();
+                });
+            }
+            if (archiveClear) {
+                archiveClear.addEventListener('click', () => {
+                    if (archiveInput) archiveInput.value = '';
+                    searchQueries.archive = '';
+                    renderArchiveEvents();
+                });
+            }
+        }
+        
+        function setupModals() {
+            const modal = document.getElementById('eventModal');
+            const openBtn = document.getElementById('openModalBtn');
+            const closeBtn = document.getElementById('closeModalBtn');
+            const createBtn = document.getElementById('createEventBtn');
+            const detailsModal = document.getElementById('detailsModal');
+            const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+            
+            openBtn?.addEventListener('click', () => {
+                loadFriendsList();
+                modal.classList.add('active');
+            });
+            closeBtn?.addEventListener('click', closeModal);
+            createBtn?.addEventListener('click', createNewEvent);
+            closeDetailsBtn?.addEventListener('click', () => detailsModal.classList.remove('active'));
+            
+            modal?.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+            detailsModal?.addEventListener('click', (e) => { if (e.target === detailsModal) detailsModal.classList.remove('active'); });
+            
+            const privacyRadios = document.querySelectorAll('input[name="privacy"]');
+            const inviteSection = document.getElementById('inviteFriendsSection');
+            privacyRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    inviteSection.style.display = radio.value === 'private' ? 'block' : 'none';
+                });
+            });
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('eventModal');
+            modal.classList.remove('active');
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventType').value = 'Учёба';
+            document.getElementById('eventLocation').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventTime').value = '';
+            document.getElementById('eventDescription').value = '';
+            document.querySelector('input[name="privacy"][value="public"]').checked = true;
+            document.getElementById('inviteFriendsSection').style.display = 'none';
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return "";
+            return String(str).replace(/[&<>]/g, function (m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        window.openEventDetails = openEventDetails;
+        
+        async function init() {
+            await loadUserName();
+            await loadFriendsList();
+            await loadAllEventsData();
+            setupTabs();
+            setupToggleButtons();
+            setupSearch();
+            setupModals();
+        }
+        
+        init();
+    </script>
+</body>
+</html>

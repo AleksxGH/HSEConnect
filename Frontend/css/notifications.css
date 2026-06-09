@@ -1,5 +1,35 @@
 /* notifications.css - стили для страницы уведомлений */
 
+/* Для content */
+.content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Для page */
+.page {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    gap: 18px;
+    padding: 14px 16px 18px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Для body и html */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
 /* Заголовок секции */
 .notifications-header {
     padding-top: 10px;
@@ -22,6 +52,8 @@
     min-height: 500px;
     display: flex;
     flex-direction: column;
+    flex: 1;
+    height: 100%;
 }
 
 /* Вкладки */
