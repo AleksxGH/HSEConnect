@@ -142,31 +142,75 @@ function buildName(profile) {
 
 function buildTags(profile) {
   const tags = [];
+  const usedValues = new Set();
 
-  if (profile.student) {
-    if (profile.student.faculty)
-      tags.push(profile.student.faculty);
-    if (profile.student.program)
-      tags.push(profile.student.program);
-    if (profile.student.course)
-      tags.push(profile.student.course);
-    if (profile.student.status)
-      tags.push(profile.student.status);
+  // Функция для добавления значения в Set
+  const markAsUsed = (value) => {
+    if (value) usedValues.add(value);
+  };
+
+  if (profile.type) {
+    markAsUsed(profile.type);
   }
+  // Группируем данные студента
+  if (profile.student) {
+    const studentParts = [];
 
-  if (profile.employee) {
-    if (profile.employee.jobs && profile.employee.jobs.length > 0) {
-      profile.employee.jobs.forEach(job => {
-        if (job.department)
-          tags.push(job.department);
-        if (job.position)
-          tags.push(job.position);
-      });
+    if (profile.student.faculty) {
+      studentParts.push(profile.student.faculty);
+      markAsUsed(profile.student.faculty);
+    }
+    if (profile.student.program) {
+      studentParts.push(profile.student.program);
+      markAsUsed(profile.student.program);
+    }
+    if (profile.student.course) {
+      studentParts.push(profile.student.course);
+      markAsUsed(profile.student.course);
+    }
+    if (profile.student.status) {
+      if (profile.student.status.toLowerCase() !== 'учусь') {
+        studentParts.push(profile.student.status);
+      }
+      markAsUsed(profile.student.status);
+    }
+    if (profile.student.educationLevel) {
+      markAsUsed(profile.student.educationLevel);
+    }
+
+    if (studentParts.length > 0) {
+      tags.push(studentParts.join(' · '));
     }
   }
 
-  if (profile.tags && profile.tags.length > 0) {
-    tags.push(...profile.tags);
+  // Группируем данные сотрудника
+  if (profile.employee?.jobs?.length) {
+    profile.employee.jobs.forEach(job => {
+      const jobParts = [];
+
+      if (job.department) {
+        jobParts.push(job.department);
+        markAsUsed(job.department);
+      }
+      if (job.position) {
+        jobParts.push(job.position);
+        markAsUsed(job.position);
+      }
+
+      if (jobParts.length > 0) {
+        tags.push(jobParts.join(' · '));
+      }
+    });
+  }
+
+  // Добавляем только уникальные и неиспользованные теги
+  if (profile.tags?.length) {
+    const uniqueTags = [...new Set(profile.tags)]; // Убираем дубликаты
+    uniqueTags.forEach(tag => {
+      if (!usedValues.has(tag)) {
+        tags.push(tag);
+      }
+    });
   }
 
   return tags.filter(Boolean);
@@ -202,7 +246,7 @@ function openProfileModal() {
   document.getElementById('editAbout').value = currentProfile.about || '';
 
   document.getElementById('editInterests').value =
-      Array.isArray(currentProfile.interests) ? currentProfile.interests.join(', ') : '';
+    Array.isArray(currentProfile.interests) ? currentProfile.interests.join(', ') : '';
 
   document.getElementById('profileModal').classList.add('active');
 }
@@ -219,9 +263,9 @@ async function saveProfileChanges() {
     middleName: document.getElementById('editMiddleName').value.trim(),
     about: document.getElementById('editAbout').value.trim(),
     interests: document.getElementById('editInterests')
-                   .value.split(',')
-                   .map(item => item.trim())
-                   .filter(item => item.length > 0)
+      .value.split(',')
+      .map(item => item.trim())
+      .filter(item => item.length > 0)
   };
 
   try {
@@ -276,17 +320,16 @@ function renderEvents(events) {
       <img class="event-photo" src="../stubs/photo_square.svg" alt="Фото события">
 
       <div class="event-actions">
-        ${
-          currentEventsMode === 'my'
-            ? `
+        ${currentEventsMode === 'my'
+      ? `
               <button class="btn" onclick="editEvent(${event.id})">Редактировать</button>
               <button class="btn danger" onclick="deleteEvent(${event.id})">Удалить</button>
             `
-            : `
+      : `
               <button class="btn" onclick="viewEvent(${event.id})">Подробнее</button>
               <button class="btn danger" onclick="cancelGoing(${event.id})">Отменить</button>
             `
-        }
+    }
       </div>
     </article>
   `).join("");
@@ -329,7 +372,7 @@ function formatEventDate(event) {
 
   if (event.startsAt) {
     const date = new Date(event.startsAt);
-    return date.toLocaleString('ru-RU', {day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'});
+    return date.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   }
 
   return 'Дата не указана';
@@ -344,7 +387,7 @@ function getDay(date) {
 function getMonth(date) {
   if (!date)
     return '';
-  return new Date(date).toLocaleString('ru', {month: 'short'}).replace('.', '');
+  return new Date(date).toLocaleString('ru', { month: 'short' }).replace('.', '');
 }
 
 async function getProfile() {
@@ -361,7 +404,7 @@ function escapeHtml(str) {
   if (!str)
     return '';
 
-  return String(str).replace(/[&<>]/g, function(m) {
+  return String(str).replace(/[&<>]/g, function (m) {
     if (m === '&')
       return '&amp;';
     if (m === '<')
