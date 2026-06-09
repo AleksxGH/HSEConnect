@@ -366,16 +366,35 @@ async function deleteEvent(eventId) {
 }
 
 function formatEventDate(event) {
+  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+                  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  
+  let dateObj = null;
+  let timeStr = null;
+  
+  // Определяем источник данных
   if (event.date && event.time) {
-    return `${event.date}, ${event.time}`;
+    dateObj = new Date(event.date);
+    timeStr = event.time;
+  } else if (event.startsAt) {
+    dateObj = new Date(event.startsAt);
+    const hours = dateObj.getHours().toString().padStart(2, '0');
+    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+    timeStr = `${hours}:${minutes}`;
+  } else {
+    return 'Дата не указана';
   }
-
-  if (event.startsAt) {
-    const date = new Date(event.startsAt);
-    return date.toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  
+  // Проверка на валидность даты
+  if (isNaN(dateObj.getTime())) {
+    return 'Дата не указана';
   }
-
-  return 'Дата не указана';
+  
+  const day = dateObj.getDate();
+  const month = months[dateObj.getMonth()];
+  const year = dateObj.getFullYear();
+  
+  return `${day} ${month} ${year}, ${timeStr}`;
 }
 
 function getDay(date) {
