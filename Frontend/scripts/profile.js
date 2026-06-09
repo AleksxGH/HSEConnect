@@ -474,3 +474,14 @@ function closeDetailsModal() {
   document.getElementById("detailsModal").classList.remove("active");
   selectedEvent = null;
 }
+
+// Функция для обновления аватарки
+async function updateAvatarDisplay() {
+    const avatarContainer = document.getElementById('avatarContainer');
+    if (avatarContainer && currentProfile) {
+        const firstName = currentProfile.firstName || '';
+        const lastName = currentProfile.lastName || '';
+        const userId = currentUserId || localStorage.getItem('userId');
+        await window.avatarAPI.renderAvatar(avatarContainer, userId, firstName, lastName, 'medium');
+    }
+}
