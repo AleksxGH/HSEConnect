@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/friends.css">
 
+    <script src="../js/avatar.js"></script>
     <script src="../js/components.js" defer></script>
 
     <style>
@@ -52,30 +53,6 @@
             display: flex;
             gap: 8px;
             align-items: center;
-        }
-
-        .btn-chat {
-            background: #4b59ff;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 12px;
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .btn-chat:hover {
-            background: #3a48e8;
-            transform: translateY(-1px);
-        }
-
-        .btn-chat:active {
-            transform: translateY(0);
         }
     </style>
 </head>
@@ -350,7 +327,7 @@
                 if (isFriend) {
                     return `
             ${chatButton}
-            <button class="btn-unfriend" onclick="removeFriend(${userId}, '${name}')">Удалить</button>
+            <button class="btn-unfriend" onclick="removeFriend(${userId}, '${name}')">Удалить из друзей</button>
         `;
                 }
 
