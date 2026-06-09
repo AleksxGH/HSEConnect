@@ -2,6 +2,7 @@ package org.example.hseconnect.services;
 
 import org.example.hseconnect.model.ChatDto;
 import org.example.hseconnect.model.MessageDto;
+import org.example.hseconnect.websocket.ChatWebSocketHandler;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
@@ -20,9 +21,11 @@ import java.util.Objects;
 public class ChatService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final ChatWebSocketHandler chatWebSocketHandler;
 
-    public ChatService(JdbcTemplate jdbcTemplate) {
+    public ChatService(JdbcTemplate jdbcTemplate, ChatWebSocketHandler chatWebSocketHandler) {
         this.jdbcTemplate = jdbcTemplate;
+        this.chatWebSocketHandler = chatWebSocketHandler;
     }
 
     public List<ChatDto> getChats(Long currentUserId) {
@@ -142,6 +145,29 @@ public class ChatService {
         );
 
         dto.setSenderId(currentUserId);
+
+        List<Long> receiverIds = jdbcTemplate.queryForList("""
+    SELECT user_id
+    FROM app.chat_participant
+    WHERE chat_id = ?
+      AND user_id <> ?
+      AND left_at IS NULL
+""", Long.class, chatId, currentUserId);
+
+        for (Long receiverId : receiverIds) {
+            MessageDto incomingDto = new MessageDto(
+                    dto.getId(),
+                    dto.getChatId(),
+                    dto.getText(),
+                    "incoming",
+                    dto.getTime()
+            );
+
+            incomingDto.setSenderId(currentUserId);
+
+            chatWebSocketHandler.sendMessageToUser(receiverId, incomingDto);
+        }
+
         return dto;
     }
 

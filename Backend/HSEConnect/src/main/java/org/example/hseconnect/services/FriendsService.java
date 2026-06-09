@@ -1,6 +1,7 @@
 package org.example.hseconnect.services;
 
 import org.example.hseconnect.model.FriendUserDto;
+import org.example.hseconnect.model.RelationStatusDto;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -309,5 +310,14 @@ public class FriendsService {
     """, String.class, userId);
 
         return names.isEmpty() ? "Пользователь" : names.get(0);
+    }
+
+    public RelationStatusDto getRelationStatus(Long userId, Long targetUserId) {
+        RelationStatusDto dto = new RelationStatusDto();
+
+        dto.setFriend(areFriends(userId, targetUserId));
+        dto.setFollowing(isFollowing(userId, targetUserId));
+
+        return dto;
     }
 }

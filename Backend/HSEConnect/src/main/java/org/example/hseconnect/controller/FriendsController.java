@@ -95,4 +95,16 @@ public class FriendsController {
             return ResponseEntity.badRequest().body(error.getMessage());
         }
     }
+
+    @GetMapping("/{userId}/status/{targetUserId}")
+    public ResponseEntity<?> getRelationStatus(
+            @PathVariable Long userId,
+            @PathVariable Long targetUserId
+    ) {
+        try {
+            return ResponseEntity.ok(friendsService.getRelationStatus(userId, targetUserId));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
 }
