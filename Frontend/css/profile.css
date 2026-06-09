@@ -314,6 +314,10 @@
     font-weight: 700;
     cursor: pointer;
     background: var(--blue-strong);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .btn.danger {
