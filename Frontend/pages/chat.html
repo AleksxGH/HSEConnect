@@ -125,31 +125,6 @@
             gap: 8px;
         }
 
-        .chat-unread-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #4b59ff;
-            box-shadow: 0 0 0 4px rgba(75, 89, 255, 0.12);
-            flex-shrink: 0;
-        }
-
-        .sidebar-chat-dot {
-            position: absolute;
-            top: 8px;
-            right: 10px;
-            width: 11px;
-            height: 11px;
-            border-radius: 50%;
-            background: red;
-            box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.18);
-        }
-
-        .sidebar-chat-link-with-dot {
-            position: relative;
-        }
-
-
         .unread-preview {
             color: #24304a;
             font-weight: 700;
@@ -285,7 +260,6 @@
 
                 await loadChats();
                 renderDialogs();
-                updateSidebarMessagesDot();
             };
         }
 
@@ -325,6 +299,10 @@
             }
 
             chats = await response.json();
+
+            if (window.updateSidebarIcons) {
+                await window.updateSidebarIcons();
+            }
         }
 
         async function loadMessages(chatId) {
@@ -388,7 +366,6 @@
                     await loadChats();
 
                     renderDialogs();
-                    updateSidebarMessagesDot();
                     renderMessages();
                     updateChatHeader();
                     showChatInterface();
@@ -411,26 +388,6 @@
             }
         }
 
-        function updateSidebarMessagesDot() {
-            const hasUnread = chats.some(chat => Number(chat.unreadCount) > 0);
-
-            const chatLink = document.querySelector('a[href$="chat.html"]');
-            if (!chatLink) return;
-
-            chatLink.classList.add("sidebar-chat-link-with-dot");
-
-            let dot = chatLink.querySelector(".sidebar-chat-dot");
-
-            if (hasUnread) {
-                if (!dot) {
-                    dot = document.createElement("span");
-                    dot.className = "sidebar-chat-dot";
-                    chatLink.appendChild(dot);
-                }
-            } else {
-                if (dot) dot.remove();
-            }
-        }
 
         // Функция для показа интерфейса чата (скрываем пустое состояние)
         function showChatInterface() {
@@ -603,7 +560,6 @@
                 await loadMessages(currentChatId);
 
                 renderDialogs();
-                updateSidebarMessagesDot();
                 renderMessages();
                 updateChatHeader();
                 clearFilePreview();
@@ -671,8 +627,6 @@
                 connectTypingSocket();
                 connectChatSocket();
                 renderDialogs();
-                updateSidebarMessagesDot();
-                updateSidebarMessagesDot();
 
                 if (initialChatId) {
                     const chatExists = chats.some(chat => chat.id === initialChatId);
@@ -685,7 +639,6 @@
                         await loadChats();
 
                         renderDialogs();
-                        updateSidebarMessagesDot();
                         renderMessages();
                         updateChatHeader();
                         showChatInterface();

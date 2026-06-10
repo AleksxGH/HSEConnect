@@ -25,8 +25,7 @@ class HseHeader extends HTMLElement {
                 <div class="topbar-right">
                     <div class="user-menu-trigger" id="userMenuTrigger">
                         <div class="avatar-container" id="headerAvatar">
-                            <img class="mini-avatar" src="${
-        basePath}stubs/photo_circle.jpg" alt="Фото профиля" style="display: none;" />
+                            <img class="mini-avatar" src="${basePath}stubs/photo_circle.jpg" alt="Фото профиля" style="display: none;" />
                             <div class="mini-avatar-initials" style="display: none;"></div>
                         </div>
                         <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
@@ -90,7 +89,7 @@ class HseHeader extends HTMLElement {
         // Закрытие при клике вне меню
         document.addEventListener('click', (e) => {
           if (userMenuTrigger && dropdownMenu && !userMenuTrigger.contains(e.target) &&
-              !dropdownMenu.contains(e.target)) {
+            !dropdownMenu.contains(e.target)) {
             dropdownMenu.classList.remove('show');
           }
         });
@@ -115,6 +114,8 @@ class HseSidebar extends HTMLElement {
     super();
     this.loadTemplate();
     this.highlightActivePage();
+    this.initWebSocket();
+    this.checkUnreadStatus();
   }
 
   getBasePath() {
@@ -139,11 +140,11 @@ class HseSidebar extends HTMLElement {
                         <span>Главная</span>
                     </a>
                     <a class="menu-item" href="${basePath}pages/chat.html" data-page="chat">
-                        <img src="${basePath}icons/chat_icon.svg" alt="" aria-hidden="true" />
+                        <img src="${basePath}icons/chat_icon.svg" alt="" aria-hidden="true" id="chatIcon" />
                         <span>Сообщения</span>
                     </a>
                     <a class="menu-item" href="${basePath}pages/notifications.html" data-page="notifications">
-                        <img src="${basePath}icons/notifications_icon.svg" alt="" aria-hidden="true" />
+                        <img src="${basePath}icons/notifications_icon.svg" alt="" aria-hidden="true" id="notificationsIcon" />
                         <span>Уведомления</span>
                     </a>
                     <a class="menu-item" href="${basePath}pages/friends.html" data-page="friends">
@@ -182,7 +183,138 @@ class HseSidebar extends HTMLElement {
       });
     }, 0);
   }
+  getBaseApiUrl() {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8080';
+    }
+    return 'https://hseconnect.onrender.com';
+  }
+
+  // Проверка наличия непрочитанных сообщений
+  async hasUnreadMessages() {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) return false;
+
+      const response = await fetch(`${this.getBaseApiUrl()}/api/chats/user/${userId}/has-unread`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.hasUnread || false;
+      }
+      return false;
+    } catch (error) {
+      console.error('Ошибка проверки сообщений:', error);
+      return false;
+    }
+  }
+
+  // Проверка наличия непрочитанных уведомлений
+  async hasUnreadNotifications() {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) return false;
+
+      const response = await fetch(`${this.getBaseApiUrl()}/api/notifications/user/${userId}/has-unread`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.hasUnread || false;
+      }
+      return false;
+    } catch (error) {
+      console.error('Ошибка проверки уведомлений:', error);
+      return false;
+    }
+  }
+
+  // Обновление иконки чата
+  async updateChatIcon() {
+    const chatIcon = document.getElementById('chatIcon');
+    if (!chatIcon) return;
+
+    const basePath = this.getBasePath();
+    const hasUnread = await this.hasUnreadMessages();
+
+    if (hasUnread) {
+      chatIcon.src = `${basePath}icons/chat_with_dot_icon.svg`;
+    } else {
+      chatIcon.src = `${basePath}icons/chat_icon.svg`;
+    }
+  }
+
+  // Обновление иконки уведомлений
+  async updateNotificationsIcon() {
+    const notificationsIcon = document.getElementById('notificationsIcon');
+    if (!notificationsIcon) return;
+
+    const basePath = this.getBasePath();
+    const hasUnread = await this.hasUnreadNotifications();
+
+    if (hasUnread) {
+      notificationsIcon.src = `${basePath}icons/notifications_with_dot_icon.svg`;
+    } else {
+      notificationsIcon.src = `${basePath}icons/notifications_icon.svg`;
+    }
+  }
+
+  // Обновление всех иконок
+  async updateAllIcons() {
+    await this.updateChatIcon();
+    await this.updateNotificationsIcon();
+  }
+
+  // Проверка статуса при загрузке
+  async checkUnreadStatus() {
+    await this.updateAllIcons();
+
+    // Периодическая проверка (каждые 30 секунд)
+    setInterval(() => {
+      this.updateAllIcons();
+    }, 30000);
+  }
+
+  // WebSocket для получения событий в реальном времени
+  initWebSocket() {
+    const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const host = this.getBaseApiUrl().replace(/^https?:\/\//, "");
+    const userId = localStorage.getItem('userId');
+
+    if (!userId) return;
+
+    try {
+      const socket = new WebSocket(`${wsProtocol}://${host}/ws/notifications?userId=${userId}`);
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'new_message' || data.type === 'message_read') {
+          this.updateChatIcon();
+        }
+
+        if (data.type === 'new_notification' || data.type === 'notification_read') {
+          this.updateNotificationsIcon();
+        }
+      };
+
+      socket.onerror = (error) => {
+        console.error('WebSocket ошибка:', error);
+      };
+
+      socket.onclose = () => {
+        setTimeout(() => this.initWebSocket(), 5000);
+      };
+    } catch (error) {
+      console.error('Ошибка WebSocket:', error);
+    }
+  }
 }
 
 customElements.define('hse-header', HseHeader);
 customElements.define('hse-sidebar', HseSidebar);
+
+window.updateSidebarIcons = async () => {
+  const sidebar = document.querySelector('hse-sidebar');
+  if (sidebar && sidebar.updateAllIcons) {
+    await sidebar.updateAllIcons();
+  }
+};
