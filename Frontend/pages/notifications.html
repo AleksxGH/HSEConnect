@@ -14,26 +14,26 @@
     <script src="../js/avatar.js"></script>
     <script src="../js/components.js" defer></script>
     <style>
-    .unread-dot {
-        width: 9px;
-        height: 9px;
-        border-radius: 50%;
-        background: #4b59ff;
-        display: inline-block;
-        flex-shrink: 0;
-        box-shadow: 0 0 0 4px rgba(75, 89, 255, 0.12);
-    }
+        .unread-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #4b59ff;
+            display: inline-block;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 4px rgba(75, 89, 255, 0.12);
+        }
 
-    .notification-item {
-        cursor: pointer;
-    }
+        .notification-item {
+            cursor: pointer;
+        }
 
-    .notification-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-</style>
+        .notification-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
 </head>
 
 <body>
@@ -110,6 +110,9 @@
                 }));
 
                 renderNotifications();
+                if (window.updateSidebarIcons) {
+                    await window.updateSidebarIcons();
+                }
             } catch (error) {
                 console.error(error);
                 document.getElementById('notificationsContainer').innerHTML = `
@@ -189,6 +192,10 @@
                 });
 
                 loadNotifications();
+
+                if (window.updateSidebarIcons) {
+                    await window.updateSidebarIcons();
+                }
             } catch (error) {
                 console.error(error);
             }
@@ -240,9 +247,48 @@
         `;
         }
 
+        function connectNotificationsWebSocket() {
+            const wsProtocol = window.location.protocol === "https:" ? "wss" : "ws";
+            const host = API_URL.replace(/^https?:\/\//, "");
+            const userId = currentUserId;
+
+            if (!userId) return;
+
+            try {
+                const socket = new WebSocket(`${wsProtocol}://${host}/ws/notifications?userId=${userId}`);
+
+                socket.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+
+                    if (data.type === 'new_notification') {
+                        // Загружаем обновлённый список
+                        loadNotifications();
+
+                        // Обновляем иконку в сайдбаре
+                        if (window.updateSidebarIcons) {
+                            window.updateSidebarIcons();
+                        }
+                    }
+                };
+
+                socket.onerror = (error) => {
+                    console.error('WebSocket ошибка:', error);
+                };
+
+                socket.onclose = () => {
+                    setTimeout(connectNotificationsWebSocket, 5000);
+                };
+
+                return socket;
+            } catch (error) {
+                console.error('Ошибка WebSocket:', error);
+            }
+        }
+
         window.addEventListener('load', () => {
             setupTabs();
             loadNotifications();
+            connectNotificationsWebSocket();
         });
 
         window.markNotificationAsRead = markNotificationAsRead;
