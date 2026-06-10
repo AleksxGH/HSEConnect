@@ -54,6 +54,14 @@ public class ChatController {
         }
     }
 
+    @PutMapping("/{chatId}/read/user/{currentUserId}")
+    public void markChatAsRead(
+            @PathVariable Long chatId,
+            @PathVariable Long currentUserId
+    ) {
+        chatService.markChatAsRead(chatId, currentUserId);
+    }
+
     @PostMapping("/private/{userId}/{targetUserId}")
     public ResponseEntity<?> getOrCreatePrivateChat(
             @PathVariable Long userId,

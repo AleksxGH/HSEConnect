@@ -21,6 +21,15 @@ public class ChatDto {
         this.lastMessage = lastMessage;
     }
 
+    public ChatDto(Long id, String name, String avatarInitial, String status, String lastMessage, Integer unreadCount) {
+        this.id = id;
+        this.name = name;
+        this.avatarInitial = avatarInitial;
+        this.status = status;
+        this.lastMessage = lastMessage;
+        this.unreadCount = unreadCount;
+    }
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getChatType() { return chatType; }
@@ -37,6 +46,16 @@ public class ChatDto {
     public void setStatus(String status) { this.status = status; }
     public String getLastMessage() { return lastMessage; }
     public void setLastMessage(String lastMessage) { this.lastMessage = lastMessage; }
+
+    private Integer unreadCount = 0;
+
+    public Integer getUnreadCount() {
+        return unreadCount;
+    }
+
+    public void setUnreadCount(Integer unreadCount) {
+        this.unreadCount = unreadCount;
+    }
 
     private Long otherUserId;
 
