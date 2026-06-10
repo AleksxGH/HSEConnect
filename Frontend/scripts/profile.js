@@ -20,10 +20,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     currentProfile = profile;
     renderProfile(profile);
+
   } catch (error) {
     console.error('Ошибка загрузки профиля:', error);
+
+    const userId = localStorage.getItem('userId');
+
+    // профиль текущего пользователя отсутствует
+    if (userId &&
+        (error.message?.includes('404') || error.message?.includes('Профиль пользователя не найден') ||
+         error.message?.includes('Профиль не найден'))) {
+      localStorage.removeItem('userId');
+      localStorage.removeItem('token');
+
+      window.location.href = 'auth.html';
+      return;
+    }
+
     alert(error.message || 'Профиль не найден');
-    return;
   }
 
   try {
@@ -146,7 +160,8 @@ function buildTags(profile) {
 
   // Функция для добавления значения в Set
   const markAsUsed = (value) => {
-    if (value) usedValues.add(value);
+    if (value)
+      usedValues.add(value);
   };
 
   if (profile.type) {
@@ -208,7 +223,7 @@ function buildTags(profile) {
 
   // Добавляем только уникальные и неиспользованные теги
   if (profile.tags?.length) {
-    const uniqueTags = [...new Set(profile.tags)]; // Убираем дубликаты
+    const uniqueTags = [...new Set(profile.tags)];  // Убираем дубликаты
     uniqueTags.forEach(tag => {
       if (!usedValues.has(tag)) {
         tags.push(tag);
@@ -249,7 +264,7 @@ function openProfileModal() {
   document.getElementById('editAbout').value = currentProfile.about || '';
 
   document.getElementById('editInterests').value =
-    Array.isArray(currentProfile.interests) ? currentProfile.interests.join(', ') : '';
+      Array.isArray(currentProfile.interests) ? currentProfile.interests.join(', ') : '';
 
   document.getElementById('profileModal').classList.add('active');
 }
@@ -266,9 +281,9 @@ async function saveProfileChanges() {
     middleName: document.getElementById('editMiddleName').value.trim(),
     about: document.getElementById('editAbout').value.trim(),
     interests: document.getElementById('editInterests')
-      .value.split(',')
-      .map(item => item.trim())
-      .filter(item => item.length > 0)
+                   .value.split(',')
+                   .map(item => item.trim())
+                   .filter(item => item.length > 0)
   };
 
   try {
@@ -298,24 +313,27 @@ async function updateProfile(profile) {
 function renderEvents(events) {
   currentRenderedEvents = events || [];
 
-  const container = document.getElementById("eventsContainer");
-  if (!container) return;
+  const container = document.getElementById('eventsContainer');
+  if (!container)
+    return;
 
   if (!events || events.length === 0) {
     container.innerHTML = `<div class="empty-events">Пока нет событий</div>`;
     return;
   }
 
-  container.innerHTML = events.map(event => `
+  container.innerHTML = events
+                            .map(
+                                event => `
     <article class="event-card">
       <div>
-        <span class="event-badge">${event.category || event.type || "Событие"}</span>
+        <span class="event-badge">${event.category || event.type || 'Событие'}</span>
 
-        <h3 class="event-title">${event.title || "Без названия"}</h3>
+        <h3 class="event-title">${event.title || 'Без названия'}</h3>
 
         <div class="event-meta">
           <span>${formatEventDate(event)}</span>
-          <span>${event.location || event.address || "Место не указано"}</span>
+          <span>${event.location || event.address || 'Место не указано'}</span>
           <span>${event.respondedUserIds?.length || 0} участника</span>
         </div>
       </div>
@@ -323,19 +341,18 @@ function renderEvents(events) {
       <img class="event-photo" src="../stubs/photo_square.svg" alt="Фото события">
 
       <div class="event-actions">
-        ${currentEventsMode === 'my'
-      ? `
+        ${
+                                    currentEventsMode === 'my' ? `
               <button class="btn" onclick="editEvent(${event.id})">Редактировать</button>
               <button class="btn danger" onclick="deleteEvent(${event.id})">Удалить</button>
-            `
-      : `
+            ` :
+                                                                 `
               <button class="btn" onclick="viewEvent(${event.id})">Подробнее</button>
               <button class="btn danger" onclick="cancelGoing(${event.id})">Отменить</button>
-            `
-    }
+            `}
       </div>
     </article>
-  `).join("");
+  `).join('');
 }
 
 function viewEvent(eventId) {
@@ -343,38 +360,41 @@ function viewEvent(eventId) {
 }
 
 async function cancelGoing(eventId) {
-  if (!confirm("Отменить участие в событии?")) return;
+  if (!confirm('Отменить участие в событии?'))
+    return;
 
-  const userId = localStorage.getItem("userId");
+  const userId = localStorage.getItem('userId');
 
   try {
     await apiDelete(`/api/events/${eventId}/respond?userId=${userId}`);
     await loadGoingEvents();
   } catch (error) {
-    console.error("Ошибка отмены участия:", error);
-    alert(error.message || "Не удалось отменить участие");
+    console.error('Ошибка отмены участия:', error);
+    alert(error.message || 'Не удалось отменить участие');
   }
 }
 
 async function deleteEvent(eventId) {
-  if (!confirm("Удалить событие?")) return;
+  if (!confirm('Удалить событие?'))
+    return;
 
   try {
     await apiDelete(`/api/events/${eventId}`);
     await loadMyEvents();
   } catch (error) {
-    console.error("Ошибка удаления события:", error);
-    alert(error.message || "Не удалось удалить событие");
+    console.error('Ошибка удаления события:', error);
+    alert(error.message || 'Не удалось удалить событие');
   }
 }
 
 function formatEventDate(event) {
-  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
-                  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-  
+  const months = [
+    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+  ];
+
   let dateObj = null;
   let timeStr = null;
-  
+
   // Определяем источник данных
   if (event.date && event.time) {
     dateObj = new Date(event.date);
@@ -387,16 +407,16 @@ function formatEventDate(event) {
   } else {
     return 'Дата не указана';
   }
-  
+
   // Проверка на валидность даты
   if (isNaN(dateObj.getTime())) {
     return 'Дата не указана';
   }
-  
+
   const day = dateObj.getDate();
   const month = months[dateObj.getMonth()];
   const year = dateObj.getFullYear();
-  
+
   return `${day} ${month} ${year}, ${timeStr}`;
 }
 
@@ -409,7 +429,7 @@ function getDay(date) {
 function getMonth(date) {
   if (!date)
     return '';
-  return new Date(date).toLocaleString('ru', { month: 'short' }).replace('.', '');
+  return new Date(date).toLocaleString('ru', {month: 'short'}).replace('.', '');
 }
 
 async function getProfile() {
@@ -426,7 +446,7 @@ function escapeHtml(str) {
   if (!str)
     return '';
 
-  return String(str).replace(/[&<>]/g, function (m) {
+  return String(str).replace(/[&<>]/g, function(m) {
     if (m === '&')
       return '&amp;';
     if (m === '<')
@@ -438,14 +458,15 @@ function escapeHtml(str) {
 }
 
 function initDetailsModal() {
-  const detailsModal = document.getElementById("detailsModal");
-  const closeDetailsBtn = document.getElementById("closeDetailsBtn");
+  const detailsModal = document.getElementById('detailsModal');
+  const closeDetailsBtn = document.getElementById('closeDetailsBtn');
 
-  if (!detailsModal || !closeDetailsBtn) return;
+  if (!detailsModal || !closeDetailsBtn)
+    return;
 
-  closeDetailsBtn.addEventListener("click", closeDetailsModal);
+  closeDetailsBtn.addEventListener('click', closeDetailsModal);
 
-  detailsModal.addEventListener("click", (event) => {
+  detailsModal.addEventListener('click', (event) => {
     if (event.target === detailsModal) {
       closeDetailsModal();
     }
@@ -456,35 +477,34 @@ function viewEvent(eventId) {
   const event = currentRenderedEvents.find(item => item.id === eventId);
 
   if (!event) {
-    alert("Событие не найдено");
+    alert('Событие не найдено');
     return;
   }
 
   selectedEvent = event;
 
-  document.getElementById("detailsTitle").textContent = event.title || "Событие";
-  document.getElementById("detailsType").textContent = event.type || event.category || "";
-  document.getElementById("detailsLocation").textContent = event.location || event.address || "";
-  document.getElementById("detailsDate").textContent = event.date || "";
-  document.getElementById("detailsTime").textContent = event.time || "";
-  document.getElementById("detailsDescription").textContent =
-    event.description || "Описание отсутствует";
+  document.getElementById('detailsTitle').textContent = event.title || 'Событие';
+  document.getElementById('detailsType').textContent = event.type || event.category || '';
+  document.getElementById('detailsLocation').textContent = event.location || event.address || '';
+  document.getElementById('detailsDate').textContent = event.date || '';
+  document.getElementById('detailsTime').textContent = event.time || '';
+  document.getElementById('detailsDescription').textContent = event.description || 'Описание отсутствует';
 
-  document.getElementById("detailsModal").classList.add("active");
+  document.getElementById('detailsModal').classList.add('active');
 }
 
 function closeDetailsModal() {
-  document.getElementById("detailsModal").classList.remove("active");
+  document.getElementById('detailsModal').classList.remove('active');
   selectedEvent = null;
 }
 
 // Функция для обновления аватарки
 async function updateAvatarDisplay() {
-    const avatarContainer = document.getElementById('avatarContainer');
-    if (avatarContainer && currentProfile) {
-        const firstName = currentProfile.firstName || '';
-        const lastName = currentProfile.lastName || '';
-        const userId = currentUserId || localStorage.getItem('userId');
-        await window.avatarAPI.renderAvatar(avatarContainer, userId, firstName, lastName, 'medium');
-    }
+  const avatarContainer = document.getElementById('avatarContainer');
+  if (avatarContainer && currentProfile) {
+    const firstName = currentProfile.firstName || '';
+    const lastName = currentProfile.lastName || '';
+    const userId = currentUserId || localStorage.getItem('userId');
+    await window.avatarAPI.renderAvatar(avatarContainer, userId, firstName, lastName, 'medium');
+  }
 }

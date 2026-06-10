@@ -484,36 +484,60 @@
 
         async function loadAllEventsData() {
             try {
-                const userId = localStorage.getItem("userId");
+                const userId = Number(localStorage.getItem("userId"));
                 const events = await apiGet("/api/events");
-                const currentDate = new Date().toISOString().split('T')[0];
 
-                // Ближайшие события (будущие, первые 5)
+                const now = new Date();
+
+                const getEventDateTime = (event) => {
+                    return new Date(`${event.date}T${event.time || "00:00"}`);
+                };
+
+                const isFutureOrNow = (event) => getEventDateTime(event) >= now;
+                const isPast = (event) => getEventDateTime(event) < now;
+
+                const isMine = (event) => Number(event.creatorId) === userId;
+
+                const isGoing = (event) =>
+                    Array.isArray(event.respondedUserIds) &&
+                    event.respondedUserIds.map(Number).includes(userId);
+
+                const friendsIds = friendsList.map(friend => Number(friend.id));
+
+                const byNearestDate = (a, b) => getEventDateTime(a) - getEventDateTime(b);
+                const byNewestPastDate = (a, b) => getEventDateTime(b) - getEventDateTime(a);
+
                 upcomingEvents = events
-                    .filter(e => e.date >= currentDate)
-                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    .filter(event =>
+                        isFutureOrNow(event) &&
+                        (isMine(event) || isGoing(event))
+                    )
+                    .sort(byNearestDate)
                     .slice(0, 5);
 
-                // Все публичные события
                 allEvents = events
-                    .filter(e => e.date >= currentDate && (e.privacy === 'public' || e.privacy === null))
-                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                    .filter(isFutureOrNow)
+                    .sort(byNearestDate);
 
-                // События знакомых (друзья)
-                const friendsIds = friendsList.map(f => f.id);
                 friendsEvents = events
-                    .filter(e => e.date >= currentDate && friendsIds.includes(e.creatorId))
-                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+                    .filter(event =>
+                        isFutureOrNow(event) &&
+                        friendsIds.includes(Number(event.creatorId))
+                    )
+                    .sort(byNearestDate);
 
-                // Архив (прошедшие события)
                 archiveEvents = events
-                    .filter(e => e.date < currentDate)
-                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+                    .filter(event =>
+                        isPast(event) &&
+                        (isMine(event) || isGoing(event))
+                    )
+                    .sort(byNewestPastDate);
 
                 renderUpcomingEvents();
                 renderAllEvents();
                 renderFriendsEvents();
                 renderArchiveEvents();
+
             } catch (error) {
                 console.error("Ошибка загрузки событий:", error);
             }

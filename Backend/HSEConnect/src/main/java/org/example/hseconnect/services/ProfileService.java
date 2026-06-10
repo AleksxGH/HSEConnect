@@ -769,7 +769,7 @@ public class ProfileService {
     private void ensureUserExists(Long userId) {
         Integer count = jdbcTemplate.queryForObject("""
         SELECT COUNT(*)
-        FROM app."user"
+        FROM app.users
         WHERE user_id = ?
     """, Integer.class, userId);
 

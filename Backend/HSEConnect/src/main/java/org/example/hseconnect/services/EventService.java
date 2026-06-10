@@ -33,68 +33,72 @@ public class EventService {
 
     public List<EventDto> getAllEvents() {
         return jdbcTemplate.query("""
-                SELECT e.event_id,
-                                           e.title,
-                                           COALESCE(ec.name, '') AS type,
-                                           COALESCE(a.full_address, '') AS location,
-                                           e.starts_at,
-                                           e.description,
-                                           (
-                                               SELECT COUNT(*)
-                                               FROM app.event_participant ep
-                                               WHERE ep.event_id = e.event_id
-                                                 AND ep.cancelled_at IS NULL
-                                           ) AS participants_count
-                FROM app.event e
-                LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
-                LEFT JOIN app.address a ON a.address_id = e.address_id
-                ORDER BY e.starts_at
-                """, eventMapper());
+        SELECT e.event_id,
+               e.creator_id,
+               e.title,
+               COALESCE(ec.name, '') AS type,
+               COALESCE(a.full_address, '') AS location,
+               e.starts_at,
+               e.description,
+               (
+                   SELECT COUNT(*)
+                   FROM app.event_participant ep
+                   WHERE ep.event_id = e.event_id
+                     AND ep.cancelled_at IS NULL
+               ) AS participants_count
+        FROM app.event e
+        LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
+        LEFT JOIN app.address a ON a.address_id = e.address_id
+        ORDER BY e.starts_at
+    """, eventMapper());
     }
 
     public List<EventDto> getMyEvents(Long userId) {
         return jdbcTemplate.query("""
-                SELECT e.event_id,
-                                           e.title,
-                                           COALESCE(ec.name, '') AS type,
-                                           COALESCE(a.full_address, '') AS location,
-                                           e.starts_at,
-                                           e.description,
-                                           (
-                                               SELECT COUNT(*)
-                                               FROM app.event_participant ep
-                                               WHERE ep.event_id = e.event_id
-                                                 AND ep.cancelled_at IS NULL
-                                           ) AS participants_count
-                FROM app.event e
-                LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
-                LEFT JOIN app.address a ON a.address_id = e.address_id
-                WHERE e.creator_id = ?
-                ORDER BY e.starts_at
-                """, eventMapper(), userId);
+        SELECT e.event_id,
+               e.creator_id,
+               e.title,
+               COALESCE(ec.name, '') AS type,
+               COALESCE(a.full_address, '') AS location,
+               e.starts_at,
+               e.description,
+               (
+                   SELECT COUNT(*)
+                   FROM app.event_participant ep
+                   WHERE ep.event_id = e.event_id
+                     AND ep.cancelled_at IS NULL
+               ) AS participants_count
+        FROM app.event e
+        LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
+        LEFT JOIN app.address a ON a.address_id = e.address_id
+        WHERE e.creator_id = ?
+        ORDER BY e.starts_at
+    """, eventMapper(), userId);
     }
 
     public List<EventDto> getGoingEvents(Long userId) {
         return jdbcTemplate.query("""
-                SELECT e.event_id,
-                                           e.title,
-                                           COALESCE(ec.name, '') AS type,
-                                           COALESCE(a.full_address, '') AS location,
-                                           e.starts_at,
-                                           e.description,
-                                           (
-                                               SELECT COUNT(*)
-                                               FROM app.event_participant ep
-                                               WHERE ep.event_id = e.event_id
-                                                 AND ep.cancelled_at IS NULL
-                                           ) AS participants_count
-                FROM app.event e
-                JOIN app.event_participant ep ON ep.event_id = e.event_id
-                LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
-                LEFT JOIN app.address a ON a.address_id = e.address_id
-                WHERE ep.user_id = ?
-                ORDER BY e.starts_at
-                """, eventMapper(), userId);
+        SELECT e.event_id,
+               e.creator_id,
+               e.title,
+               COALESCE(ec.name, '') AS type,
+               COALESCE(a.full_address, '') AS location,
+               e.starts_at,
+               e.description,
+               (
+                   SELECT COUNT(*)
+                   FROM app.event_participant ep_count
+                   WHERE ep_count.event_id = e.event_id
+                     AND ep_count.cancelled_at IS NULL
+               ) AS participants_count
+        FROM app.event e
+        JOIN app.event_participant ep ON ep.event_id = e.event_id
+        LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
+        LEFT JOIN app.address a ON a.address_id = e.address_id
+        WHERE ep.user_id = ?
+          AND ep.cancelled_at IS NULL
+        ORDER BY e.starts_at
+    """, eventMapper(), userId);
     }
 
     @Transactional
@@ -209,23 +213,24 @@ public class EventService {
 
     public EventDto getEventById(Long eventId) {
         List<EventDto> result = jdbcTemplate.query("""
-                SELECT e.event_id,
-                                           e.title,
-                                           COALESCE(ec.name, '') AS type,
-                                           COALESCE(a.full_address, '') AS location,
-                                           e.starts_at,
-                                           e.description,
-                                           (
-                                               SELECT COUNT(*)
-                                               FROM app.event_participant ep
-                                               WHERE ep.event_id = e.event_id
-                                                 AND ep.cancelled_at IS NULL
-                                           ) AS participants_count
-                FROM app.event e
-                LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
-                LEFT JOIN app.address a ON a.address_id = e.address_id
-                WHERE e.event_id = ?
-                """, eventMapper(), eventId);
+        SELECT e.event_id,
+               e.creator_id,
+               e.title,
+               COALESCE(ec.name, '') AS type,
+               COALESCE(a.full_address, '') AS location,
+               e.starts_at,
+               e.description,
+               (
+                   SELECT COUNT(*)
+                   FROM app.event_participant ep
+                   WHERE ep.event_id = e.event_id
+                     AND ep.cancelled_at IS NULL
+               ) AS participants_count
+        FROM app.event e
+        LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
+        LEFT JOIN app.address a ON a.address_id = e.address_id
+        WHERE e.event_id = ?
+    """, eventMapper(), eventId);
 
         if (result.isEmpty()) {
             throw new RuntimeException("Событие не найдено");
@@ -283,7 +288,9 @@ public class EventService {
             LocalDateTime startsAt = timestamp == null ? null : timestamp.toLocalDateTime();
 
             EventDto dto = new EventDto();
+
             dto.setId(rs.getLong("event_id"));
+            dto.setCreatorId(rs.getLong("creator_id"));
             dto.setTitle(rs.getString("title"));
             dto.setType(rs.getString("type"));
             dto.setLocation(rs.getString("location"));
@@ -295,6 +302,7 @@ public class EventService {
             }
 
             dto.setRespondedUserIds(getRespondedUserIds(dto.getId()));
+
             return dto;
         };
     }
