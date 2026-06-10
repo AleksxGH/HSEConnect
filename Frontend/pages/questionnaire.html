@@ -142,6 +142,36 @@
             margin-bottom: 12px;
             font-size: 13px;
         }
+
+        /* Стили для автокомплита */
+        .autocomplete-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid rgba(74, 89, 255, 0.18);
+            border-radius: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            background: #f7f8ff;
+        }
+
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: #eef0ff;
+        }
     </style>
 </head>
 
