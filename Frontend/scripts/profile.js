@@ -177,6 +177,9 @@ function buildTags(profile) {
     if (profile.student.educationLevel) {
       markAsUsed(profile.student.educationLevel);
     }
+    if (profile.student.studyForm) {
+      markAsUsed(profile.student.studyForm);
+    }
 
     if (studentParts.length > 0) {
       tags.push(studentParts.join(' · '));

@@ -10,12 +10,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="../css/auth_reg_styles.css">
+    <link rel="stylesheet" href="../css/auth_reg.css">
 
     <style>
         body {
             font-family: 'Montserrat', sans-serif;
             background: #eef3fb;
+            text-align: center;
         }
 
         .card-wrap {
@@ -172,7 +173,11 @@
                         <div class="section-title">Информация о студенте</div>
 
                         <input class="input" id="campus" type="text" placeholder="Кампус">
-                        <input class="input" id="faculty" type="text" placeholder="Факультет">
+
+                        <div class="autocomplete-wrapper">
+                            <input class="input" id="faculty" type="text" placeholder="Факультет" autocomplete="off">
+                            <div id="facultyDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                        </div>
 
                         <div class="section-title" style="margin-top: 16px;">Ступень обучения</div>
                         <div class="radio-group">
@@ -210,7 +215,12 @@
                             </label>
                         </div>
 
-                        <input class="input" id="program" type="text" placeholder="ОП">
+                        <div class="autocomplete-wrapper">
+                            <input class="input" id="program" type="text" placeholder="Образовательная программа"
+                                autocomplete="off">
+                            <div id="programDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                        </div>
+
                         <input class="input" id="graduationYear" type="number" placeholder="Год конца обучения">
                         <div id="courseBlock" style="display:none;">
                             <input class="input" id="course" type="text" placeholder="Курс посчитается автоматически"
@@ -220,7 +230,6 @@
                         <select class="select" id="studentStatus">
                             <option value="">Статус</option>
                             <option value="Учусь">Учусь</option>
-                            <option value="Не учусь">Не учусь</option>
                             <option value="В академе">В академе</option>
                             <option value="Выпускник">Выпускник</option>
                         </select>
@@ -241,11 +250,12 @@
 
                     <textarea class="textarea" id="about" maxlength="500"
                         placeholder="О себе (необязательно)"></textarea>
-                    <div class="hint">До 500 символов</div>
 
-                    <input class="input" id="interestInput" type="text"
-                        placeholder="Интересы: начните вводить и нажмите Enter">
-                    <div class="hint">Если интереса нет в базе, он добавится автоматически</div>
+                    <div class="autocomplete-wrapper">
+                        <input class="input" id="interestInput" type="text" placeholder="Интересы: начните вводить..."
+                            autocomplete="off">
+                        <div id="interestDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                    </div>
 
                     <div class="chips" id="interestChips"></div>
 
@@ -272,11 +282,317 @@
         const addJobBtn = document.getElementById("addJobBtn");
 
         const interestInput = document.getElementById("interestInput");
+        const interestDropdown = document.getElementById("interestDropdown");
         const interestChips = document.getElementById("interestChips");
         const errorText = document.getElementById("errorText");
 
-        let interestsBase = ["спорт", "программирование", "дизайн", "музыка", "кино", "наука", "стартапы"];
+        const facultyInput = document.getElementById("faculty");
+        const facultyDropdown = document.getElementById("facultyDropdown");
+        const programInput = document.getElementById("program");
+        const programDropdown = document.getElementById("programDropdown");
+
         let selectedInterests = [];
+        let allApprovedInterests = [];
+
+        let faculties = [];
+        let programs = [];
+        let currentFacultyId = null;
+
+        const currentUserId = localStorage.getItem('userId');
+
+        // Функция для нормализации строки (первая буква заглавная, остальные строчные)
+        function normalizeString(str) {
+            if (!str) return '';
+            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        }
+
+        // ========== РАБОТА С ИНТЕРЕСАМИ ==========
+
+        // Загрузка одобренных интересов
+        async function loadApprovedInterests() {
+            try {
+                const response = await fetch(`${API_URL}/api/interests?approved=true`);
+                if (response.ok) {
+                    allApprovedInterests = await response.json();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки интересов:", error);
+            }
+        }
+
+        // Автодополнение для интересов
+        function setupInterestAutocomplete() {
+            interestInput.addEventListener("input", () => {
+                const query = interestInput.value.toLowerCase();
+                if (!query) {
+                    interestDropdown.style.display = "none";
+                    return;
+                }
+
+                // Показываем только одобренные интересы
+                const filtered = allApprovedInterests.filter(interest =>
+                    interest.name.toLowerCase().includes(query)
+                );
+
+                if (filtered.length === 0) {
+                    interestDropdown.style.display = "none";
+                    return;
+                }
+
+                interestDropdown.innerHTML = filtered.map(interest =>
+                    `<div class="autocomplete-item" data-id="${interest.interest_id}" data-name="${interest.name}">${interest.name}</div>`
+                ).join("");
+
+                interestDropdown.style.display = "block";
+
+                interestDropdown.querySelectorAll(".autocomplete-item").forEach(el => {
+                    el.addEventListener("click", () => {
+                        const interestName = el.dataset.name;
+                        if (!selectedInterests.includes(interestName)) {
+                            selectedInterests.push(interestName);
+                            renderInterests();
+                        }
+                        interestInput.value = "";
+                        interestDropdown.style.display = "none";
+                    });
+                });
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!interestDropdown.contains(e.target) && e.target !== interestInput) {
+                    interestDropdown.style.display = "none";
+                }
+            });
+        }
+
+        // Добавление нового интереса в базу
+        async function addNewInterest(name) {
+            try {
+                const response = await fetch(`${API_URL}/api/interests`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: normalizeString(name),
+                        created_by_user_id: currentUserId ? parseInt(currentUserId) : null
+                    })
+                });
+
+                if (response.ok) {
+                    const newInterest = await response.json();
+                    // Если интерес сразу одобрен (например, для админа), добавляем в список
+                    if (newInterest.is_approved) {
+                        allApprovedInterests.push(newInterest);
+                    }
+                    return newInterest;
+                }
+            } catch (error) {
+                console.error("Ошибка создания интереса:", error);
+            }
+            return null;
+        }
+
+        // Обработка Enter для ввода нового интереса
+        interestInput.addEventListener("keydown", async (event) => {
+            if (event.key !== "Enter") return;
+
+            event.preventDefault();
+
+            const value = interestInput.value.trim();
+            if (!value) return;
+
+            const normalizedValue = normalizeString(value);
+
+            // Проверяем, есть ли такой интерес уже в выбранных
+            if (selectedInterests.includes(normalizedValue)) {
+                interestInput.value = "";
+                return;
+            }
+
+            // Проверяем, есть ли такой интерес в одобренных
+            const existingApproved = allApprovedInterests.find(i =>
+                i.name.toLowerCase() === normalizedValue.toLowerCase()
+            );
+
+            if (existingApproved) {
+                // Если есть одобренный - добавляем
+                selectedInterests.push(existingApproved.name);
+                renderInterests();
+                interestInput.value = "";
+                return;
+            }
+
+            // Если нет - создаём новый (требует одобрения)
+            const newInterest = await addNewInterest(normalizedValue);
+
+            if (newInterest) {
+                if (newInterest.is_approved) {
+                    // Если сразу одобрен
+                    selectedInterests.push(newInterest.name);
+                } else {
+                    // Если требует одобрения
+                    alert(`Интерес "${normalizedValue}" отправлен на модерацию. После одобрения он появится в списке.`);
+                }
+                renderInterests();
+                interestInput.value = "";
+            } else {
+                alert("Не удалось добавить интерес. Попробуйте позже.");
+            }
+        });
+
+        function renderInterests() {
+            interestChips.innerHTML = "";
+
+            selectedInterests.forEach((interest) => {
+                const chip = document.createElement("span");
+                chip.className = "chip";
+                chip.textContent = interest;
+
+                chip.addEventListener("click", () => {
+                    selectedInterests = selectedInterests.filter(item => item !== interest);
+                    renderInterests();
+                });
+
+                interestChips.appendChild(chip);
+            });
+        }
+
+        // ========== РАБОТА С ФАКУЛЬТЕТАМИ И ПРОГРАММАМИ ==========
+
+        async function loadFaculties() {
+            try {
+                const response = await fetch(`${API_URL}/api/faculties`);
+                if (response.ok) {
+                    faculties = await response.json();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки факультетов:", error);
+            }
+        }
+
+        async function loadPrograms(facultyId = null) {
+            try {
+                let url = `${API_URL}/api/education-programs`;
+                if (facultyId) {
+                    url += `?facultyId=${facultyId}`;
+                }
+                const response = await fetch(url);
+                if (response.ok) {
+                    programs = await response.json();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки программ:", error);
+            }
+        }
+
+        function setupAutocomplete(input, dropdown, dataSource, onSelect) {
+            input.addEventListener("input", () => {
+                const query = input.value.toLowerCase();
+                if (!query) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                const filtered = dataSource.filter(item =>
+                    item.name.toLowerCase().includes(query)
+                );
+
+                if (filtered.length === 0) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                dropdown.innerHTML = filtered.map(item =>
+                    `<div class="autocomplete-item" data-id="${item.id}" data-name="${item.name}">${item.name}</div>`
+                ).join("");
+
+                dropdown.style.display = "block";
+
+                dropdown.querySelectorAll(".autocomplete-item").forEach(el => {
+                    el.addEventListener("click", () => {
+                        input.value = el.dataset.name;
+                        dropdown.style.display = "none";
+                        if (onSelect) onSelect(parseInt(el.dataset.id));
+                    });
+                });
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!dropdown.contains(e.target) && e.target !== input) {
+                    dropdown.style.display = "none";
+                }
+            });
+        }
+
+        function onFacultySelect(facultyId) {
+            currentFacultyId = facultyId;
+            loadPrograms(facultyId);
+            programInput.value = "";
+            setupAutocomplete(programInput, programDropdown, programs, null);
+        }
+
+        async function createFaculty(name) {
+            try {
+                const response = await fetch(`${API_URL}/api/faculties`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: normalizeString(name) })
+                });
+                if (response.ok) {
+                    const newFaculty = await response.json();
+                    faculties.push(newFaculty);
+                    return newFaculty.id;
+                }
+            } catch (error) {
+                console.error("Ошибка создания факультета:", error);
+            }
+            return null;
+        }
+
+        async function createEducationProgram(facultyId, name, educationLevel, studyForm) {
+            try {
+                const response = await fetch(`${API_URL}/api/education-programs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        facultyId: facultyId,
+                        name: normalizeString(name),
+                        educationLevel: normalizeString(educationLevel),
+                        studyForm: normalizeString(studyForm)
+                    })
+                });
+                if (response.ok) {
+                    const newProgram = await response.json();
+                    programs.push(newProgram);
+                    return newProgram.id;
+                }
+            } catch (error) {
+                console.error("Ошибка создания программы:", error);
+            }
+            return null;
+        }
+
+        async function getOrCreateFaculty(name) {
+            if (!name) return null;
+            const normalizedName = normalizeString(name);
+            const existing = faculties.find(f =>
+                f.name.toLowerCase() === normalizedName.toLowerCase()
+            );
+            if (existing) return existing.id;
+            return await createFaculty(normalizedName);
+        }
+
+        async function getOrCreateProgram(facultyId, programName, educationLevel, studyForm) {
+            if (!facultyId || !programName) return null;
+            const normalizedName = normalizeString(programName);
+            const existing = programs.find(p =>
+                p.facultyId === facultyId &&
+                p.name.toLowerCase() === normalizedName.toLowerCase()
+            );
+            if (existing) return existing.id;
+            return await createEducationProgram(facultyId, normalizedName, educationLevel, studyForm);
+        }
+
+        // ========== ОСТАЛЬНАЯ ЛОГИКА ==========
 
         userType.addEventListener("change", () => {
             studentBlock.classList.toggle("hidden", userType.value !== "student");
@@ -305,7 +621,6 @@
             }
 
             let duration = 4;
-
             if (educationForm === "Бакалавриат") duration = 4;
             if (educationForm === "Специалитет") duration = 5;
             if (educationForm === "Магистратура") duration = 2;
@@ -331,10 +646,10 @@
             row.className = "job-row";
 
             row.innerHTML = `
-      <input class="input" type="text" placeholder="Подразделение">
-      <input class="input" type="text" placeholder="Должность">
-      <button class="small-btn danger" type="button">×</button>
-    `;
+                <input class="input" type="text" placeholder="Подразделение">
+                <input class="input" type="text" placeholder="Должность">
+                <button class="small-btn danger" type="button">×</button>
+            `;
 
             const deleteBtn = row.querySelector("button");
             deleteBtn.addEventListener("click", () => row.remove());
@@ -343,43 +658,6 @@
         }
 
         addJobBtn.addEventListener("click", addJobRow);
-
-        interestInput.addEventListener("keydown", (event) => {
-            if (event.key !== "Enter") return;
-
-            event.preventDefault();
-
-            const value = interestInput.value.trim().toLowerCase();
-            if (!value) return;
-
-            if (!interestsBase.includes(value)) {
-                interestsBase.push(value);
-            }
-
-            if (!selectedInterests.includes(value)) {
-                selectedInterests.push(value);
-            }
-
-            interestInput.value = "";
-            renderInterests();
-        });
-
-        function renderInterests() {
-            interestChips.innerHTML = "";
-
-            selectedInterests.forEach((interest) => {
-                const chip = document.createElement("span");
-                chip.className = "chip";
-                chip.textContent = interest;
-
-                chip.addEventListener("click", () => {
-                    selectedInterests = selectedInterests.filter(item => item !== interest);
-                    renderInterests();
-                });
-
-                interestChips.appendChild(chip);
-            });
-        }
 
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
@@ -395,9 +673,9 @@
             }
 
             const payload = {
-                lastName,
-                firstName,
-                middleName: document.getElementById("middleName").value.trim(),
+                lastName: normalizeString(lastName),
+                firstName: normalizeString(firstName),
+                middleName: normalizeString(document.getElementById("middleName").value.trim()),
                 birthDate,
                 type: userType.value,
                 about: document.getElementById("about").value.trim(),
@@ -405,31 +683,40 @@
             };
 
             if (userType.value === "student") {
+                const facultyName = document.getElementById("faculty").value.trim();
+                const programName = document.getElementById("program").value.trim();
+                const educationLevel = document.querySelector('input[name="educationForm"]:checked')?.value || "";
+                const studyForm = document.querySelector('input[name="studyFormat"]:checked')?.value || "";
+
+                if (!facultyName) {
+                    errorText.textContent = "Введите факультет.";
+                    return;
+                }
+
+                if (!educationLevel || !studyForm) {
+                    errorText.textContent = "Выберите ступень и форму обучения.";
+                    return;
+                }
+
+                const facultyId = await getOrCreateFaculty(facultyName);
+
+                let programId = null;
+                if (programName) {
+                    programId = await getOrCreateProgram(facultyId, programName, educationLevel, studyForm);
+                }
+
                 payload.student = {
+                    faculty: facultyName,
+                    facultyId: facultyId,
+                    educationProgram: programName,
+                    educationProgramId: programId,
+                    educationLevel: educationLevel,
+                    studyForm: studyForm,
                     campus: document.getElementById("campus").value.trim(),
-                    faculty: document.getElementById("faculty").value.trim(),
-
-                    educationLevel:
-                        document.querySelector('input[name="educationForm"]:checked')?.value || "",
-
-                    studyForm:
-                        document.querySelector('input[name="studyFormat"]:checked')?.value || "",
-
-                    educationProgram:
-                        document.getElementById("program").value.trim(),
-
-                    program:
-                        document.getElementById("program").value.trim(),
-
                     graduationYear: graduationYearInput.value,
-
                     course: courseInput.value,
-
-                    academicStatus:
-                        document.getElementById("studentStatus").value,
-
-                    status:
-                        document.getElementById("studentStatus").value
+                    academicStatus: document.getElementById("studentStatus").value,
+                    status: document.getElementById("studentStatus").value
                 };
             }
 
@@ -437,25 +724,14 @@
                 payload.employee = {
                     jobs: Array.from(jobsContainer.children).map(row => {
                         const inputs = row.querySelectorAll("input");
-
                         return {
-                            department: inputs[0].value.trim(),
-                            position: inputs[1].value.trim()
+                            department: normalizeString(inputs[0].value.trim()),
+                            position: normalizeString(inputs[1].value.trim())
                         };
                     }),
                     address: document.getElementById("address").value.trim(),
                     workPhone: document.getElementById("workPhone").value.trim()
                 };
-            }
-
-            if (userType.value === "student") {
-                const educationLevel = document.querySelector('input[name="educationForm"]:checked')?.value;
-                const studyForm = document.querySelector('input[name="studyFormat"]:checked')?.value;
-
-                if (!educationLevel || !studyForm) {
-                    errorText.textContent = "Выберите ступень и форму обучения.";
-                    return;
-                }
             }
 
             console.log(payload);
@@ -468,6 +744,18 @@
                 errorText.textContent = error.message;
             }
         });
+
+        async function init() {
+            await loadApprovedInterests();
+            await loadFaculties();
+            await loadPrograms();
+
+            setupInterestAutocomplete();
+            setupAutocomplete(facultyInput, facultyDropdown, faculties, onFacultySelect);
+            setupAutocomplete(programInput, programDropdown, programs, null);
+        }
+
+        init();
     </script>
 </body>
 
