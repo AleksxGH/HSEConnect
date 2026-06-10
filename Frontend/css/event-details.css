@@ -1,0 +1,340 @@
+/* event-details.css - стили для модального окна деталей события */
+
+/* Модальное окно */
+.event-details-modal {
+    max-width: 800px;
+    width: 90%;
+    position: relative;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    z-index: 10;
+}
+
+.modal-close-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--blue-strong);
+}
+
+/* Кнопки действий в правом верхнем углу */
+.event-actions-top {
+    position: absolute;
+    top: 20px;
+    right: 60px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.icon-btn {
+    background: #f0f2ff;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--blue-strong);
+}
+
+.icon-btn:hover {
+    background: #eef0ff;
+    transform: scale(1.05);
+}
+
+/* Основная сетка */
+.event-details-layout {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 24px;
+}
+
+.event-details-info {
+    flex: 1;
+}
+
+.event-details-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--blue-strong);
+    margin: 0 0 16px 0;
+    padding-right: 80px;
+}
+
+.event-status-container {
+    margin-bottom: 20px;
+}
+
+.event-status {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.event-status.upcoming {
+    background: rgba(75, 89, 255, 0.12);
+    color: var(--blue-strong);
+}
+
+.event-status.past {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+/* Строки с информацией */
+.details-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+}
+
+.details-icon {
+    font-size: 20px;
+    min-width: 28px;
+}
+
+.details-content {
+    flex: 1;
+}
+
+.details-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.details-value {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    word-break: break-word;
+}
+
+.description-row .details-value {
+    line-height: 1.5;
+}
+
+/* Фото события */
+.event-details-photo {
+    width: 200px;
+    height: 200px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #f0f2ff;
+}
+
+.event-details-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Кнопки действий снизу */
+.event-details-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--stroke);
+}
+
+.action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.respond-btn {
+    background: linear-gradient(135deg, #4b59ff 0%, #3f4cff 100%);
+    color: white;
+}
+
+.respond-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(75, 89, 255, 0.3);
+}
+
+.respond-btn.cancel {
+    background: #e9ecef;
+    color: #dc3545;
+}
+
+.respond-btn.cancel:hover {
+    background: #ffeef2;
+}
+
+.invite-btn {
+    background: #f0f2ff;
+    color: var(--blue-strong);
+    border: 1px solid var(--stroke);
+}
+
+.invite-btn:hover {
+    background: #eef0ff;
+    transform: translateY(-2px);
+}
+
+/* Выпадающий список для приглашения друзей */
+.invite-friends-dropdown {
+    margin-top: 16px;
+    background: white;
+    border: 1px solid var(--stroke);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.dropdown-header {
+    padding: 12px;
+    border-bottom: 1px solid var(--stroke);
+}
+
+.friend-search-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--stroke);
+    border-radius: 40px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    outline: none;
+}
+
+.friends-list-dropdown {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.friend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    transition: background 0.2s;
+}
+
+.friend-item:hover {
+    background: #f8f9ff;
+}
+
+.friend-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    cursor: pointer;
+}
+
+.friend-avatar-small {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c90de 0%, #4b59ff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+}
+
+.invite-friend-btn {
+    background: none;
+    border: none;
+    color: var(--blue-strong);
+    cursor: pointer;
+    font-size: 20px;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.invite-friend-btn:hover {
+    background: #eef0ff;
+}
+
+/* Модальное окно редактирования */
+#editEventModal .modal-content {
+    max-width: 550px;
+    position: relative;
+}
+
+#editEventModal .upload-photo-btn {
+    width: 100%;
+    margin: 16px 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #7c90de 0%, #4b59ff 100%);
+    border: none;
+    border-radius: 40px;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#editEventModal .upload-photo-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(75, 89, 255, 0.3);
+}
+
+/* Адаптивность */
+@media (max-width: 680px) {
+    .event-details-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .event-details-photo {
+        width: 100%;
+        height: 180px;
+        order: -1;
+    }
+    
+    .event-details-title {
+        font-size: 22px;
+        padding-right: 70px;
+    }
+    
+    .event-actions-top {
+        right: 50px;
+    }
+    
+    .event-details-actions {
+        flex-direction: column;
+    }
+}

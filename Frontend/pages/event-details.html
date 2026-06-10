@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HSE Connect — Детали события</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/event-details.css">
+
+    <script src="../js/components.js" defer></script>
+
+    <style>
+        /* Дополнительные стили для страницы */
+        .page {
+            display: grid;
+            grid-template-columns: 210px 1fr;
+            gap: 18px;
+            padding: 14px 16px 18px;
+            min-height: calc(100vh - 54px);
+        }
+
+        .content {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border: none;
+            color: var(--blue-strong);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 0;
+            margin-bottom: 20px;
+            transition: opacity 0.2s;
+        }
+
+        .back-button:hover {
+            opacity: 0.7;
+        }
+
+        @media (max-width: 900px) {
+            .page {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <hse-header></hse-header>
+
+    <div class="page">
+        <hse-sidebar></hse-sidebar>
+
+        <main class="content">
+            <button class="back-button" onclick="goBack()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Назад
+            </button>
+
+            <!-- Контейнер для деталей события -->
+            <div id="eventDetailsContainer">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Загрузка...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../scripts/api.js"></script>
+    <script>
+        // Получаем ID события из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const eventId = urlParams.get('id');
+        const mode = urlParams.get('mode'); // 'view', 'edit', 'create'
+        
+        let currentEvent = null;
+        let tempPhotoFile = null;
+
+        // Проверка авторизации
+        function requireAuth() {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                window.location.replace('auth.html');
+            }
+        }
+
+        requireAuth();
+
+        // Навигация назад
+        function goBack() {
+            const referrer = document.referrer;
+            if (referrer && referrer.includes(window.location.hostname)) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+
+        // Загрузка события
+        async function loadEvent() {
+            if (!eventId && mode !== 'create') {
+                showError('ID события не указан');
+                return;
+            }
+
+            if (mode === 'create') {
+                renderCreateMode();
+                return;
+            }
+
+            try {
+                const event = await apiGet(`/api/events/${eventId}`);
+                currentEvent = event;
+                renderEventDetails(event);
+            } catch (error) {
+                console.error('Ошибка загрузки события:', error);
+                showError('Не удалось загрузить информацию о событии');
+            }
+        }
+
+        // Отображение ошибки
+        function showError(message) {
+            const container = document.getElementById('eventDetailsContainer');
+            container.innerHTML = `
+                <div class="error-container">
+                    <div class="error-icon">⚠️</div>
+                    <h3>Ошибка</h3>
+                    <p>${message}</p>
+                    <button class="action-btn respond-btn" onclick="goBack()">Вернуться назад</button>
+                </div>
+            `;
+        }
+
+        // Рендер деталей события (режим просмотра)
+        function renderEventDetails(event) {
+            const container = document.getElementById('eventDetailsContainer');
+            const currentUserId = Number(localStorage.getItem('userId'));
+            const isCreator = event.creatorId === currentUserId;
+            const isPast = new Date(event.date) < new Date();
+            
+            const dateTimeStr = formatEventDateTime(event.date, event.time);
+            const participantsText = getParticipantsText(event.participantsCount || 0);
+            
+            container.innerHTML = `
+                <div class="event-details-card">
+                    <div class="event-details-header">
+                        <div class="event-details-image">
+                            <img src="${event.photoUrl || '../stubs/event_placeholder.jpg'}" alt="${escapeHtml(event.title)}">
+                            ${isCreator ? `
+                                <button class="change-photo-btn" onclick="document.getElementById('changePhotoInput').click()">
+                                    📷 Сменить фото
+                                </button>
+                                <input type="file" id="changePhotoInput" accept="image/*" style="display: none;">
+                            ` : ''}
+                        </div>
+                        
+                        <div class="event-details-info-header">
+                            <div class="event-status ${isPast ? 'past' : 'upcoming'}">
+                                ${isPast ? 'Завершено' : 'Запланировано'}
+                            </div>
+                            <h1 class="event-title">${escapeHtml(event.title)}</h1>
+                            <div class="event-meta">
+                                <div class="meta-item">
+                                    <span class="meta-icon">📅</span>
+                                    <span>${dateTimeStr}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-icon">📍</span>
+                                    <span>${escapeHtml(event.location || 'Место не указано')}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-icon">🏷️</span>
+                                    <span>${escapeHtml(event.type || 'Событие')}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-icon">👥</span>
+                                    <span>${participantsText}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-details-body">
+                        <div class="event-description">
+                            <h3>Описание</h3>
+                            <p>${escapeHtml(event.description || 'Нет описания')}</p>
+                        </div>
+                        
+                        <div class="event-participants">
+                            <h3>Участники (${event.participantsCount || 0})</h3>
+                            <div class="participants-list" id="participantsList">
+                                <div class="loading-small">Загрузка...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-details-footer">
+                        ${!isPast ? `
+                            <button class="action-btn respond-btn ${isUserResponded ? 'cancel' : ''}" id="respondBtn">
+                                ${isUserResponded ? '❌ Отменить запись' : '✋ Записаться'}
+                            </button>
+                            <button class="action-btn invite-btn" id="inviteBtn">👥 Пригласить друга</button>
+                        ` : ''}
+                        ${isCreator && !isPast ? `
+                            <button class="action-btn edit-btn" id="editBtn">✏️ Редактировать</button>
+                            <button class="action-btn delete-btn" id="deleteBtn">🗑️ Удалить</button>
+                        ` : ''}
+                    </div>
+
+                    <div class="invite-dropdown" id="inviteDropdown" style="display: none;">
+                        <div class="dropdown-header">
+                            <input type="text" id="friendSearch" placeholder="Поиск друзей..." class="friend-search">
+                        </div>
+                        <div class="friends-list" id="friendsList"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Загружаем участников
+            loadParticipants(event.id);
+            
+            // Настраиваем обработчики
+            setupViewHandlers(event, isCreator, isPast);
+        }
+
+        // Форматирование даты
+        function formatEventDateTime(date, time) {
+            if (!date) return "Дата не указана";
+            const dateObj = new Date(date);
+            const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+                            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+            const formattedDate = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+            return time ? `${formattedDate}, ${time}` : formattedDate;
+        }
+
+        function getParticipantsText(count) {
+            if (count === 0) return "Нет участников";
+            if (count === 1) return "1 участник";
+            if (count >= 2 && count <= 4) return `${count} участника`;
+            return `${count} участников`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
+        // Загрузка участников
+        async function loadParticipants(eventId) {
+            try {
+                const response = await fetch(`${API_URL}/api/events/${eventId}/participants`);
+                if (response.ok) {
+                    const participants = await response.json();
+                    renderParticipants(participants);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки участников:', error);
+            }
+        }
+
+        function renderParticipants(participants) {
+            const container = document.getElementById('participantsList');
+            if (!container) return;
+            
+            if (!participants || participants.length === 0) {
+                container.innerHTML = '<div class="empty-participants">Пока никто не записался</div>';
+                return;
+            }
+            
+            container.innerHTML = participants.map(p => `
+                <div class="participant-item" onclick="window.location.href='user.html?id=${p.id}'">
+                    <div class="participant-avatar">${getInitials(p.name || p.firstName)}</div>
+                    <div class="participant-info">
+                        <div class="participant-name">${escapeHtml(p.name || p.firstName || 'Пользователь')}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getInitials(name) {
+            if (!name) return '?';
+            const parts = name.split(' ');
+            if (parts.length >= 2) {
+                return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+            }
+            return name.charAt(0).toUpperCase();
+        }
+
+        // Настройка обработчиков для режима просмотра
+        function setupViewHandlers(event, isCreator, isPast) {
+            // Кнопка записи
+            const respondBtn = document.getElementById('respondBtn');
+            if (respondBtn) {
+                respondBtn.onclick = () => toggleResponse(event.id);
+            }
+            
+            // Кнопка приглашения
+            const inviteBtn = document.getElementById('inviteBtn');
+            if (inviteBtn) {
+                inviteBtn.onclick = toggleInviteDropdown;
+            }
+            
+            // Кнопка редактирования
+            const editBtn = document.getElementById('editBtn');
+            if (editBtn) {
+                editBtn.onclick = () => renderEditMode(event);
+            }
+            
+            // Кнопка удаления
+            const deleteBtn = document.getElementById('deleteBtn');
+            if (deleteBtn) {
+                deleteBtn.onclick = () => deleteEvent(event.id);
+            }
+            
+            // Смена фото
+            const photoInput = document.getElementById('changePhotoInput');
+            if (photoInput) {
+                photoInput.onchange = (e) => changeEventPhoto(event.id, e.target.files[0]);
+            }
+        }
+
+        // Переключение записи/отмены
+        async function toggleResponse(eventId) {
+            try {
+                const userId = localStorage.getItem("userId");
+                const isResponded = document.getElementById('respondBtn').classList.contains('cancel');
+                
+                if (isResponded) {
+                    await apiDelete(`/api/events/${eventId}/respond?userId=${userId}`);
+                    alert("Вы отменили запись");
+                } else {
+                    await apiPost(`/api/events/${eventId}/respond?userId=${userId}`, {});
+                    alert("Вы записались на событие!");
+                }
+                
+                // Обновляем страницу
+                await loadEvent();
+            } catch (error) {
+                console.error("Ошибка:", error);
+                alert("Не удалось выполнить действие");
+            }
+        }
+
+        // Смена фото события
+        async function changeEventPhoto(eventId, file) {
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('photo', file);
+            
+            try {
+                const response = await fetch(`${API_URL}/api/events/${eventId}/photo`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert("Фото обновлено!");
+                    await loadEvent();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки фото:", error);
+                alert("Не удалось загрузить фото");
+            }
+        }
+
+        // Выпадающий список приглашений
+        async function toggleInviteDropdown() {
+            const dropdown = document.getElementById('inviteDropdown');
+            if (dropdown.style.display === 'none') {
+                await loadFriendsList();
+                dropdown.style.display = 'block';
+            } else {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        async function loadFriendsList() {
+            const userId = localStorage.getItem("userId");
+            const container = document.getElementById('friendsList');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/friends/${userId}`);
+                if (response.ok) {
+                    const friends = await response.json();
+                    renderFriendsList(friends);
+                    setupFriendSearch(friends);
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки друзей:", error);
+            }
+        }
+
+        function renderFriendsList(friends) {
+            const container = document.getElementById('friendsList');
+            if (!friends || friends.length === 0) {
+                container.innerHTML = '<div class="empty-friends">У вас пока нет друзей</div>';
+                return;
+            }
+            
+            container.innerHTML = friends.map(friend => `
+                <div class="friend-item" onclick="inviteFriend(${friend.id})">
+                    <div class="friend-avatar">${getInitials(friend.name || friend.firstName)}</div>
+                    <div class="friend-name">${escapeHtml(friend.name || friend.firstName || 'Пользователь')}</div>
+                    <button class="invite-action">📨 Пригласить</button>
+                </div>
+            `).join('');
+        }
+
+        function setupFriendSearch(friends) {
+            const searchInput = document.getElementById('friendSearch');
+            searchInput.oninput = (e) => {
+                const query = e.target.value.toLowerCase();
+                const filtered = friends.filter(f => 
+                    (f.name || f.firstName || '').toLowerCase().includes(query)
+                );
+                renderFriendsList(filtered);
+            };
+        }
+
+        window.inviteFriend = async function(friendId) {
+            try {
+                await apiPost(`/api/events/${currentEvent.id}/invite`, { friendId });
+                alert("Приглашение отправлено!");
+                document.getElementById('inviteDropdown').style.display = 'none';
+            } catch (error) {
+                console.error("Ошибка:", error);
+                alert("Не удалось отправить приглашение");
+            }
+        };
+
+        // ========== РЕЖИМ РЕДАКТИРОВАНИЯ ==========
+        
+        function renderEditMode(event) {
+            const container = document.getElementById('eventDetailsContainer');
+            const dateObj = new Date(event.date);
+            const day = dateObj.getDate();
+            const monthIndex = dateObj.getMonth();
+            
+            container.innerHTML = `
+                <div class="event-details-card edit-mode">
+                    <div class="event-details-header">
+                        <div class="event-details-image">
+                            <img src="${event.photoUrl || '../stubs/event_placeholder.jpg'}" alt="Фото" id="editPhoto">
+                            <button class="change-photo-btn" onclick="document.getElementById('editPhotoInput').click()">
+                                📷 Сменить фото
+                            </button>
+                            <input type="file" id="editPhotoInput" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <div class="event-details-info-header">
+                            <div class="edit-form">
+                                <input type="text" id="editTitle" class="edit-input title-input" value="${escapeHtml(event.title)}" placeholder="Название события">
+                                
+                                <div class="edit-row">
+                                    <div class="edit-date-group">
+                                        <input type="number" id="editDay" class="edit-input small" value="${day}" min="1" max="31">
+                                        <select id="editMonth" class="edit-input">
+                                            <option value="0" ${monthIndex === 0 ? 'selected' : ''}>января</option>
+                                            <option value="1" ${monthIndex === 1 ? 'selected' : ''}>февраля</option>
+                                            <option value="2" ${monthIndex === 2 ? 'selected' : ''}>марта</option>
+                                            <option value="3" ${monthIndex === 3 ? 'selected' : ''}>апреля</option>
+                                            <option value="4" ${monthIndex === 4 ? 'selected' : ''}>мая</option>
+                                            <option value="5" ${monthIndex === 5 ? 'selected' : ''}>июня</option>
+                                            <option value="6" ${monthIndex === 6 ? 'selected' : ''}>июля</option>
+                                            <option value="7" ${monthIndex === 7 ? 'selected' : ''}>августа</option>
+                                            <option value="8" ${monthIndex === 8 ? 'selected' : ''}>сентября</option>
+                                            <option value="9" ${monthIndex === 9 ? 'selected' : ''}>октября</option>
+                                            <option value="10" ${monthIndex === 10 ? 'selected' : ''}>ноября</option>
+                                            <option value="11" ${monthIndex === 11 ? 'selected' : ''}>декабря</option>
+                                        </select>
+                                        <input type="number" id="editYear" class="edit-input small" value="${dateObj.getFullYear()}" min="2020" max="2030">
+                                    </div>
+                                    <input type="time" id="editTime" class="edit-input" value="${event.time || ''}">
+                                </div>
+                                
+                                <input type="text" id="editLocation" class="edit-input" value="${escapeHtml(event.location || '')}" placeholder="Место проведения">
+                                
+                                <select id="editType" class="edit-input">
+                                    <option value="Учёба" ${event.type === 'Учёба' ? 'selected' : ''}>Учёба</option>
+                                    <option value="Спорт" ${event.type === 'Спорт' ? 'selected' : ''}>Спорт</option>
+                                    <option value="Вечеринка" ${event.type === 'Вечеринка' ? 'selected' : ''}>Вечеринка</option>
+                                    <option value="Образование" ${event.type === 'Образование' ? 'selected' : ''}>Образование</option>
+                                    <option value="Развлечения" ${event.type === 'Развлечения' ? 'selected' : ''}>Развлечения</option>
+                                    <option value="Общение" ${event.type === 'Общение' ? 'selected' : ''}>Общение</option>
+                                    <option value="Другое" ${event.type === 'Другое' ? 'selected' : ''}>Другое</option>
+                                </select>
+                                
+                                <div class="privacy-group">
+                                    <label>
+                                        <input type="radio" name="privacy" value="public" ${event.privacy !== 'private' ? 'checked' : ''}> Публичное
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="privacy" value="private" ${event.privacy === 'private' ? 'checked' : ''}> Закрытое (только для друзей)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-details-body">
+                        <textarea id="editDescription" class="edit-description" placeholder="Описание события">${escapeHtml(event.description || '')}</textarea>
+                    </div>
+
+                    <div class="event-details-footer">
+                        <button class="action-btn respond-btn" id="saveBtn">💾 Сохранить</button>
+                        <button class="action-btn cancel-btn" id="cancelBtn">✖ Отмена</button>
+                    </div>
+                </div>
+            `;
+            
+            setupEditHandlers(event);
+        }
+
+        function setupEditHandlers(event) {
+            const photoInput = document.getElementById('editPhotoInput');
+            if (photoInput) {
+                photoInput.onchange = (e) => {
+                    if (e.target.files[0]) {
+                        tempPhotoFile = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            document.getElementById('editPhoto').src = e.target.result;
+                        };
+                        reader.readAsDataURL(tempPhotoFile);
+                    }
+                };
+            }
+            
+            document.getElementById('saveBtn').onclick = () => saveEventEdit(event.id);
+            document.getElementById('cancelBtn').onclick = () => loadEvent();
+        }
+
+        async function saveEventEdit(eventId) {
+            const day = document.getElementById('editDay').value;
+            const month = document.getElementById('editMonth').value;
+            const year = document.getElementById('editYear').value;
+            const date = `${year}-${String(parseInt(month) + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            const eventData = {
+                title: document.getElementById('editTitle').value,
+                location: document.getElementById('editLocation').value,
+                time: document.getElementById('editTime').value,
+                type: document.getElementById('editType').value,
+                description: document.getElementById('editDescription').value,
+                privacy: document.querySelector('input[name="privacy"]:checked')?.value,
+                date: date
+            };
+            
+            try {
+                const formData = new FormData();
+                Object.keys(eventData).forEach(key => formData.append(key, eventData[key]));
+                if (tempPhotoFile) formData.append('photo', tempPhotoFile);
+                
+                const response = await fetch(`${API_URL}/api/events/${eventId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Ошибка сохранения');
+                
+                alert('Событие обновлено!');
+                tempPhotoFile = null;
+                await loadEvent();
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Не удалось сохранить изменения');
+            }
+        }
+
+        // ========== РЕЖИМ СОЗДАНИЯ ==========
+        
+        function renderCreateMode() {
+            const container = document.getElementById('eventDetailsContainer');
+            container.innerHTML = `
+                <div class="event-details-card edit-mode">
+                    <div class="event-details-header">
+                        <div class="event-details-image">
+                            <img src="../stubs/event_placeholder.jpg" alt="Фото" id="createPhoto">
+                            <button class="change-photo-btn" onclick="document.getElementById('createPhotoInput').click()">
+                                📷 Выбрать фото
+                            </button>
+                            <input type="file" id="createPhotoInput" accept="image/*" style="display: none;">
+                        </div>
+                        
+                        <div class="event-details-info-header">
+                            <div class="edit-form">
+                                <input type="text" id="createTitle" class="edit-input title-input" placeholder="Название события">
+                                
+                                <div class="edit-row">
+                                    <div class="edit-date-group">
+                                        <input type="number" id="createDay" class="edit-input small" placeholder="День" min="1" max="31">
+                                        <select id="createMonth" class="edit-input">
+                                            <option value="0">января</option>
+                                            <option value="1">февраля</option>
+                                            <option value="2">марта</option>
+                                            <option value="3">апреля</option>
+                                            <option value="4">мая</option>
+                                            <option value="5">июня</option>
+                                            <option value="6">июля</option>
+                                            <option value="7">августа</option>
+                                            <option value="8">сентября</option>
+                                            <option value="9">октября</option>
+                                            <option value="10">ноября</option>
+                                            <option value="11">декабря</option>
+                                        </select>
+                                        <input type="number" id="createYear" class="edit-input small" placeholder="Год" min="2024" max="2030">
+                                    </div>
+                                    <input type="time" id="createTime" class="edit-input">
+                                </div>
+                                
+                                <input type="text" id="createLocation" class="edit-input" placeholder="Место проведения">
+                                
+                                <select id="createType" class="edit-input">
+                                    <option value="Учёба">Учёба</option>
+                                    <option value="Спорт">Спорт</option>
+                                    <option value="Вечеринка">Вечеринка</option>
+                                    <option value="Образование">Образование</option>
+                                    <option value="Развлечения">Развлечения</option>
+                                    <option value="Общение">Общение</option>
+                                    <option value="Другое">Другое</option>
+                                </select>
+                                
+                                <div class="privacy-group">
+                                    <label>
+                                        <input type="radio" name="createPrivacy" value="public" checked> Публичное
+                                    </label>
+                                    <label>
+                                        <input type="radio" name="createPrivacy" value="private"> Закрытое (только для друзей)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="event-details-body">
+                        <textarea id="createDescription" class="edit-description" placeholder="Описание события"></textarea>
+                    </div>
+
+                    <div class="event-details-footer">
+                        <button class="action-btn respond-btn" id="createBtn">✅ Создать событие</button>
+                        <button class="action-btn cancel-btn" onclick="goBack()">✖ Отмена</button>
+                    </div>
+                </div>
+            `;
+            
+            setupCreateHandlers();
+        }
+
+        function setupCreateHandlers() {
+            const photoInput = document.getElementById('createPhotoInput');
+            if (photoInput) {
+                photoInput.onchange = (e) => {
+                    if (e.target.files[0]) {
+                        tempPhotoFile = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            document.getElementById('createPhoto').src = e.target.result;
+                        };
+                        reader.readAsDataURL(tempPhotoFile);
+                    }
+                };
+            }
+            
+            document.getElementById('createBtn').onclick = createNewEvent;
+        }
+
+        async function createNewEvent() {
+            const day = document.getElementById('createDay').value;
+            const month = document.getElementById('createMonth').value;
+            const year = document.getElementById('createYear').value;
+            
+            if (!day || !month || !year) {
+                alert('Пожалуйста, заполните дату события');
+                return;
+            }
+            
+            const date = `${year}-${String(parseInt(month) + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            
+            const eventData = {
+                title: document.getElementById('createTitle').value,
+                location: document.getElementById('createLocation').value,
+                time: document.getElementById('createTime').value,
+                type: document.getElementById('createType').value,
+                description: document.getElementById('createDescription').value,
+                privacy: document.querySelector('input[name="createPrivacy"]:checked')?.value,
+                date: date,
+                creatorId: Number(localStorage.getItem('userId'))
+            };
+            
+            if (!eventData.title || !eventData.location || !eventData.time) {
+                alert('Пожалуйста, заполните название, место и время события');
+                return;
+            }
+            
+            try {
+                const formData = new FormData();
+                Object.keys(eventData).forEach(key => formData.append(key, eventData[key]));
+                if (tempPhotoFile) formData.append('photo', tempPhotoFile);
+                
+                const response = await fetch(`${API_URL}/api/events`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Ошибка создания');
+                
+                const newEvent = await response.json();
+                alert('Событие создано!');
+                window.location.href = `event-details.html?id=${newEvent.id}`;
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Не удалось создать событие');
+            }
+        }
+
+        // Удаление события
+        async function deleteEvent(eventId) {
+            if (!confirm('⚠️ Вы уверены, что хотите удалить это событие?\n\nЭто действие нельзя отменить.')) return;
+            
+            try {
+                await apiDelete(`/api/events/${eventId}`);
+                alert('Событие удалено');
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Не удалось удалить событие');
+            }
+        }
+
+        // Инициализация
+        loadEvent();
+    </script>
+</body>
+
+</html>
