@@ -590,6 +590,115 @@ public class ProfileService {
         return ids.isEmpty() ? null : ids.get(0);
     }
 
+    public List<java.util.Map<String, Object>> getInterests(Boolean approved) {
+        String sql = """
+        SELECT interest_id, name, created_by_user_id, is_approved
+        FROM app.interest
+    """;
+
+        if (approved != null) {
+            sql += " WHERE is_approved = " + approved;
+        }
+
+        sql += " ORDER BY name";
+
+        return jdbcTemplate.queryForList(sql);
+    }
+
+    @Transactional
+    public java.util.Map<String, Object> createInterest(java.util.Map<String, Object> body) {
+        String name = Objects.toString(body.get("name"), "").trim();
+        Long createdByUserId = body.get("created_by_user_id") == null
+                ? null
+                : Long.valueOf(body.get("created_by_user_id").toString());
+
+        if (name.isBlank()) {
+            throw new RuntimeException("Название интереса обязательно");
+        }
+
+        Long id = findOrCreateInterest(name, createdByUserId);
+
+        return jdbcTemplate.queryForMap("""
+        SELECT interest_id, name, created_by_user_id, is_approved
+        FROM app.interest
+        WHERE interest_id = ?
+    """, id);
+    }
+
+    public List<java.util.Map<String, Object>> getFaculties() {
+        return jdbcTemplate.queryForList("""
+        SELECT faculty_id AS id, name
+        FROM app.faculty
+        ORDER BY name
+    """);
+    }
+
+    @Transactional
+    public java.util.Map<String, Object> createFaculty(java.util.Map<String, Object> body) {
+        String name = Objects.toString(body.get("name"), "").trim();
+
+        if (name.isBlank()) {
+            throw new RuntimeException("Название факультета обязательно");
+        }
+
+        Long id = findOrCreateSimple("faculty", "faculty_id", name);
+
+        return jdbcTemplate.queryForMap("""
+        SELECT faculty_id AS id, name
+        FROM app.faculty
+        WHERE faculty_id = ?
+    """, id);
+    }
+
+    public List<java.util.Map<String, Object>> getEducationPrograms(Long facultyId) {
+        if (facultyId == null) {
+            return jdbcTemplate.queryForList("""
+            SELECT education_program_id AS id,
+                   faculty_id AS "facultyId",
+                   education_level_id AS "educationLevelId",
+                   name,
+                   code
+            FROM app.education_program
+            ORDER BY name
+        """);
+        }
+
+        return jdbcTemplate.queryForList("""
+        SELECT education_program_id AS id,
+               faculty_id AS "facultyId",
+               education_level_id AS "educationLevelId",
+               name,
+               code
+        FROM app.education_program
+        WHERE faculty_id = ?
+        ORDER BY name
+    """, facultyId);
+    }
+
+    @Transactional
+    public java.util.Map<String, Object> createEducationProgram(java.util.Map<String, Object> body) {
+        Long facultyId = Long.valueOf(body.get("facultyId").toString());
+        String name = Objects.toString(body.get("name"), "").trim();
+        String educationLevel = Objects.toString(body.get("educationLevel"), "Не указано").trim();
+
+        if (name.isBlank()) {
+            throw new RuntimeException("Название программы обязательно");
+        }
+
+        Long educationLevelId = findOrCreateSimple("education_level", "education_level_id", educationLevel);
+        Long id = findOrCreateProgram(name, facultyId, educationLevelId);
+
+        return jdbcTemplate.queryForMap("""
+        SELECT education_program_id AS id,
+               faculty_id AS "facultyId",
+               education_level_id AS "educationLevelId",
+               name,
+               code
+        FROM app.education_program
+        WHERE education_program_id = ?
+    """, id);
+    }
+
     private void deleteStudentProfile(Long userId) {
         jdbcTemplate.update("""
             DELETE FROM app.student_profile
@@ -658,7 +767,13 @@ public class ProfileService {
     }
 
     private void ensureUserExists(Long userId) {
-        if (!exists("users", "user_id", userId)) {
+        Integer count = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*)
+        FROM app."user"
+        WHERE user_id = ?
+    """, Integer.class, userId);
+
+        if (count == null || count == 0) {
             throw new RuntimeException("Пользователь не найден в базе данных");
         }
     }

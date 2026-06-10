@@ -351,49 +351,50 @@
         }
 
         // Автодополнение для интересов
-        function setupInterestAutocomplete() {
-            interestInput.addEventListener("input", () => {
-                const query = interestInput.value.toLowerCase();
-                if (!query) {
-                    interestDropdown.style.display = "none";
-                    return;
-                }
+        async function setupInterestAutocomplete() {
+    interestInput.addEventListener("input", async () => {
+        const query = interestInput.value.trim();
 
-                // Показываем только одобренные интересы
-                const filtered = allApprovedInterests.filter(interest =>
-                    interest.name.toLowerCase().includes(query)
-                );
-
-                if (filtered.length === 0) {
-                    interestDropdown.style.display = "none";
-                    return;
-                }
-
-                interestDropdown.innerHTML = filtered.map(interest =>
-                    `<div class="autocomplete-item" data-id="${interest.interest_id}" data-name="${interest.name}">${interest.name}</div>`
-                ).join("");
-
-                interestDropdown.style.display = "block";
-
-                interestDropdown.querySelectorAll(".autocomplete-item").forEach(el => {
-                    el.addEventListener("click", () => {
-                        const interestName = el.dataset.name;
-                        if (!selectedInterests.includes(interestName)) {
-                            selectedInterests.push(interestName);
-                            renderInterests();
-                        }
-                        interestInput.value = "";
-                        interestDropdown.style.display = "none";
-                    });
-                });
-            });
-
-            document.addEventListener("click", (e) => {
-                if (!interestDropdown.contains(e.target) && e.target !== interestInput) {
-                    interestDropdown.style.display = "none";
-                }
-            });
+        if (!query) {
+            interestDropdown.style.display = "none";
+            return;
         }
+
+        const response = await fetch(`${API_URL}/api/profile/suggest/interest?q=${encodeURIComponent(query)}`);
+
+        if (!response.ok) {
+            interestDropdown.style.display = "none";
+            return;
+        }
+
+        const variants = await response.json();
+
+        if (!variants.length) {
+            interestDropdown.style.display = "none";
+            return;
+        }
+
+        interestDropdown.innerHTML = variants.map(name =>
+            `<div class="autocomplete-item" data-name="${name}">${name}</div>`
+        ).join("");
+
+        interestDropdown.style.display = "block";
+
+        interestDropdown.querySelectorAll(".autocomplete-item").forEach(el => {
+            el.addEventListener("click", () => {
+                const interestName = el.dataset.name;
+
+                if (!selectedInterests.includes(interestName)) {
+                    selectedInterests.push(interestName);
+                    renderInterests();
+                }
+
+                interestInput.value = "";
+                interestDropdown.style.display = "none";
+            });
+        });
+    });
+}
 
         // Добавление нового интереса в базу
         async function addNewInterest(name) {
@@ -514,25 +515,31 @@
             }
         }
 
-        function setupAutocomplete(input, dropdown, dataSource, onSelect) {
-            input.addEventListener("input", () => {
-                const query = input.value.toLowerCase();
+        function setupAutocomplete(input, dropdown, dictionary, onSelect) {
+            input.addEventListener("input", async () => {
+                const query = input.value.trim();
+
                 if (!query) {
                     dropdown.style.display = "none";
                     return;
                 }
 
-                const filtered = dataSource.filter(item =>
-                    item.name.toLowerCase().includes(query)
-                );
+                const response = await fetch(`${API_URL}/api/profile/suggest/${dictionary}?q=${encodeURIComponent(query)}`);
 
-                if (filtered.length === 0) {
+                if (!response.ok) {
                     dropdown.style.display = "none";
                     return;
                 }
 
-                dropdown.innerHTML = filtered.map(item =>
-                    `<div class="autocomplete-item" data-id="${item.id}" data-name="${item.name}">${item.name}</div>`
+                const variants = await response.json();
+
+                if (!variants.length) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                dropdown.innerHTML = variants.map(name =>
+                    `<div class="autocomplete-item" data-name="${name}">${name}</div>`
                 ).join("");
 
                 dropdown.style.display = "block";
@@ -541,7 +548,8 @@
                     el.addEventListener("click", () => {
                         input.value = el.dataset.name;
                         dropdown.style.display = "none";
-                        if (onSelect) onSelect(parseInt(el.dataset.id));
+
+                        if (onSelect) onSelect(el.dataset.name);
                     });
                 });
             });
@@ -776,13 +784,9 @@
         });
 
         async function init() {
-            await loadApprovedInterests();
-            await loadFaculties();
-            await loadPrograms();
-
             setupInterestAutocomplete();
-            setupAutocomplete(facultyInput, facultyDropdown, faculties, onFacultySelect);
-            setupAutocomplete(programInput, programDropdown, programs, null);
+            setupAutocomplete(facultyInput, facultyDropdown, "faculty", null);
+            setupAutocomplete(programInput, programDropdown, "education_program", null);
         }
 
         init();
