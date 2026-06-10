@@ -13,6 +13,27 @@
 
     <script src="../js/avatar.js"></script>
     <script src="../js/components.js" defer></script>
+    <style>
+    .unread-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #4b59ff;
+        display: inline-block;
+        flex-shrink: 0;
+        box-shadow: 0 0 0 4px rgba(75, 89, 255, 0.12);
+    }
+
+    .notification-item {
+        cursor: pointer;
+    }
+
+    .notification-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+</style>
 </head>
 
 <body>
@@ -101,7 +122,17 @@
 
         function formatTime(dateString) {
             if (!dateString) return '';
-            return new Date(dateString).toLocaleString('ru-RU');
+
+            const date = new Date(dateString);
+
+            const day = String(date.getDate()).padStart(2, "0");
+            const month = String(date.getMonth() + 1).padStart(2, "0");
+            const year = date.getFullYear();
+
+            const hours = String(date.getHours()).padStart(2, "0");
+            const minutes = String(date.getMinutes()).padStart(2, "0");
+
+            return `${day}.${month}.${year} ${hours}:${minutes}`;
         }
 
         async function acceptFriendRequest(notificationId, senderUserId) {
@@ -163,6 +194,11 @@
             }
         }
 
+        async function handleNotificationClick(notificationId, isRead) {
+            if (isRead) return;
+            await markNotificationAsRead(notificationId);
+        }
+
         function renderNotifications() {
             const container = document.getElementById('notificationsContainer');
 
@@ -178,7 +214,7 @@
             container.innerHTML = `
             <div class="notification-list">
                 ${notifications.map(notification => `
-                    <div class="notification-item ${!notification.read ? 'unread' : ''}">
+                    <div class="notification-item ${!notification.read ? 'unread' : ''}" onclick="handleNotificationClick(${notification.id}, ${notification.read})">
                         <div class="notification-icon">
                             ${getIconSvg(notification.type)}
                         </div>
@@ -189,16 +225,13 @@
                         </div>
 
                         ${!notification.read ? `
-    <div class="notification-actions">
+    <div class="notification-actions" onclick="event.stopPropagation()">
         ${notification.type === 'friend_request' ? `
             <button class="btn-accept" onclick="acceptFriendRequest(${notification.id}, ${notification.relatedUserId})">
                 Принять
             </button>
         ` : ''}
-
-        <button class="btn-accept" onclick="markNotificationAsRead(${notification.id})">
-            Прочитано
-        </button>
+        <span class="unread-dot" title="Новое уведомление"></span>
     </div>
 ` : ''}
                     </div>
@@ -214,6 +247,7 @@
 
         window.markNotificationAsRead = markNotificationAsRead;
         window.acceptFriendRequest = acceptFriendRequest;
+        window.handleNotificationClick = handleNotificationClick;
     </script>
 </body>
 

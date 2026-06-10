@@ -5,6 +5,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
@@ -63,8 +65,10 @@ public class NotificationService {
             (user_id, notification_type, title, body,
              related_event_id, related_user_id, related_friend_request_id,
              is_read, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, false, now())
-        """, userId, type, title, body, relatedEventId, relatedUserId, relatedFriendRequestId);
+            VALUES (?, ?, ?, ?, ?, ?, ?, false, ?)
+        """, userId, type, title, body, relatedEventId, relatedUserId, relatedFriendRequestId, Timestamp.valueOf(
+                LocalDateTime.now(ZoneId.of("Europe/Moscow"))
+        ));
     }
 
     public int countUnread(Long userId) {

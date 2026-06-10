@@ -13,6 +13,8 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
@@ -44,7 +46,20 @@ public class ChatService {
                    ),
                    'Чат #' || c.chat_id
                ) AS name,
-               COALESCE(last_message.message_text, '') AS last_message
+               COALESCE(last_message.message_text, '') AS last_message,
+            (
+                SELECT COUNT(*)
+                FROM app.message m_unread
+                WHERE m_unread.chat_id = c.chat_id
+                  AND m_unread.sender_id <> ?
+                  AND m_unread.deleted_at IS NULL
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM app.message_read mr
+                      WHERE mr.message_id = m_unread.message_id
+                        AND mr.user_id = ?
+                  )
+            ) AS unread_count
         FROM app.chat c
         JOIN app.chat_participant cp_me ON cp_me.chat_id = c.chat_id
         LEFT JOIN app.event e ON e.event_id = c.event_id
@@ -69,9 +84,31 @@ public class ChatService {
                     name,
                     avatarInitial,
                     "онлайн",
-                    rs.getString("last_message")
+                    rs.getString("last_message"),
+                    rs.getInt("unread_count")
             );
-        }, currentUserId, currentUserId);
+        }, currentUserId, currentUserId, currentUserId, currentUserId);
+    }
+
+    @Transactional
+    public void markChatAsRead(Long chatId, Long currentUserId) {
+        validateChatExists(chatId);
+        validateUserInChat(chatId, currentUserId);
+
+        jdbcTemplate.update("""
+        INSERT INTO app.message_read (message_id, user_id, read_at)
+        SELECT m.message_id, ?, NOW()
+        FROM app.message m
+        WHERE m.chat_id = ?
+          AND m.sender_id <> ?
+          AND m.deleted_at IS NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM app.message_read mr
+              WHERE mr.message_id = m.message_id
+                AND mr.user_id = ?
+          )
+    """, currentUserId, chatId, currentUserId, currentUserId);
     }
 
     public List<MessageDto> getMessages(Long chatId, Long currentUserId) {
@@ -108,7 +145,12 @@ public class ChatService {
             dto.setSenderId(senderId);
 
             if (createdAt != null) {
-                dto.setCreatedAt(createdAt.toInstant().toString());
+                dto.setCreatedAt(
+                        createdAt.toLocalDateTime()
+                                .atZone(ZoneId.of("Europe/Moscow"))
+                                .toInstant()
+                                .toString()
+                );
             }
 
             return dto;
@@ -124,7 +166,9 @@ public class ChatService {
         validateChatExists(chatId);
         validateUserInChat(chatId, currentUserId);
 
-        LocalDateTime now = LocalDateTime.now();
+        ZoneId moscowZone = ZoneId.of("Europe/Moscow");
+        ZonedDateTime nowMoscow = ZonedDateTime.now(moscowZone);
+        LocalDateTime now = nowMoscow.toLocalDateTime();
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
@@ -150,7 +194,7 @@ public class ChatService {
         );
 
         dto.setSenderId(currentUserId);
-        dto.setCreatedAt(Timestamp.valueOf(now).toInstant().toString());
+        dto.setCreatedAt(nowMoscow.toInstant().toString());
 
         List<Long> receiverIds = jdbcTemplate.queryForList("""
     SELECT user_id
@@ -170,6 +214,7 @@ public class ChatService {
             );
 
             incomingDto.setSenderId(currentUserId);
+            incomingDto.setCreatedAt(dto.getCreatedAt());
 
             chatWebSocketHandler.sendMessageToUser(receiverId, incomingDto);
         }
