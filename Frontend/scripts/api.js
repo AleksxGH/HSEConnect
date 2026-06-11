@@ -75,25 +75,31 @@ function getCurrentUserId() {
   return localStorage.getItem('userId');
 }
 
-function redirectToRegister() {
+function redirectToAuth() {
   localStorage.removeItem('userId');
   localStorage.removeItem('userEmail');
-  window.location.href = '../pages/register.html';
+  window.location.href = '../pages/auth.html';
 }
 
 async function getProfile() {
   const userId = getCurrentUserId();
 
-  if (!userId) {
-    redirectToRegister();
-    return;
+  if (!userId || userId === "undefined" || userId === "null") {
+    redirectToAuth();
+    return null;
   }
 
   const response = await fetch(`${API_URL}/api/profile/${userId}`);
 
+  if (response.status === 404) {
+    console.warn("Профиль не найден, но пользователь авторизован");
+    return null;
+  }
+
   if (!response.ok) {
-    redirectToRegister();
-    return;
+    const message = await response.text();
+    console.error("Ошибка загрузки профиля:", response.status, message);
+    return null;
   }
 
   return response.json();
@@ -102,8 +108,8 @@ async function getProfile() {
 async function saveQuestionnaire(payload) {
   const userId = getCurrentUserId();
 
-  if (!userId) {
-    redirectToRegister();
+  if (!userId || userId === "undefined" || userId === "null") {
+    redirectToAuth();
     return;
   }
 

@@ -4,46 +4,22 @@ let selectedEvent = null;
 let currentRenderedEvents = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  initProfileEditModal();
-  initEventTabs();
-  initDetailsModal();
-
-  const userId = localStorage.getItem('userId');
-
-  if (!userId) {
-    window.location.href = 'auth.html';
-    return;
-  }
-
   try {
-    const profile = await getProfile();
+    currentProfile = await getProfile();
 
-    currentProfile = profile;
-    renderProfile(profile);
-
-  } catch (error) {
-    console.error('Ошибка загрузки профиля:', error);
-
-    const userId = localStorage.getItem('userId');
-
-    // профиль текущего пользователя отсутствует
-    if (userId &&
-        (error.message?.includes('404') || error.message?.includes('Профиль пользователя не найден') ||
-         error.message?.includes('Профиль не найден'))) {
-      localStorage.removeItem('userId');
-      localStorage.removeItem('token');
-
-      window.location.href = 'auth.html';
+    if (!currentProfile) {
+      console.warn("Профиль не найден, отправляем на анкету");
+      window.location.href = "auth.html";
       return;
     }
 
-    alert(error.message || 'Профиль не найден');
-  }
+    renderProfile(currentProfile);
+    await loadProfileEvents('my');
+    initProfileEditModal();
 
-  try {
-    await loadMyEvents();
   } catch (error) {
-    console.error('Ошибка загрузки событий профиля:', error);
+    console.error('Ошибка загрузки профиля:', error);
+    alert(error.message || 'Ошибка загрузки профиля');
   }
 });
 
@@ -444,16 +420,6 @@ function getMonth(date) {
   if (!date)
     return '';
   return new Date(date).toLocaleString('ru', {month: 'short'}).replace('.', '');
-}
-
-async function getProfile() {
-  const userId = localStorage.getItem('userId');
-
-  if (!userId) {
-    throw new Error('Пользователь не найден');
-  }
-
-  return await apiGet(`/api/profile/${userId}`);
 }
 
 function escapeHtml(str) {

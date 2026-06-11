@@ -16,29 +16,24 @@ form.addEventListener('submit', async function(event) {
 
   errorText.textContent = '';
 
-  const loginData = {email: emailInput.value.trim(), password: passwordInput.value.trim()};
+  const loginData = {
+    email: emailInput.value.trim(),
+    password: passwordInput.value.trim()
+  };
 
   try {
-    const response = await fetch(
-        `${API_URL}/api/auth/login`,
-        {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(loginData)});
-
-    if (!response.ok) {
-      const message = await response.text();
-      console.log('Ошибка от backend:', message);
-      errorText.textContent = message;
-      return;
-    }
-
     const user = await apiPost("/api/auth/login", loginData);
 
-    localStorage.setItem('userId', user.userId);
+    console.log("LOGIN RESPONSE:", user);
+
+    localStorage.setItem('userId', String(user.userId));
     localStorage.setItem('userEmail', user.email);
 
-    window.location.href = '../pages/profile.html';
+    console.log("SAVED userId:", localStorage.getItem("userId"));
 
+    window.location.href = '../pages/profile.html';
   } catch (error) {
-    errorText.textContent = 'Ошибка подключения к серверу';
+    console.error("Ошибка логина:", error);
+    errorText.textContent = error.message || 'Ошибка подключения к серверу';
   }
-  console.log("auth_script.js подключился");
 });
