@@ -22,6 +22,7 @@ public class EventDto {
     private Integer maxParticipants;
     private String status;
     private String visibility;
+    private Integer participantsCount = 0;
 
     private List<Long> respondedUserIds = new ArrayList<>();
 
@@ -78,5 +79,13 @@ public class EventDto {
 
     public void setInvitedFriends(List<Long> invitedFriends) {
         this.invitedFriends = invitedFriends;
+    }
+
+    public Integer getParticipantsCount() {
+        return participantsCount;
+    }
+
+    public void setParticipantsCount(Integer participantsCount) {
+        this.participantsCount = participantsCount;
     }
 }

@@ -9,7 +9,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/events")
-@CrossOrigin(origins = "*")
 public class EventController {
 
     private static final Long DEFAULT_USER_ID = 1L;
@@ -148,6 +147,15 @@ public class EventController {
         try {
             EventDto event = eventService.cancelRespondToEvent(eventId, userId);
             return ResponseEntity.ok(event);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @GetMapping("/{eventId}/participants")
+    public ResponseEntity<?> getEventParticipants(@PathVariable Long eventId) {
+        try {
+            return ResponseEntity.ok(eventService.getEventParticipants(eventId));
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
         }

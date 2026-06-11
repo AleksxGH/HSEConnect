@@ -1,6 +1,7 @@
 package org.example.hseconnect.services;
 
 import org.example.hseconnect.model.EventDto;
+import org.example.hseconnect.model.FriendUserDto;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -327,6 +328,8 @@ public class EventService {
             dto.setType(rs.getString("type"));
             dto.setLocation(rs.getString("location"));
             dto.setDescription(rs.getString("description"));
+            dto.setParticipantsCount(rs.getInt("participants_count"));
+
 
             if (startsAt != null) {
                 dto.setDate(startsAt.toLocalDate().toString());
@@ -418,6 +421,29 @@ public class EventService {
         }, keyHolder);
 
         return Objects.requireNonNull(keyHolder.getKey()).longValue();
+    }
+
+    public List<FriendUserDto> getEventParticipants(Long eventId) {
+        return jdbcTemplate.query("""
+        SELECT ep.user_id,
+               COALESCE(CONCAT_WS(' ', p.first_name, p.last_name), 'Пользователь') AS name,
+               COALESCE(p.avatar_url, '') AS avatar
+        FROM app.event_participant ep
+        LEFT JOIN app.profile p ON p.user_id = ep.user_id
+        WHERE ep.event_id = ?
+          AND ep.cancelled_at IS NULL
+        ORDER BY ep.joined_at
+        """,
+                (rs, rowNum) -> new FriendUserDto(
+                        rs.getLong("user_id"),
+                        rs.getString("name"),
+                        rs.getString("avatar"),
+                        "",
+                        false,
+                        0
+                ),
+                eventId
+        );
     }
 
     private LocalDateTime parseStartsAt(String date, String time) {
