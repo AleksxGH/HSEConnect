@@ -289,9 +289,22 @@
     padding: 14px;
     min-height: 165px;
     display: grid;
-    grid-template-columns: 1fr 82px;
+    grid-template-columns: 1fr auto; /* Правая колонка по содержимому */
     gap: 12px;
     align-items: start;
+    position: relative;
+}
+
+.event-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    display: block;
+    object-fit: cover; /* Расширяет или обрезает под 100x100 */
+    object-position: center;
+    background: #d3d3d3;
+    align-self: start;
+    justify-self: end; /* Прижимает фото к правому краю */
 }
 
 .event-badge {
@@ -317,16 +330,6 @@
     line-height: 1.7;
     display: grid;
     gap: 2px;
-}
-
-.event-photo {
-    width: 82px;
-    height: 74px;
-    border-radius: 4px;
-    display: block;
-    object-fit: cover;
-    background: #d3d3d3;
-    align-self: start;
 }
 
 .event-actions {
