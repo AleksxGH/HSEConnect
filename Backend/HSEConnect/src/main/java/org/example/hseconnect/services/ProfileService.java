@@ -25,6 +25,23 @@ public class ProfileService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    public ProfileDto getProfileForViewer(Long viewerId, Long profileUserId) {
+        if (!viewerId.equals(profileUserId)) {
+            Integer blocked = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM app.user_block
+            WHERE (blocker_id = ? AND blocked_id = ?)
+               OR (blocker_id = ? AND blocked_id = ?)
+        """, Integer.class, viewerId, profileUserId, profileUserId, viewerId);
+
+            if (blocked != null && blocked > 0) {
+                throw new RuntimeException("Профиль недоступен");
+            }
+        }
+
+        return getProfileByUserId(profileUserId);
+    }
+
     public ProfileDto getProfileByUserId(Long userId) {
         validateUserId(userId);
 

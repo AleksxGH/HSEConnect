@@ -1,6 +1,7 @@
 package org.example.hseconnect.services;
 
 import org.example.hseconnect.model.NotificationDto;
+import org.example.hseconnect.websocket.NotificationWebSocketHandler;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -13,9 +14,13 @@ import java.util.List;
 public class NotificationService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final NotificationWebSocketHandler notificationWebSocketHandler;
+    private final BlockService blockService;
 
-    public NotificationService(JdbcTemplate jdbcTemplate) {
+    public NotificationService(JdbcTemplate jdbcTemplate, NotificationWebSocketHandler notificationWebSocketHandler, BlockService blockService) {
         this.jdbcTemplate = jdbcTemplate;
+        this.notificationWebSocketHandler = notificationWebSocketHandler;
+        this.blockService = blockService;
     }
 
     public List<NotificationDto> getNotifications(Long userId, Boolean read) {
@@ -49,6 +54,8 @@ public class NotificationService {
             WHERE notification_id = ?
               AND user_id = ?
         """, notificationId, userId);
+
+        notificationWebSocketHandler.sendNotificationReadToUser(userId);
     }
 
     public void createNotification(
@@ -60,6 +67,9 @@ public class NotificationService {
             Long relatedUserId,
             Long relatedFriendRequestId
     ) {
+        if (relatedUserId != null && blockService.hasBlockBetween(userId, relatedUserId)) {
+            return;
+        }
         jdbcTemplate.update("""
             INSERT INTO app.notification
             (user_id, notification_type, title, body,
@@ -69,6 +79,8 @@ public class NotificationService {
         """, userId, type, title, body, relatedEventId, relatedUserId, relatedFriendRequestId, Timestamp.valueOf(
                 LocalDateTime.now(ZoneId.of("Europe/Moscow"))
         ));
+
+        notificationWebSocketHandler.sendNewNotificationToUser(userId);
     }
 
     public int countUnread(Long userId) {

@@ -325,7 +325,7 @@ function renderEvents(events) {
   container.innerHTML = events
                             .map(
                                 event => `
-    <article class="event-card">
+    <article class="event-card" onclick="viewEvent(${event.id})">
       <div>
         <span class="event-badge">${event.category || event.type || 'Событие'}</span>
 
@@ -343,20 +343,34 @@ function renderEvents(events) {
       <div class="event-actions">
         ${
                                     currentEventsMode === 'my' ? `
-              <button class="btn" onclick="editEvent(${event.id})">Редактировать</button>
-              <button class="btn danger" onclick="deleteEvent(${event.id})">Удалить</button>
+              <button
+    class="btn"
+    onclick="event.stopPropagation(); editEvent(${event.id})">
+    Редактировать
+</button>
+
+<button
+    class="btn danger"
+    onclick="event.stopPropagation(); deleteEvent(${event.id})">
+    Удалить
+</button>
             ` :
                                                                  `
-              <button class="btn" onclick="viewEvent(${event.id})">Подробнее</button>
-              <button class="btn danger" onclick="cancelGoing(${event.id})">Отменить</button>
+              <button
+    class="btn"
+    onclick="event.stopPropagation(); viewEvent(${event.id})">
+    Подробнее
+</button>
+
+<button
+    class="btn danger"
+    onclick="event.stopPropagation(); cancelGoing(${event.id})">
+    Отменить
+</button>
             `}
       </div>
     </article>
   `).join('');
-}
-
-function viewEvent(eventId) {
-  alert(`Подробнее о событии #${eventId}`);
 }
 
 async function cancelGoing(eventId) {
@@ -474,23 +488,7 @@ function initDetailsModal() {
 }
 
 function viewEvent(eventId) {
-  const event = currentRenderedEvents.find(item => item.id === eventId);
-
-  if (!event) {
-    alert('Событие не найдено');
-    return;
-  }
-
-  selectedEvent = event;
-
-  document.getElementById('detailsTitle').textContent = event.title || 'Событие';
-  document.getElementById('detailsType').textContent = event.type || event.category || '';
-  document.getElementById('detailsLocation').textContent = event.location || event.address || '';
-  document.getElementById('detailsDate').textContent = event.date || '';
-  document.getElementById('detailsTime').textContent = event.time || '';
-  document.getElementById('detailsDescription').textContent = event.description || 'Описание отсутствует';
-
-  document.getElementById('detailsModal').classList.add('active');
+  window.location.href = `event-details.html?id=${eventId}`;
 }
 
 function closeDetailsModal() {

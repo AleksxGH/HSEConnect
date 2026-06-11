@@ -12,10 +12,12 @@ public class FriendsService {
 
     private final JdbcTemplate jdbcTemplate;
     private final NotificationService notificationService;
+    private final BlockService blockService;
 
-    public FriendsService(JdbcTemplate jdbcTemplate, NotificationService notificationService) {
+    public FriendsService(JdbcTemplate jdbcTemplate, NotificationService notificationService, BlockService blockService) {
         this.jdbcTemplate = jdbcTemplate;
         this.notificationService = notificationService;
+        this.blockService = blockService;
     }
 
     public List<FriendUserDto> getFriends(Long userId) {
@@ -106,6 +108,9 @@ public class FriendsService {
 
     public void follow(Long userId, Long targetUserId) {
         validateDifferentUsers(userId, targetUserId);
+        if (blockService.hasBlockBetween(userId, targetUserId)) {
+            throw new RuntimeException("Действие недоступно");
+        }
 
         Integer exists = jdbcTemplate.queryForObject("""
             SELECT COUNT(*) FROM app.follow
@@ -145,6 +150,9 @@ public class FriendsService {
 
     public void addFriend(Long userId, Long targetUserId) {
         validateDifferentUsers(userId, targetUserId);
+        if (blockService.hasBlockBetween(userId, targetUserId)) {
+            throw new RuntimeException("Действие недоступно");
+        }
 
         if (areFriends(userId, targetUserId)) {
             throw new RuntimeException("Пользователь уже у вас в друзьях");
@@ -323,6 +331,9 @@ public class FriendsService {
 
     public void acceptFriendRequest(Long userId, Long senderUserId) {
         validateDifferentUsers(userId, senderUserId);
+        if (blockService.hasBlockBetween(userId, senderUserId)) {
+            throw new RuntimeException("Действие недоступно");
+        }
 
         if (areFriends(userId, senderUserId)) {
             throw new RuntimeException("Вы уже друзья");
@@ -365,6 +376,8 @@ public class FriendsService {
     public RelationStatusDto getRelationStatus(Long userId, Long targetUserId) {
         RelationStatusDto dto = new RelationStatusDto();
 
+        dto.setBlocked(blockService.isBlockedBy(userId, targetUserId));
+        dto.setBlockedByTarget(blockService.isBlockedBy(targetUserId, userId));
         dto.setFriend(areFriends(userId, targetUserId));
         dto.setFollowing(isFollowing(userId, targetUserId));
 

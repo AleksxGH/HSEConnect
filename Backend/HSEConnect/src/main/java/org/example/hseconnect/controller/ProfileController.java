@@ -60,4 +60,14 @@ public class ProfileController {
             return ResponseEntity.badRequest().body(error.getMessage());
         }
     }
+
+    @GetMapping("/{profileUserId}/viewer/{viewerId}")
+    public ProfileDto getProfileForViewer(
+            @PathVariable Long profileUserId,
+            @PathVariable Long viewerId
+    ) {
+        return profileService.getProfileForViewer(viewerId, profileUserId);
+    }
+
+
 }

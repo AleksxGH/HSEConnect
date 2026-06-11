@@ -37,4 +37,10 @@ public class NotificationController {
     public int countUnread(@PathVariable Long userId) {
         return notificationService.countUnread(userId);
     }
+
+    @GetMapping("/user/{userId}/has-unread")
+    public java.util.Map<String, Boolean> hasUnread(@PathVariable Long userId) {
+        boolean hasUnread = notificationService.countUnread(userId) > 0;
+        return java.util.Map.of("hasUnread", hasUnread);
+    }
 }

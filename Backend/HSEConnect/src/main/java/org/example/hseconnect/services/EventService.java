@@ -25,13 +25,15 @@ public class EventService {
 
     private final JdbcTemplate jdbcTemplate;
     private final NotificationService notificationService;
+    private final BlockService blockService;
 
-    public EventService(JdbcTemplate jdbcTemplate, NotificationService notificationService) {
+    public EventService(JdbcTemplate jdbcTemplate, NotificationService notificationService, BlockService blockService) {
         this.jdbcTemplate = jdbcTemplate;
         this.notificationService = notificationService;
+        this.blockService = blockService;
     }
 
-    public List<EventDto> getAllEvents() {
+    public List<EventDto> getAllEvents(Long currentUserId) {
         return jdbcTemplate.query("""
         SELECT e.event_id,
                e.creator_id,
@@ -49,8 +51,14 @@ public class EventService {
         FROM app.event e
         LEFT JOIN app.event_category ec ON ec.event_category_id = e.category_id
         LEFT JOIN app.address a ON a.address_id = e.address_id
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM app.user_block ub
+            WHERE (ub.blocker_id = ? AND ub.blocked_id = e.creator_id)
+               OR (ub.blocker_id = e.creator_id AND ub.blocked_id = ?)
+        )
         ORDER BY e.starts_at
-    """, eventMapper());
+    """, eventMapper(), currentUserId, currentUserId);
     }
 
     public List<EventDto> getMyEvents(Long userId) {
@@ -97,8 +105,14 @@ public class EventService {
         LEFT JOIN app.address a ON a.address_id = e.address_id
         WHERE ep.user_id = ?
           AND ep.cancelled_at IS NULL
+          AND NOT EXISTS (
+              SELECT 1
+              FROM app.user_block ub
+              WHERE (ub.blocker_id = ? AND ub.blocked_id = e.creator_id)
+                 OR (ub.blocker_id = e.creator_id AND ub.blocked_id = ?)
+          )
         ORDER BY e.starts_at
-    """, eventMapper(), userId);
+    """, eventMapper(), userId, userId, userId);
     }
 
     @Transactional
@@ -106,7 +120,8 @@ public class EventService {
         validateEvent(event);
 
         Long categoryId = findOrCreateSimple("event_category", "event_category_id", normalize(event.getType(), "Другое"));
-        Long accessTypeId = findOrCreateSimple("event_access_type", "access_type_id", DEFAULT_ACCESS_TYPE);
+        String accessType = normalize(event.getPrivacy(), DEFAULT_ACCESS_TYPE);
+        Long accessTypeId = findOrCreateSimple("event_access_type", "access_type_id", accessType);
         Long addressId = createAddressIfPresent(event.getLocation());
         LocalDateTime startsAt = parseStartsAt(event.getDate(), event.getTime());
         LocalDateTime now = LocalDateTime.now();
@@ -140,6 +155,7 @@ public class EventService {
         }, keyHolder);
 
         event.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        createInvitations(event.getId(), event.getCreatorId(), event.getInvitedFriends());
         return getEventById(event.getId());
     }
 
@@ -239,13 +255,29 @@ public class EventService {
         return result.get(0);
     }
 
+    public EventDto getEventByIdForViewer(Long eventId, Long viewerId) {
+        EventDto event = getEventById(eventId);
+
+        if (!event.getCreatorId().equals(viewerId)
+                && blockService.hasBlockBetween(viewerId, event.getCreatorId())) {
+            throw new RuntimeException("Событие недоступно");
+        }
+
+        return event;
+    }
+
     @Transactional
     public EventDto respondToEvent(Long eventId, Long userId) {
         if (userId == null || userId <= 0) {
             throw new RuntimeException("Пользователь не авторизован");
         }
 
-        getEventById(eventId);
+        EventDto event = getEventById(eventId);
+
+        if (!event.getCreatorId().equals(userId)
+                && blockService.hasBlockBetween(userId, event.getCreatorId())) {
+            throw new RuntimeException("Вы не можете откликнуться на это событие");
+        }
 
         Integer exists = jdbcTemplate.queryForObject("""
                 SELECT COUNT(*)
@@ -337,6 +369,41 @@ public class EventService {
         return Objects.requireNonNull(keyHolder.getKey()).longValue();
     }
 
+    private void createInvitations(Long eventId, Long creatorId, List<Long> invitedFriends) {
+        if (invitedFriends == null || invitedFriends.isEmpty()) {
+            return;
+        }
+
+        String eventTitle = getEventTitle(eventId);
+        String creatorName = getUserName(creatorId);
+
+        for (Long invitedUserId : invitedFriends) {
+            if (invitedUserId == null || invitedUserId.equals(creatorId)) {
+                continue;
+            }
+
+            if (blockService.hasBlockBetween(creatorId, invitedUserId)) {
+                continue;
+            }
+
+            jdbcTemplate.update("""
+            INSERT INTO app.event_invitation
+            (event_id, inviter_user_id, invitee_user_id, invitation_status, invited_at)
+            VALUES (?, ?, ?, ?, NOW())
+        """, eventId, creatorId, invitedUserId, "pending");
+
+            notificationService.createNotification(
+                    invitedUserId,
+                    "event_invitation",
+                    "Приглашение на событие",
+                    creatorName + " приглашает вас на событие «" + eventTitle + "»",
+                    eventId,
+                    creatorId,
+                    null
+            );
+        }
+    }
+
     private Long createAddressIfPresent(String location) {
         if (location == null || location.isBlank()) return null;
 
@@ -394,5 +461,23 @@ public class EventService {
     """, String.class, userId);
 
         return names.isEmpty() ? "Пользователь" : names.get(0);
+    }
+
+    public List<EventDto> getUserEventsForViewer(Long profileUserId, Long viewerId) {
+        if (!profileUserId.equals(viewerId)
+                && blockService.hasBlockBetween(profileUserId, viewerId)) {
+            throw new RuntimeException("События пользователя недоступны");
+        }
+
+        return getMyEvents(profileUserId);
+    }
+
+    public List<EventDto> getUserGoingEventsForViewer(Long profileUserId, Long viewerId) {
+        if (!profileUserId.equals(viewerId)
+                && blockService.hasBlockBetween(profileUserId, viewerId)) {
+            throw new RuntimeException("События пользователя недоступны");
+        }
+
+        return getGoingEvents(profileUserId);
     }
 }

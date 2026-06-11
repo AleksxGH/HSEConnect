@@ -27,6 +27,9 @@ public class EventDto {
 
     public EventDto() {}
 
+    private String privacy;
+    private List<Long> invitedFriends = new ArrayList<>();
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getCreatorId() { return creatorId; }
@@ -61,4 +64,19 @@ public class EventDto {
     public void setVisibility(String visibility) { this.visibility = visibility; }
     public List<Long> getRespondedUserIds() { return respondedUserIds; }
     public void setRespondedUserIds(List<Long> respondedUserIds) { this.respondedUserIds = respondedUserIds; }
+    public String getPrivacy() {
+        return privacy;
+    }
+
+    public void setPrivacy(String privacy) {
+        this.privacy = privacy;
+    }
+
+    public List<Long> getInvitedFriends() {
+        return invitedFriends;
+    }
+
+    public void setInvitedFriends(List<Long> invitedFriends) {
+        this.invitedFriends = invitedFriends;
+    }
 }

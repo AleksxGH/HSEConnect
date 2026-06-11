@@ -21,9 +21,10 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getEvents() {
+    public ResponseEntity<?> getEvents(@RequestParam(required = false) Long userId) {
         try {
-            List<EventDto> events = eventService.getAllEvents();
+            Long currentUserId = userId == null ? DEFAULT_USER_ID : userId;
+            List<EventDto> events = eventService.getAllEvents(currentUserId);
             return ResponseEntity.ok(events);
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
@@ -50,6 +51,34 @@ public class EventController {
         }
     }
 
+    @GetMapping("/user/{profileUserId}")
+    public ResponseEntity<?> getUserEventsForViewer(
+            @PathVariable Long profileUserId,
+            @RequestParam Long viewerId
+    ) {
+        try {
+            return ResponseEntity.ok(
+                    eventService.getUserEventsForViewer(profileUserId, viewerId)
+            );
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @GetMapping("/user/{profileUserId}/going")
+    public ResponseEntity<?> getUserGoingEventsForViewer(
+            @PathVariable Long profileUserId,
+            @RequestParam Long viewerId
+    ) {
+        try {
+            return ResponseEntity.ok(
+                    eventService.getUserGoingEventsForViewer(profileUserId, viewerId)
+            );
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
     @PostMapping
     public ResponseEntity<?> createEvent(@RequestBody EventDto event) {
         try {
@@ -60,9 +89,16 @@ public class EventController {
     }
 
     @GetMapping("/{eventId}")
-    public ResponseEntity<?> getEventById(@PathVariable Long eventId) {
+    public ResponseEntity<?> getEventById(
+            @PathVariable Long eventId,
+            @RequestParam(required = false) Long viewerId
+    ) {
         try {
-            return ResponseEntity.ok(eventService.getEventById(eventId));
+            if (viewerId == null) {
+                return ResponseEntity.ok(eventService.getEventById(eventId));
+            }
+
+            return ResponseEntity.ok(eventService.getEventByIdForViewer(eventId, viewerId));
         } catch (RuntimeException error) {
             return ResponseEntity.status(404).body(error.getMessage());
         }

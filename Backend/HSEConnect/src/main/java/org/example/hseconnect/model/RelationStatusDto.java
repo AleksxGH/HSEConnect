@@ -20,4 +20,23 @@ public class RelationStatusDto {
     public void setFollowing(boolean following) {
         this.following = following;
     }
+
+    private boolean blocked;
+    private boolean blockedByTarget;
+
+    public boolean isBlocked() {
+        return blocked;
+    }
+
+    public void setBlocked(boolean blocked) {
+        this.blocked = blocked;
+    }
+
+    public boolean isBlockedByTarget() {
+        return blockedByTarget;
+    }
+
+    public void setBlockedByTarget(boolean blockedByTarget) {
+        this.blockedByTarget = blockedByTarget;
+    }
 }

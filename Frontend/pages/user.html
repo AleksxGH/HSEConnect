@@ -372,7 +372,7 @@
             }
 
             try {
-                const response = await fetch(`${API_URL}/api/profile/${userId}`);
+                const response = await fetch(`${API_URL}/api/profile/${userId}/viewer/${currentUserId}`);
 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -407,6 +407,9 @@
                 }
 
                 const relation = await response.json();
+
+                currentProfile.isBlocked = relation.blocked === true || relation.isBlocked === true;
+                currentProfile.blocked = currentProfile.isBlocked;
 
                 currentProfile.isFriend = relation.friend === true || relation.isFriend === true;
                 currentProfile.isFollowing = relation.following === true || relation.isFollowing === true;
@@ -457,20 +460,22 @@
             const friendIcon = document.getElementById('friendIcon');
             const blockIcon = document.getElementById('blockIcon');
 
+            const isBlocked = currentProfile.isBlocked === true || currentProfile.blocked === true;
+            blockText.textContent = isBlocked ? 'Разблокировать' : 'Заблокировать';
+            blockBtn.className = `action-btn ${isBlocked ? 'btn-unblock' : 'btn-block'}`;
+            blockIcon.src = isBlocked ? ICON_PATHS.unblock : ICON_PATHS.block;
+
             const isFollowing = currentProfile.isFollowing === true || currentProfile.following === true;
             const isFriend = currentProfile.isFriend === true || currentProfile.friend === true;
 
             followText.textContent = isFollowing ? 'Отписаться' : 'Подписаться';
             friendText.textContent = isFriend ? 'Удалить из друзей' : 'Добавить в друзья';
-            blockText.textContent = 'Заблокировать';
 
             followBtn.className = `action-btn ${isFollowing ? 'btn-unfollow' : 'btn-follow'}`;
             friendBtn.className = `action-btn ${isFriend ? 'btn-unfriend' : 'btn-friend'}`;
-            blockBtn.className = 'action-btn btn-block';
 
             followIcon.src = isFollowing ? ICON_PATHS.unfollow : ICON_PATHS.follow;
             friendIcon.src = isFriend ? ICON_PATHS.unfriend : ICON_PATHS.friend;
-            blockIcon.src = ICON_PATHS.block;
 
             followBtn.onclick = toggleFollow;
             friendBtn.onclick = toggleFriend;
@@ -534,8 +539,41 @@
             }
         }
 
-        function toggleBlock() {
-            alert('Блокировка пока не реализована на бэке');
+        async function toggleBlock() {
+            const isBlocked = currentProfile.isBlocked === true || currentProfile.blocked === true;
+
+            const question = isBlocked
+                ? 'Разблокировать пользователя?'
+                : 'Заблокировать пользователя? Он не сможет писать вам, видеть ваш профиль и события.';
+
+            if (!confirm(question)) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/blocks/${currentUserId}/${userId}`, {
+                    method: isBlocked ? 'DELETE' : 'POST'
+                });
+
+                if (!response.ok) {
+                    alert(await response.text());
+                    return;
+                }
+
+                currentProfile.isBlocked = !isBlocked;
+                currentProfile.blocked = !isBlocked;
+
+                if (!isBlocked) {
+                    alert('Пользователь заблокирован');
+                    window.location.href = 'friends.html';
+                    return;
+                }
+
+                alert('Пользователь разблокирован');
+                updateActionButtons();
+
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка соединения с сервером');
+            }
         }
 
         function renderTags() {

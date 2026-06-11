@@ -129,6 +129,16 @@
             color: #24304a;
             font-weight: 700;
         }
+
+        .chat-unread-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #4b59ff;
+            display: inline-block;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 4px rgba(75, 89, 255, 0.12);
+        }
     </style>
 </head>
 
@@ -254,8 +264,17 @@
                     messagesDB[message.chatId].push(message);
                 }
 
-                if (message.chatId === currentChatId) {
+                const isCurrentChatOpen = message.chatId === currentChatId;
+                const isIncomingMessage =
+                    Number(message.senderId || message.fromUserId) !== currentUserId;
+
+                if (isCurrentChatOpen) {
                     renderMessages();
+                    openMessagesAtBottom();
+
+                    if (isIncomingMessage) {
+                        await markChatAsRead(currentChatId);
+                    }
                 }
 
                 await loadChats();
@@ -357,7 +376,17 @@
 `;
 
                 div.addEventListener("click", async () => {
-                    if (currentChatId === chat.id) return;
+                    if (currentChatId === chat.id) {
+                        await markChatAsRead(currentChatId);
+                        await loadChats();
+                        renderDialogs();
+
+                        if (window.updateSidebarIcons) {
+                            await window.updateSidebarIcons();
+                        }
+
+                        return;
+                    }
 
                     currentChatId = chat.id;
 

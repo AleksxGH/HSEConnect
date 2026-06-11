@@ -485,7 +485,7 @@
         async function loadAllEventsData() {
             try {
                 const userId = Number(localStorage.getItem("userId"));
-                const events = await apiGet("/api/events");
+                const events = await apiGet(`/api/events?userId=${userId}`);
 
                 const now = new Date();
 
@@ -566,8 +566,7 @@
                 const month = dateObj.toLocaleString('ru', { month: 'short' }).replace('.', '');
 
                 return `
-                    <div class="event-item" onclick="openEventDetails(${event.id})">
-                        <div class="event-date">
+                    <div class="event-item" data-event-id="${event.id}">
                             <div class="event-day">${day}</div>
                             <div class="event-month">${month}</div>
                         </div>
@@ -579,6 +578,11 @@
                     </div>
                 `;
             }).join('');
+            container.querySelectorAll('.event-item').forEach(card => {
+                card.addEventListener('click', () => {
+                    openEventDetails(card.dataset.eventId);
+                });
+            });
         }
 
         function renderUpcomingEvents() {
@@ -606,8 +610,11 @@
             const description = document.getElementById('eventDescription').value.trim();
             const privacy = document.querySelector('input[name="privacy"]:checked')?.value || 'public';
 
-            const invitedFriends = Array.from(document.querySelectorAll('#friendsSelectList input:checked'))
-                .map(cb => Number(cb.value));
+            const friendsSelectList = document.getElementById('friendsSelectList');
+
+            const invitedFriends = friendsSelectList
+                ? Array.from(friendsSelectList.querySelectorAll('input:checked')).map(cb => Number(cb.value))
+                : [];
 
             const userId = localStorage.getItem("userId");
             if (!userId) {
@@ -645,19 +652,15 @@
         }
 
         function openEventDetails(eventId) {
-            const event = [...upcomingEvents, ...allEvents, ...friendsEvents, ...archiveEvents].find(e => e.id === eventId);
-            if (!event) return;
+            const id = Number(eventId);
 
-            document.getElementById("detailsTitle").textContent = event.title || "Событие";
-            document.getElementById("detailsType").textContent = event.type || "";
-            document.getElementById("detailsLocation").textContent = event.location || "";
-            document.getElementById("detailsDate").textContent = event.date || "";
-            document.getElementById("detailsTime").textContent = event.time || "";
-            document.getElementById("detailsDescription").textContent = event.description || "Описание отсутствует";
-            document.getElementById("detailsModal").classList.add("active");
+            if (!id || Number.isNaN(id)) {
+                console.error("Некорректный id события:", eventId);
+                alert("Не удалось открыть событие: нет id");
+                return;
+            }
 
-            const respondBtn = document.getElementById("respondEventBtn");
-            respondBtn.onclick = () => respondToEvent(event.id);
+            window.location.href = `pages/event-details.html?id=${id}`;
         }
 
         async function respondToEvent(eventId) {
@@ -773,11 +776,14 @@
 
             const privacyRadios = document.querySelectorAll('input[name="privacy"]');
             const inviteSection = document.getElementById('inviteFriendsSection');
-            privacyRadios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    inviteSection.style.display = radio.value === 'private' ? 'block' : 'none';
+
+            if (inviteSection) {
+                privacyRadios.forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        inviteSection.style.display = radio.value === 'private' ? 'block' : 'none';
+                    });
                 });
-            });
+            }
         }
 
         function closeModal() {
@@ -790,7 +796,11 @@
             document.getElementById('eventTime').value = '';
             document.getElementById('eventDescription').value = '';
             document.querySelector('input[name="privacy"][value="public"]').checked = true;
-            document.getElementById('inviteFriendsSection').style.display = 'none';
+            const inviteSection = document.getElementById('inviteFriendsSection');
+
+            if (inviteSection) {
+                inviteSection.style.display = 'none';
+            }
         }
 
         function escapeHtml(str) {

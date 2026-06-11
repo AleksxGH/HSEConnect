@@ -24,10 +24,12 @@ public class ChatService {
 
     private final JdbcTemplate jdbcTemplate;
     private final ChatWebSocketHandler chatWebSocketHandler;
+    private final BlockService blockService;
 
-    public ChatService(JdbcTemplate jdbcTemplate, ChatWebSocketHandler chatWebSocketHandler) {
+    public ChatService(JdbcTemplate jdbcTemplate, ChatWebSocketHandler chatWebSocketHandler, BlockService blockService) {
         this.jdbcTemplate = jdbcTemplate;
         this.chatWebSocketHandler = chatWebSocketHandler;
+        this.blockService = blockService;
     }
 
     public List<ChatDto> getChats(Long currentUserId) {
@@ -161,6 +163,12 @@ public class ChatService {
     public MessageDto sendMessage(Long chatId, Long currentUserId, String text) {
         if (text == null || text.trim().isEmpty()) {
             throw new RuntimeException("Сообщение не может быть пустым");
+        }
+
+        Long receivId = getPrivateChatOtherUserId(chatId, currentUserId);
+
+        if (receivId != null && blockService.hasBlockBetween(currentUserId, receivId)) {
+            throw new RuntimeException("Вы не можете написать этому пользователю");
         }
 
         validateChatExists(chatId);
@@ -330,5 +338,20 @@ public class ChatService {
                     rs.getString("last_message")
             );
         }, currentUserId, chatId);
+    }
+
+    private Long getPrivateChatOtherUserId(Long chatId, Long currentUserId) {
+        List<Long> ids = jdbcTemplate.queryForList("""
+        SELECT cp.user_id
+        FROM app.chat_participant cp
+        JOIN app.chat c ON c.chat_id = cp.chat_id
+        WHERE cp.chat_id = ?
+          AND cp.user_id <> ?
+          AND cp.left_at IS NULL
+          AND c.chat_type = 'private'
+        LIMIT 1
+    """, Long.class, chatId, currentUserId);
+
+        return ids.isEmpty() ? null : ids.get(0);
     }
 }
