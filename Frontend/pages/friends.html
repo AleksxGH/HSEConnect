@@ -228,15 +228,23 @@
             return 'Пользователь';
         }
 
-        function getUserAvatar(user) {
-            if (user.avatar && user.avatar.trim()) {
-                return user.avatar;
-            }
+        function getUserAvatarHtml(user) {
+    const avatarUrl = user.avatarUrl || user.photoUrl;
 
-            const name = getUserName(user);
-            return name.substring(0, 1).toUpperCase();
-        }
+    if (avatarUrl && avatarUrl.trim() && avatarUrl.startsWith("http")) {
+        return `
+            <img 
+                src="${escapeHtml(avatarUrl)}" 
+                alt=""
+                onerror="this.style.display='none'; this.parentElement.textContent='${escapeHtml(getUserName(user).substring(0, 1).toUpperCase())}'"
+                style="width:100%;height:100%;border-radius:50%;object-fit:cover;"
+            >
+        `;
+    }
 
+    const name = getUserName(user);
+    return escapeHtml(name.substring(0, 1).toUpperCase());
+}
         function renderFriends() {
             const container = document.getElementById('friendsContainer');
             if (!container) return;
@@ -282,7 +290,7 @@
                 html += `
                 <div class="friend-card" onclick="openUserProfile(${user.id})">
                     <div class="friend-avatar">
-                        ${getUserAvatar(user)}
+                        ${getUserAvatarHtml(user)}
                     </div>
 
                     <div class="friend-info">

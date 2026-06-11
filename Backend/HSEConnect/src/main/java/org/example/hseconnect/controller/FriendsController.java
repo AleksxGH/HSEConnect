@@ -4,6 +4,7 @@ import org.example.hseconnect.model.FriendUserDto;
 import org.example.hseconnect.services.FriendsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -108,16 +109,26 @@ public class FriendsController {
         }
     }
 
-    @PostMapping("/{userId}/accept/{senderUserId}")
-    public ResponseEntity<?> acceptFriendRequest(
+    @PostMapping("/{userId}/avatar")
+    public ResponseEntity<?> uploadAvatar(
             @PathVariable Long userId,
-            @PathVariable Long senderUserId
+            @RequestParam("file") MultipartFile file
     ) {
         try {
-            friendsService.acceptFriendRequest(userId, senderUserId);
-            return ResponseEntity.ok("Запрос принят");
+            String avatarUrl = friendsService.uploadAvatar(userId, file);
+            return ResponseEntity.ok(avatarUrl);
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @GetMapping("/{userId}/avatar")
+    public ResponseEntity<?> getUserAvatar(@PathVariable Long userId) {
+        try {
+            String avatarUrl = friendsService.getUserAvatar(userId);
+            return ResponseEntity.ok(avatarUrl);
+        } catch (RuntimeException error) {
+            return ResponseEntity.notFound().build();
         }
     }
 }

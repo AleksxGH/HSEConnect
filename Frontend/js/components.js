@@ -61,7 +61,7 @@ class HseHeader extends HTMLElement {
       return;
 
     try {
-      const response = await fetch(`${this.getBaseApiUrl()}/api/profile/${userId}`);
+      const response = await fetch(`${API_URL}/api/profile/${userId}`);
 
       if (response.ok) {
         const profile = await response.json();

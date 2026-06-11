@@ -139,6 +139,32 @@
             flex-shrink: 0;
             box-shadow: 0 0 0 4px rgba(75, 89, 255, 0.12);
         }
+
+        .message-file {
+            display: block;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            background: rgba(75, 89, 255, 0.08);
+            color: #4b59ff;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .message-file:hover {
+            text-decoration: underline;
+        }
+
+        .message-image {
+            display: block;
+            max-width: 260px;
+            max-height: 260px;
+            border-radius: 14px;
+            margin-top: 8px;
+            object-fit: cover;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -362,7 +388,12 @@
                 div.className = `dialog-item ${currentChatId === chat.id ? "active" : ""}`;
 
                 div.innerHTML = `
-    <div class="dialog-avatar">${escapeHtml(chat.avatarInitial)}</div>
+    <div class="dialog-avatar">
+    ${chat.avatarUrl
+                        ? `<img src="${escapeHtml(chat.avatarUrl)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`
+                        : escapeHtml(chat.avatarInitial)
+                    }
+</div>
     <div class="dialog-info">
         <div class="dialog-name-row">
             <div class="dialog-name">${escapeHtml(chat.name)}</div>
@@ -454,7 +485,19 @@
 
             document.getElementById("chatName").innerText = chat.name;
             document.getElementById("chatStatus").innerText = chat.status;
-            document.getElementById("chatAvatar").innerText = chat.avatarInitial;
+            const chatAvatar = document.getElementById("chatAvatar");
+
+            if (chatAvatar) {
+                if (chat.avatarUrl) {
+                    chatAvatar.innerHTML = `
+            <img src="${escapeHtml(chat.avatarUrl)}" 
+                 alt="" 
+                 style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+        `;
+                } else {
+                    chatAvatar.innerText = chat.avatarInitial;
+                }
+            }
         }
 
         function renderMessages() {
@@ -522,12 +565,44 @@
                     const msgDiv = document.createElement("div");
                     msgDiv.className = `message ${isOutgoing ? "outgoing" : "incoming"}`;
 
+                    const files = msg.files || msg.attachments || [];
+
+                    const filesHtml = files.map(file => {
+                        const url = file.url || file.fileUrl;
+                        const name = file.name || file.fileName || "Файл";
+
+                        if (!url) return "";
+
+                        const type = file.type || file.fileType || "";
+                        const isImage =
+                            type.startsWith("image/") ||
+                            /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name);
+
+                        if (isImage) {
+                            return `
+        <a href="${escapeHtml(url)}" target="_blank">
+            <img 
+                src="${escapeHtml(url)}" 
+                alt="${escapeHtml(name)}"
+                class="message-image"
+            >
+        </a>
+    `;
+                        }
+
+                        return `
+    <a href="${escapeHtml(url)}" target="_blank" class="message-file">
+        📎 ${escapeHtml(name)}
+    </a>
+`;
+                    }).join("");
                     msgDiv.innerHTML = `
-                <div class="bubble">
-                    ${text ? `<div>${escapeHtml(text)}</div>` : ""}
-                    <div class="msg-meta">${escapeHtml(time)}</div>
-                </div>
-            `;
+    <div class="bubble">
+        ${text ? `<div>${escapeHtml(text)}</div>` : ""}
+        ${filesHtml}
+        <div class="msg-meta">${escapeHtml(time)}</div>
+    </div>
+`;
 
                     messagesContainer.appendChild(msgDiv);
                 });
@@ -565,21 +640,28 @@
             const inputEl = document.getElementById("messageInput");
             const text = inputEl.value.trim();
 
-            if (!text || currentChatId === null) return;
+            if (!text && currentFileList.length === 0) return;
+            if (currentChatId === null) return;
 
             isSendingMessage = true;
 
             try {
-                const response = await fetch(`${API_BASE}/${currentChatId}/messages/user/${currentUserId}`, {
+                const formData = new FormData();
+                formData.append("text", text);
+
+                currentFileList.forEach(file => {
+                    formData.append("files", file);
+                });
+
+                const response = await fetch(`${API_BASE}/${currentChatId}/messages/user/${currentUserId}/with-files`, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ text })
+                    body: formData
                 });
 
                 if (!response.ok) {
-                    alert("Не удалось отправить сообщение");
+                    const errorText = await response.text();
+                    console.error("Ошибка отправки сообщения с файлами:", errorText);
+                    alert(errorText || "Не удалось отправить сообщение");
                     return;
                 }
 
@@ -592,6 +674,7 @@
                 renderMessages();
                 updateChatHeader();
                 clearFilePreview();
+
             } finally {
                 isSendingMessage = false;
             }
