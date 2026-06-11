@@ -1,11 +1,5 @@
 // js/components.js - Web Components для header и sidebar
 
-const LOCAL_API = 'http://localhost:8080';
-const SERVER_API = 'https://hseconnect.onrender.com';
-
-const API_URL =
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? LOCAL_API : SERVER_API;
-
 const WS_URL = API_URL.replace(/^http/, 'ws');
 
 class HseHeader extends HTMLElement {

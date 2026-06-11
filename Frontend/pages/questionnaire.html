@@ -333,7 +333,8 @@
         // Функция для нормализации строки (первая буква заглавная, остальные строчные)
         function normalizeString(str) {
             if (!str) return '';
-            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+            const cleaned = str.trim().replace(/\s+/g, ' ');
+            return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
         }
 
         // ========== РАБОТА С ИНТЕРЕСАМИ ==========
@@ -736,12 +737,8 @@
                     return;
                 }
 
-                const facultyId = await getOrCreateFaculty(facultyName);
-
-                let programId = null;
-                if (programName) {
-                    programId = await getOrCreateProgram(facultyId, programName, educationLevel, studyForm);
-                }
+                const facultyId = null;
+                const programId = null;
 
                 payload.student = {
                     faculty: facultyName,
