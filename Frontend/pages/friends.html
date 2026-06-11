@@ -228,21 +228,29 @@
             return 'Пользователь';
         }
 
-        function getUserAvatar(user) {
-            if (user.avatar && user.avatar.trim()) {
-                return user.avatar;
-            }
 
-            const name = getUserName(user);
-            return name.substring(0, 1).toUpperCase();
+        // Функция для отображения аватарки с использованием avatar.js
+        async function renderFriendAvatar(container, userId, firstName, lastName) {
+            if (!container || !window.avatarAPI) return;
+            
+            // Очищаем контейнер
+            container.innerHTML = '';
+            
+            // Создаём контейнер для аватарки
+            const avatarWrapper = document.createElement('div');
+            avatarWrapper.className = 'friend-avatar';
+            
+            // Используем renderMiniAvatar для маленькой аватарки
+            await window.avatarAPI.renderMiniAvatar(avatarWrapper, userId, firstName, lastName);
+            
+            container.appendChild(avatarWrapper);
         }
 
-        function renderFriends() {
+        async function renderFriends() {
             const container = document.getElementById('friendsContainer');
             if (!container) return;
 
             let data = [...currentData];
-
             if (searchQuery) {
                 data = data.filter(user =>
                     getUserName(user).toLowerCase().includes(searchQuery)
@@ -253,56 +261,66 @@
                 const noResultsText = searchQuery
                     ? `Ничего не найдено по запросу "${searchQuery}"`
                     : getEmptyText();
-
                 container.innerHTML = `
-                <div class="empty-friends">
-                    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="#8792b0" stroke-width="1.5">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    <p>${noResultsText}</p>
-                </div>
-            `;
+                    <div class="empty-friends">
+                        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="#8792b0" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <p>${noResultsText}</p>
+                    </div>
+                `;
                 return;
             }
 
+            // Создаём HTML структуру без аватарок
             let html = '<div class="friends-list">';
-
             data.forEach(user => {
-                if (currentTab === 'all' && user.id === currentUserId) {
-                    return;
-                }
-
+                if (currentTab === 'all' && user.id === currentUserId) return;
+                
                 const statusClass = user.status === 'online' ? 'online' : 'offline';
                 const statusText = user.status === 'online' ? 'В сети' : 'Не в сети';
                 const mutualFriendsText = user.mutualFriends
                     ? ` • ${user.mutualFriends} общих друзей`
                     : '';
-
+                
                 html += `
-                <div class="friend-card" onclick="openUserProfile(${user.id})">
-                    <div class="friend-avatar">
-                        ${getUserAvatar(user)}
-                    </div>
-
-                    <div class="friend-info">
-                        <div class="friend-name">${escapeHtml(getUserName(user))}</div>
-                        <div class="friend-status">
-                            <span class="status-dot ${statusClass}"></span>
-                            ${statusText}
-                            ${mutualFriendsText}
+                    <div class="friend-card" data-user-id="${user.id}" data-first-name="${escapeHtml(user.firstName || '')}" data-last-name="${escapeHtml(user.lastName || '')}">
+                        <div class="friend-avatar-container" id="avatar-${user.id}"></div>
+                        <div class="friend-info">
+                            <div class="friend-name">${escapeHtml(getUserName(user))}</div>
+                            <div class="friend-status">
+                                <span class="status-dot ${statusClass}"></span>
+                                ${statusText}
+                                ${mutualFriendsText}
+                            </div>
+                        </div>
+                        <div class="friend-actions" onclick="event.stopPropagation()">
+                            ${getButtonsHtml(user)}
                         </div>
                     </div>
-
-                    <div class="friend-actions" onclick="event.stopPropagation()">
-                        ${getButtonsHtml(user)}
-                    </div>
-                </div>
-            `;
+                `;
             });
-
             html += '</div>';
             container.innerHTML = html;
+
+            // Загружаем аватарки для каждого пользователя
+            for (const user of data) {
+                if (currentTab === 'all' && user.id === currentUserId) continue;
+                
+                const avatarContainer = document.getElementById(`avatar-${user.id}`);
+                if (avatarContainer && window.avatarAPI) {
+                    const firstName = user.firstName || '';
+                    const lastName = user.lastName || '';
+                    await renderFriendAvatar(avatarContainer, user.id, firstName, lastName);
+                    
+                    // Добавляем обработчик клика на карточку
+                    const card = avatarContainer.closest('.friend-card');
+                    if (card) {
+                        card.addEventListener('click', () => openUserProfile(user.id));
+                    }
+                }
+            }
         }
 
         function openUserProfile(userId) {
