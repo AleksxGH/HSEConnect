@@ -168,12 +168,18 @@ class HseSidebar extends HTMLElement {
           </a>
 
           <a class="menu-item" href="${basePath}pages/chat.html" data-page="chat">
-            <img id="chatIcon" src="${basePath}icons/chat_icon.svg" alt="" aria-hidden="true" />
+            <div class="icon-wrapper">
+                <img id="chatIcon" src="${basePath}icons/chat_icon.svg" alt="" aria-hidden="true" />
+                <span class="notification-dot" id="chatDot" style="display: none;"></span>
+            </div>
             <span>Сообщения</span>
           </a>
 
           <a class="menu-item" href="${basePath}pages/notifications.html" data-page="notifications">
-            <img id="notificationsIcon" src="${basePath}icons/notifications_icon.svg" alt="" aria-hidden="true" />
+            <div class="icon-wrapper">
+                <img id="notificationsIcon" src="${basePath}icons/notifications_icon.svg" alt="" aria-hidden="true" />
+                <span class="notification-dot" id="notificationsDot" style="display: none;"></span>
+            </div>
             <span>Уведомления</span>
           </a>
 
@@ -234,16 +240,13 @@ class HseSidebar extends HTMLElement {
   }
 
   async updateChatIcon() {
-    const chatIcon = this.querySelector('#chatIcon');
-    if (!chatIcon) return;
+    const chatDot = this.querySelector('#chatDot');
+    if (!chatDot) return;
 
-    const basePath = this.getBasePath();
     const hasUnread = await this.hasUnreadMessages();
-
-    chatIcon.src = hasUnread
-      ? `${basePath}icons/chat_dot_icon.svg`
-      : `${basePath}icons/chat_icon.svg`;
+    chatDot.style.display = hasUnread ? 'block' : 'none';
   }
+
 
   connectGlobalChatSocket() {
     const userId = localStorage.getItem('userId');
@@ -309,15 +312,11 @@ class HseSidebar extends HTMLElement {
   }
 
   async updateNotificationsIcon() {
-    const notificationsIcon = this.querySelector('#notificationsIcon');
-    if (!notificationsIcon) return;
+    const notificationsDot = this.querySelector('#notificationsDot');
+    if (!notificationsDot) return;
 
-    const basePath = this.getBasePath();
     const hasUnread = await this.hasUnreadNotifications();
-
-    notificationsIcon.src = hasUnread
-      ? `${basePath}icons/notifications_dot_icon.svg`
-      : `${basePath}icons/notifications_icon.svg`;
+    notificationsDot.style.display = hasUnread ? 'block' : 'none';
   }
 
   async updateAllIcons() {
