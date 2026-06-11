@@ -4,7 +4,7 @@
 function getInitials(firstName, lastName) {
     const first = firstName ? firstName.charAt(0).toUpperCase() : '';
     const last = lastName ? lastName.charAt(0).toUpperCase() : '';
-    
+
     if (first && last) {
         return `${first}${last}`;
     }
@@ -17,32 +17,32 @@ function getInitials(firstName, lastName) {
     return '?';
 }
 
-// Функция для генерации цвета на основе строки
-function getColorFromString(str) {
+function getGradientFromString(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    
-    const colors = [
-        '#4b59ff', '#6f42c1',
-        '#20c997','#17a2b8'
+
+    const gradients = [
+        'linear-gradient(135deg, #7c90de 0%, #4b59ff 100%)',  // синий градиент
+        'linear-gradient(135deg, #1abc9c 0%, #20c997 100%)',  // зелёный градиент
+        'linear-gradient(135deg, #17a2b8 0%, #138496 100%)'    // бирюзовый градиент
     ];
-    
-    return colors[Math.abs(hash) % colors.length];
+
+    return gradients[Math.abs(hash) % gradients.length];
 }
 
 // Функция для создания элемента аватарки с инициалами (только с классами, без инлайн-стилей)
 function createInitialsAvatar(firstName, lastName) {
     const initials = getInitials(firstName, lastName);
-    const bgColor = getColorFromString(`${firstName || ''}${lastName || ''}`);
-    
+    const gradient = getGradientFromString(`${firstName || ''}${lastName || ''}`);
+
     const avatarDiv = document.createElement('div');
     avatarDiv.className = 'avatar-initials';
     avatarDiv.setAttribute('data-initials', initials);
-    avatarDiv.style.backgroundColor = bgColor;
+    avatarDiv.style.background = gradient;
     avatarDiv.textContent = initials;
-    
+
     return avatarDiv;
 }
 
@@ -76,17 +76,17 @@ async function loadUserAvatar(userId) {
 async function updateUserAvatar(userId, file) {
     const formData = new FormData();
     formData.append('avatar', file);
-    
+
     try {
         const response = await fetch(`${API_URL}/api/users/${userId}/avatar`, {
             method: 'POST',
             body: formData
         });
-        
+
         if (!response.ok) {
             throw new Error('Ошибка загрузки аватарки');
         }
-        
+
         return await response.json();
     } catch (error) {
         console.error(error);
@@ -100,11 +100,11 @@ async function deleteUserAvatar(userId) {
         const response = await fetch(`${API_URL}/api/users/${userId}/avatar`, {
             method: 'DELETE'
         });
-        
+
         if (!response.ok) {
             throw new Error('Ошибка удаления аватарки');
         }
-        
+
         return true;
     } catch (error) {
         console.error(error);
@@ -118,7 +118,7 @@ function openFileSelector(userId, onAvatarUpdate) {
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
-    
+
     fileInput.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -126,12 +126,12 @@ function openFileSelector(userId, onAvatarUpdate) {
                 alert('Файл слишком большой. Максимальный размер 5MB');
                 return;
             }
-            
+
             if (!file.type.startsWith('image/')) {
                 alert('Пожалуйста, выберите изображение');
                 return;
             }
-            
+
             try {
                 await updateUserAvatar(userId, file);
                 if (onAvatarUpdate) await onAvatarUpdate();
@@ -142,7 +142,7 @@ function openFileSelector(userId, onAvatarUpdate) {
         }
         fileInput.remove();
     });
-    
+
     document.body.appendChild(fileInput);
     fileInput.click();
 }
@@ -152,17 +152,17 @@ function showAvatarModal(currentAvatarUrl, userId, firstName, lastName, onAvatar
     const modal = document.createElement('div');
     modal.className = 'modal avatar-modal';
     modal.style.display = 'flex';
-    
+
     modal.innerHTML = `
         <div class="modal-content avatar-modal-content">
             <h2>Фото профиля</h2>
             
             <div class="avatar-preview-container">
                 <div class="avatar-preview" id="avatarPreview">
-                    ${currentAvatarUrl ? 
-                        `<img src="${currentAvatarUrl}" alt="Аватарка" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">` :
-                        `<div class="avatar-initials-preview" style="width: 150px; height: 150px; border-radius: 50%; background-color: ${getColorFromString(firstName + lastName)}; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px; font-weight: 600;">${getInitials(firstName, lastName)}</div>`
-                    }
+                    ${currentAvatarUrl ?
+            `<img src="${currentAvatarUrl}" alt="Аватарка" style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover;">` :
+            `<div class="avatar-initials-preview" style="width: 150px; height: 150px; border-radius: 50%; background: ${getGradientFromString(firstName + lastName)}; display: flex; align-items: center; justify-content: center; color: white; font-size: 48px; font-weight: 600;">${getInitials(firstName, lastName)}</div>`
+        }
                 </div>
             </div>
             
@@ -182,19 +182,19 @@ function showAvatarModal(currentAvatarUrl, userId, firstName, lastName, onAvatar
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(modal);
     modal.classList.add('active');
-    
+
     const changeBtn = modal.querySelector('#changeAvatarBtn');
     const deleteBtn = modal.querySelector('#deleteAvatarBtn');
     const closeBtn = modal.querySelector('#closeAvatarModalBtn');
-    
+
     changeBtn?.addEventListener('click', () => {
         modal.remove();
         openFileSelector(userId, onAvatarUpdate);
     });
-    
+
     deleteBtn?.addEventListener('click', async () => {
         if (confirm('Удалить фото профиля?')) {
             try {
@@ -207,11 +207,11 @@ function showAvatarModal(currentAvatarUrl, userId, firstName, lastName, onAvatar
             }
         }
     });
-    
+
     closeBtn?.addEventListener('click', () => {
         modal.remove();
     });
-    
+
     modal.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.remove();
@@ -220,11 +220,11 @@ function showAvatarModal(currentAvatarUrl, userId, firstName, lastName, onAvatar
 }
 
 // Основная функция отображения аватарки
-async function renderAvatar(container, userId, firstName, lastName) {
+async function renderAvatar(container, userId, firstName, lastName, size = 'medium', isEditable = true) {
     if (!container) return;
     
     container.innerHTML = '';
-    container.style.cursor = 'pointer';
+    container.style.cursor = isEditable ? 'pointer' : 'default';
     
     const hasAvatar = await hasUserAvatar(userId);
     
@@ -236,31 +236,39 @@ async function renderAvatar(container, userId, firstName, lastName) {
         img.alt = 'Фото профиля';
         container.appendChild(img);
         
-        container.onclick = async () => {
-            const currentAvatarUrl = await loadUserAvatar(userId);
-            showAvatarModal(currentAvatarUrl, userId, firstName, lastName, async () => {
-                await renderAvatar(container, userId, firstName, lastName);
-            });
-        };
+        if (isEditable) {
+            container.onclick = async () => {
+                const currentAvatarUrl = await loadUserAvatar(userId);
+                showAvatarModal(currentAvatarUrl, userId, firstName, lastName, async () => {
+                    await renderAvatar(container, userId, firstName, lastName, size, isEditable);
+                });
+            };
+        } else {
+            container.onclick = null;
+        }
     } else {
         const initialsAvatar = createInitialsAvatar(firstName, lastName);
         container.appendChild(initialsAvatar);
         
-        container.onclick = () => {
-            openFileSelector(userId, async () => {
-                await renderAvatar(container, userId, firstName, lastName);
-            });
-        };
+        if (isEditable) {
+            container.onclick = () => {
+                openFileSelector(userId, async () => {
+                    await renderAvatar(container, userId, firstName, lastName, size, isEditable);
+                });
+            };
+        } else {
+            container.onclick = null;
+        }
     }
 }
 
 async function renderMiniAvatar(container, userId, firstName, lastName) {
     if (!container) return;
-    
+
     container.innerHTML = '';
-    
+
     const hasAvatar = await hasUserAvatar(userId);
-    
+
     if (hasAvatar) {
         const avatarUrl = await loadUserAvatar(userId);
         const img = document.createElement('img');
@@ -274,14 +282,14 @@ async function renderMiniAvatar(container, userId, firstName, lastName) {
         container.appendChild(img);
     } else {
         const initials = getInitials(firstName, lastName);
-        const bgColor = getColorFromString(`${firstName || ''}${lastName || ''}`);
-        
+        const gradient = getGradientFromString(`${firstName || ''}${lastName || ''}`);
+
         const initialsDiv = document.createElement('div');
         initialsDiv.className = 'mini-avatar-initials';
         initialsDiv.style.width = '32px';
         initialsDiv.style.height = '32px';
         initialsDiv.style.borderRadius = '50%';
-        initialsDiv.style.backgroundColor = bgColor;
+        initialsDiv.style.background = gradient;
         initialsDiv.style.display = 'flex';
         initialsDiv.style.alignItems = 'center';
         initialsDiv.style.justifyContent = 'center';

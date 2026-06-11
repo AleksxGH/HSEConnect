@@ -75,8 +75,13 @@ body {
   padding: 0 28px;
 }
 
+.primary:hover { 
+  background: #2932e5; 
+}
+
 .primary:active {
-  transform: translateY(0);
+  background: #1a22cc;
+  transform: translateY(1px);
 }
 
 .primary:disabled { background: var(--dark-gray); color: #fff; cursor: default; }
