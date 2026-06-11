@@ -362,10 +362,10 @@ body, .event-details-card, .event-details-card * {
 .invite-action {
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 16px;
     cursor: pointer;
     padding: 8px;
-    border-radius: 50%;
+    border-radius: 40%;
     transition: background 0.2s;
 }
 
