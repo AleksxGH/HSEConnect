@@ -42,6 +42,14 @@ public class ChatService {
     public List<ChatDto> getChats(Long currentUserId) {
         return jdbcTemplate.query("""
         SELECT c.chat_id,
+               (
+                   SELECT cp_other.user_id
+                   FROM app.chat_participant cp_other
+                   WHERE cp_other.chat_id = c.chat_id
+                     AND cp_other.user_id <> ?
+                     AND cp_other.left_at IS NULL
+                   LIMIT 1
+               ) AS other_user_id,
                COALESCE(
                    e.title,
                    (
@@ -56,52 +64,52 @@ public class ChatService {
                    'Чат #' || c.chat_id
                ) AS name,
                CASE
-                                                                           WHEN last_message.message_text IS NOT NULL\s
-                                                                                AND TRIM(last_message.message_text) <> ''
-                                                                               THEN last_message.message_text
-                                                                           WHEN last_message.has_image = TRUE
-                                                                               THEN 'Фото'
-                                                                           WHEN last_message.has_file = TRUE
-                                                                               THEN 'Файл'
-                                                                           ELSE ''
-                                                                       END AS last_message,
-            (
-                SELECT COUNT(*)
-                FROM app.message m_unread
-                WHERE m_unread.chat_id = c.chat_id
-                  AND m_unread.sender_id <> ?
-                  AND m_unread.deleted_at IS NULL
-                  AND NOT EXISTS (
-                      SELECT 1
-                      FROM app.message_read mr
-                      WHERE mr.message_id = m_unread.message_id
-                        AND mr.user_id = ?
-                  )
-            ) AS unread_count
+                   WHEN last_message.message_text IS NOT NULL
+                        AND TRIM(last_message.message_text) <> ''
+                       THEN last_message.message_text
+                   WHEN last_message.has_image = TRUE
+                       THEN 'Фото'
+                   WHEN last_message.has_file = TRUE
+                       THEN 'Файл'
+                   ELSE ''
+               END AS last_message,
+               (
+                   SELECT COUNT(*)
+                   FROM app.message m_unread
+                   WHERE m_unread.chat_id = c.chat_id
+                     AND m_unread.sender_id <> ?
+                     AND m_unread.deleted_at IS NULL
+                     AND NOT EXISTS (
+                         SELECT 1
+                         FROM app.message_read mr
+                         WHERE mr.message_id = m_unread.message_id
+                           AND mr.user_id = ?
+                     )
+               ) AS unread_count
         FROM app.chat c
         JOIN app.chat_participant cp_me ON cp_me.chat_id = c.chat_id
         LEFT JOIN app.event e ON e.event_id = c.event_id
         LEFT JOIN LATERAL (
-                                                        SELECT\s
-                                                            m.message_text,
-                                                            m.created_at,
-                                                            EXISTS (
-                                                                SELECT 1
-                                                                FROM app.message_attachment ma
-                                                                WHERE ma.message_id = m.message_id
-                                                                  AND ma.file_type LIKE 'image/%'
-                                                            ) AS has_image,
-                                                            EXISTS (
-                                                                SELECT 1
-                                                                FROM app.message_attachment ma
-                                                                WHERE ma.message_id = m.message_id
-                                                            ) AS has_file
-                                                        FROM app.message m
-                                                        WHERE m.chat_id = c.chat_id\s
-                                                          AND m.deleted_at IS NULL
-                                                        ORDER BY m.created_at DESC
-                                                        LIMIT 1
-                                                    ) last_message ON TRUE
+            SELECT
+                m.message_text,
+                m.created_at,
+                EXISTS (
+                    SELECT 1
+                    FROM app.message_attachment ma
+                    WHERE ma.message_id = m.message_id
+                      AND ma.file_type LIKE 'image/%'
+                ) AS has_image,
+                EXISTS (
+                    SELECT 1
+                    FROM app.message_attachment ma
+                    WHERE ma.message_id = m.message_id
+                ) AS has_file
+            FROM app.message m
+            WHERE m.chat_id = c.chat_id
+              AND m.deleted_at IS NULL
+            ORDER BY m.created_at DESC
+            LIMIT 1
+        ) last_message ON TRUE
         WHERE cp_me.user_id = ?
           AND cp_me.left_at IS NULL
         ORDER BY COALESCE(last_message.created_at, c.created_at) DESC
@@ -111,7 +119,7 @@ public class ChatService {
                     ? "?"
                     : name.substring(0, 1).toUpperCase();
 
-            return new ChatDto(
+            ChatDto dto = new ChatDto(
                     rs.getLong("chat_id"),
                     name,
                     avatarInitial,
@@ -119,7 +127,11 @@ public class ChatService {
                     rs.getString("last_message"),
                     rs.getInt("unread_count")
             );
-        }, currentUserId, currentUserId, currentUserId, currentUserId);
+
+            dto.setOtherUserId(rs.getObject("other_user_id", Long.class));
+
+            return dto;
+        }, currentUserId, currentUserId, currentUserId, currentUserId, currentUserId);
     }
 
     @Transactional
@@ -391,7 +403,7 @@ public class ChatService {
         WHERE cp.chat_id = ?
           AND cp.user_id <> ?
           AND cp.left_at IS NULL
-          AND c.chat_type = 'private'
+          AND c.chat_type = 'PRIVATE'
         LIMIT 1
     """, Long.class, chatId, currentUserId);
 

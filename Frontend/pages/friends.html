@@ -54,6 +54,25 @@
             gap: 8px;
             align-items: center;
         }
+
+        .friend-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .friend-avatar img,
+        .friend-avatar canvas,
+        .friend-avatar svg,
+        .friend-avatar>* {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+            display: block;
+        }
     </style>
 </head>
 
@@ -228,25 +247,21 @@
             return 'Пользователь';
         }
 
-        function getUserAvatarHtml(user) {
-            const avatarUrl = user.avatarUrl || user.photoUrl;
+        async function renderFriendAvatar(container, user) {
+            if (!container || !window.avatarAPI) return;
 
-            if (avatarUrl && avatarUrl.trim() && avatarUrl.startsWith("http")) {
-                return `
-            <img 
-                src="${escapeHtml(avatarUrl)}" 
-                alt=""
-                onerror="this.style.display='none'; this.parentElement.textContent='${escapeHtml(getUserName(user).substring(0, 1).toUpperCase())}'"
-                style="width:100%;height:100%;border-radius:50%;object-fit:cover;"
-            >
-        `;
-            }
+            const firstName = user.firstName || user.name || '';
+            const lastName = user.lastName || '';
 
-            const name = getUserName(user);
-            return escapeHtml(name.substring(0, 1).toUpperCase());
+            await window.avatarAPI.renderMiniAvatar(
+                container,
+                user.id,
+                firstName,
+                lastName
+            );
         }
 
-        function renderFriends() {
+        async function renderFriends() {
             const container = document.getElementById('friendsContainer');
             if (!container) return;
 
@@ -288,9 +303,7 @@
 
                 html += `
             <div class="friend-card" onclick="openUserProfile(${user.id})">
-                <div class="friend-avatar">
-                    ${getUserAvatarHtml(user)}
-                </div>
+                <div class="friend-avatar" id="avatar-${user.id}"></div>
 
                 <div class="friend-info">
                     <div class="friend-name">${escapeHtml(getUserName(user))}</div>
@@ -310,6 +323,12 @@
 
             html += '</div>';
             container.innerHTML = html;
+            for (const user of data) {
+                if (currentTab === 'all' && user.id === currentUserId) continue;
+
+                const avatarContainer = document.getElementById(`avatar-${user.id}`);
+                await renderFriendAvatar(avatarContainer, user);
+            }
         }
 
         function openUserProfile(userId) {

@@ -363,6 +363,25 @@
             messagesDB[chatId] = await response.json();
         }
 
+
+        async function setChatAvatar(container, userId, fallbackText) {
+            if (!container) return;
+
+            container.innerHTML = escapeHtml(fallbackText || "?");
+
+            if (!userId || !window.avatarAPI) return;
+
+            const avatarUrl = await window.avatarAPI.loadUserAvatar(userId);
+
+            if (!avatarUrl) return;
+
+            container.innerHTML = `
+        <img src="${escapeHtml(avatarUrl)}"
+             alt=""
+             style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">
+    `;
+        }
+
         function renderDialogs() {
             const container = document.getElementById("dialogsList");
             if (!container) return;
@@ -391,11 +410,8 @@
                 div.className = `dialog-item ${currentChatId === chat.id ? "active" : ""}`;
 
                 div.innerHTML = `
-    <div class="dialog-avatar">
-    ${chat.avatarUrl
-                        ? `<img src="${escapeHtml(chat.avatarUrl)}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`
-                        : escapeHtml(chat.avatarInitial)
-                    }
+    <div class="dialog-avatar" id="dialog-avatar-${chat.id}">
+    ${escapeHtml(chat.avatarInitial || "?")}
 </div>
     <div class="dialog-info">
         <div class="dialog-name-row">
@@ -430,7 +446,7 @@
 
                     renderDialogs();
                     renderMessages();
-                    updateChatHeader();
+                    await updateChatHeader();
                     showChatInterface();
                     openMessagesAtBottom();
                     clearFilePreview();
@@ -438,6 +454,12 @@
                 });
 
                 container.appendChild(div);
+                const avatarContainer = div.querySelector(`#dialog-avatar-${chat.id}`);
+                setChatAvatar(
+                    avatarContainer,
+                    chat.otherUserId,
+                    chat.avatarInitial || "?"
+                );
             });
         }
 
@@ -482,7 +504,7 @@
             if (filePreview) filePreview.style.display = "none";
         }
 
-        function updateChatHeader() {
+        async function updateChatHeader() {
             const chat = chats.find(c => c.id === currentChatId);
             if (!chat) return;
 
@@ -492,15 +514,11 @@
             const chatAvatar = document.getElementById("chatAvatar");
 
             if (chatAvatar) {
-                if (chat.avatarUrl) {
-                    chatAvatar.innerHTML = `
-                <img src="${escapeHtml(chat.avatarUrl)}"
-                     alt=""
-                     style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-            `;
-                } else {
-                    chatAvatar.innerHTML = escapeHtml(chat.avatarInitial);
-                }
+                await setChatAvatar(
+                    chatAvatar,
+                    chat.otherUserId,
+                    chat.avatarInitial || "?"
+                );
             }
 
             const chatHeaderProfile = document.getElementById("chatHeaderProfile");
@@ -683,7 +701,7 @@
 
                 renderDialogs();
                 renderMessages();
-                updateChatHeader();
+                await updateChatHeader();
                 clearFilePreview();
 
             } finally {
@@ -763,7 +781,7 @@
 
                         renderDialogs();
                         renderMessages();
-                        updateChatHeader();
+                        await updateChatHeader();
                         showChatInterface();
                         openMessagesAtBottom();
                         clearFilePreview();
