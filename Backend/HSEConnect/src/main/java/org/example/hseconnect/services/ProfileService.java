@@ -358,12 +358,14 @@ public class ProfileService {
     }
 
     private Long findOrCreateInterest(String name, Long userId) {
+        String normalizedName = normalizeName(name);
+
         List<Long> ids = jdbcTemplate.queryForList("""
-            SELECT interest_id
-            FROM app.interest
-            WHERE LOWER(name) = LOWER(?)
-            LIMIT 1
-        """, Long.class, name);
+        SELECT interest_id
+        FROM app.interest
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))
+        LIMIT 1
+    """, Long.class, normalizedName);
 
         if (!ids.isEmpty()) return ids.get(0);
 
@@ -371,13 +373,18 @@ public class ProfileService {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement("""
-                INSERT INTO app.interest
-                (name, created_by_user_id, is_approved)
-                VALUES (?, ?, false)
-            """, new String[]{"interest_id"});
+            INSERT INTO app.interest
+            (name, created_by_user_id, is_approved)
+            VALUES (?, ?, false)
+        """, new String[]{"interest_id"});
 
-            ps.setString(1, name);
-            ps.setLong(2, userId);
+            ps.setString(1, normalizedName);
+
+            if (userId == null) {
+                ps.setObject(2, null);
+            } else {
+                ps.setLong(2, userId);
+            }
 
             return ps;
         }, keyHolder);
@@ -479,10 +486,12 @@ public class ProfileService {
     }
 
     private Long findOrCreateSimple(String tableName, String idColumn, String name) {
+        String normalizedName = normalizeName(name);
+
         List<Long> ids = jdbcTemplate.queryForList(
-                "SELECT " + idColumn + " FROM app." + tableName + " WHERE LOWER(name) = LOWER(?) LIMIT 1",
+                "SELECT " + idColumn + " FROM app." + tableName + " WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1",
                 Long.class,
-                name
+                normalizedName
         );
 
         if (!ids.isEmpty()) return ids.get(0);
@@ -495,7 +504,7 @@ public class ProfileService {
                     new String[]{idColumn}
             );
 
-            ps.setString(1, name);
+            ps.setString(1, normalizedName);
             return ps;
         }, keyHolder);
 
@@ -503,12 +512,14 @@ public class ProfileService {
     }
 
     private Long findOrCreateCampus(String name) {
+        String normalizedName = normalizeName(name);
+
         List<Long> ids = jdbcTemplate.queryForList("""
-            SELECT campus_id
-            FROM app.campus
-            WHERE LOWER(name) = LOWER(?)
-            LIMIT 1
-        """, Long.class, name);
+        SELECT campus_id
+        FROM app.campus
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))
+        LIMIT 1
+    """, Long.class, normalizedName);
 
         if (!ids.isEmpty()) return ids.get(0);
 
@@ -516,11 +527,11 @@ public class ProfileService {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement("""
-                INSERT INTO app.campus (name, city)
-                VALUES (?, '')
-            """, new String[]{"campus_id"});
+            INSERT INTO app.campus (name, city)
+            VALUES (?, '')
+        """, new String[]{"campus_id"});
 
-            ps.setString(1, name);
+            ps.setString(1, normalizedName);
             return ps;
         }, keyHolder);
 
@@ -528,14 +539,16 @@ public class ProfileService {
     }
 
     private Long findOrCreateProgram(String name, Long facultyId, Long educationLevelId) {
+        String normalizedName = normalizeName(name);
+
         List<Long> ids = jdbcTemplate.queryForList("""
-            SELECT education_program_id
-            FROM app.education_program
-            WHERE LOWER(name) = LOWER(?)
-              AND faculty_id = ?
-              AND education_level_id = ?
-            LIMIT 1
-        """, Long.class, name, facultyId, educationLevelId);
+        SELECT education_program_id
+        FROM app.education_program
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM(?))
+          AND faculty_id = ?
+          AND education_level_id = ?
+        LIMIT 1
+    """, Long.class, normalizedName, facultyId, educationLevelId);
 
         if (!ids.isEmpty()) return ids.get(0);
 
@@ -543,14 +556,14 @@ public class ProfileService {
 
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement("""
-                INSERT INTO app.education_program
-                (faculty_id, education_level_id, name, code)
-                VALUES (?, ?, ?, NULL)
-            """, new String[]{"education_program_id"});
+            INSERT INTO app.education_program
+            (faculty_id, education_level_id, name, code)
+            VALUES (?, ?, ?, NULL)
+        """, new String[]{"education_program_id"});
 
             ps.setLong(1, facultyId);
             ps.setLong(2, educationLevelId);
-            ps.setString(3, name);
+            ps.setString(3, normalizedName);
 
             return ps;
         }, keyHolder);
@@ -916,5 +929,19 @@ public class ProfileService {
     private Integer parseIntegerOrNull(String value) {
         if (value == null || value.isBlank()) return null;
         return Integer.parseInt(value.trim());
+    }
+
+    private String normalizeName(String value) {
+        if (value == null) {
+            throw new RuntimeException("Название не может быть пустым");
+        }
+
+        String normalized = value.trim().replaceAll("\\s+", " ");
+
+        if (normalized.isBlank()) {
+            throw new RuntimeException("Название не может быть пустым");
+        }
+
+        return normalized;
     }
 }
