@@ -1,5 +1,7 @@
 package org.example.hseconnect.model;
 
+import java.util.List;
+
 public class MessageDto {
     private Long id;
     private Long chatId;
@@ -10,6 +12,7 @@ public class MessageDto {
     private String createdAt;
     private String editedAt;
     private String deletedAt;
+    private List<AttachmentDto> attachments;
 
     public MessageDto() {}
 
@@ -39,4 +42,11 @@ public class MessageDto {
     public void setEditedAt(String editedAt) { this.editedAt = editedAt; }
     public String getDeletedAt() { return deletedAt; }
     public void setDeletedAt(String deletedAt) { this.deletedAt = deletedAt; }
+    public List<AttachmentDto> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(List<AttachmentDto> attachments) {
+        this.attachments = attachments;
+    }
 }

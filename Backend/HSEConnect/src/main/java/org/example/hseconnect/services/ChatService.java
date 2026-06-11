@@ -1,5 +1,7 @@
 package org.example.hseconnect.services;
 
+import com.cloudinary.Cloudinary;
+import org.example.hseconnect.model.AttachmentDto;
 import org.example.hseconnect.model.ChatDto;
 import org.example.hseconnect.model.MessageDto;
 import org.example.hseconnect.websocket.ChatWebSocketHandler;
@@ -8,6 +10,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -16,7 +19,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -25,11 +30,13 @@ public class ChatService {
     private final JdbcTemplate jdbcTemplate;
     private final ChatWebSocketHandler chatWebSocketHandler;
     private final BlockService blockService;
+    private final Cloudinary cloudinary;
 
-    public ChatService(JdbcTemplate jdbcTemplate, ChatWebSocketHandler chatWebSocketHandler, BlockService blockService) {
+    public ChatService(JdbcTemplate jdbcTemplate, ChatWebSocketHandler chatWebSocketHandler, BlockService blockService, Cloudinary cloudinary) {
         this.jdbcTemplate = jdbcTemplate;
         this.chatWebSocketHandler = chatWebSocketHandler;
         this.blockService = blockService;
+        this.cloudinary = cloudinary;
     }
 
     public List<ChatDto> getChats(Long currentUserId) {
@@ -48,7 +55,16 @@ public class ChatService {
                    ),
                    'Чат #' || c.chat_id
                ) AS name,
-               COALESCE(last_message.message_text, '') AS last_message,
+               CASE
+                                                                           WHEN last_message.message_text IS NOT NULL\s
+                                                                                AND TRIM(last_message.message_text) <> ''
+                                                                               THEN last_message.message_text
+                                                                           WHEN last_message.has_image = TRUE
+                                                                               THEN 'Фото'
+                                                                           WHEN last_message.has_file = TRUE
+                                                                               THEN 'Файл'
+                                                                           ELSE ''
+                                                                       END AS last_message,
             (
                 SELECT COUNT(*)
                 FROM app.message m_unread
@@ -66,12 +82,26 @@ public class ChatService {
         JOIN app.chat_participant cp_me ON cp_me.chat_id = c.chat_id
         LEFT JOIN app.event e ON e.event_id = c.event_id
         LEFT JOIN LATERAL (
-                                  SELECT m.message_text, m.created_at
-                                  FROM app.message m
-                                  WHERE m.chat_id = c.chat_id AND m.deleted_at IS NULL
-                                  ORDER BY m.created_at DESC
-                                  LIMIT 1
-                              ) last_message ON TRUE
+                                                        SELECT\s
+                                                            m.message_text,
+                                                            m.created_at,
+                                                            EXISTS (
+                                                                SELECT 1
+                                                                FROM app.message_attachment ma
+                                                                WHERE ma.message_id = m.message_id
+                                                                  AND ma.file_type LIKE 'image/%'
+                                                            ) AS has_image,
+                                                            EXISTS (
+                                                                SELECT 1
+                                                                FROM app.message_attachment ma
+                                                                WHERE ma.message_id = m.message_id
+                                                            ) AS has_file
+                                                        FROM app.message m
+                                                        WHERE m.chat_id = c.chat_id\s
+                                                          AND m.deleted_at IS NULL
+                                                        ORDER BY m.created_at DESC
+                                                        LIMIT 1
+                                                    ) last_message ON TRUE
         WHERE cp_me.user_id = ?
           AND cp_me.left_at IS NULL
         ORDER BY COALESCE(last_message.created_at, c.created_at) DESC
@@ -145,6 +175,19 @@ public class ChatService {
             );
 
             dto.setSenderId(senderId);
+            List<AttachmentDto> attachments = jdbcTemplate.query("""
+    SELECT file_url, file_name, file_type, file_size
+    FROM app.message_attachment
+    WHERE message_id = ?
+    ORDER BY created_at
+""", (ars, i) -> new AttachmentDto(
+                    ars.getString("file_url"),
+                    ars.getString("file_name"),
+                    ars.getString("file_type"),
+                    ars.getLong("file_size")
+            ), rs.getLong("message_id"));
+
+            dto.setAttachments(attachments);
 
             if (createdAt != null) {
                 dto.setCreatedAt(
@@ -353,5 +396,76 @@ public class ChatService {
     """, Long.class, chatId, currentUserId);
 
         return ids.isEmpty() ? null : ids.get(0);
+    }
+
+    public MessageDto sendMessageWithFiles(Long chatId, Long userId, String text, List<MultipartFile> files) {
+        try {
+            boolean hasText = text != null && !text.trim().isEmpty();
+            boolean hasFiles = files != null && files.stream().anyMatch(file -> file != null && !file.isEmpty());
+
+            if (!hasText && !hasFiles) {
+                throw new RuntimeException("Сообщение не может быть пустым");
+            }
+
+            validateChatExists(chatId);
+            validateUserInChat(chatId, userId);
+
+            Long messageId = jdbcTemplate.queryForObject("""
+            INSERT INTO app.message (chat_id, sender_id, message_text, created_at, edited_at, deleted_at)
+                                VALUES (?, ?, ?, NOW(), NULL, NULL)
+                                RETURNING message_id
+        """, Long.class, chatId, userId, hasText ? text.trim() : "");
+
+            List<AttachmentDto> attachments = new ArrayList<>();
+
+            if (hasFiles) {
+                for (MultipartFile file : files) {
+                    if (file == null || file.isEmpty()) continue;
+
+                    Map uploadResult = cloudinary.uploader().upload(
+                            file.getBytes(),
+                            Map.of(
+                                    "folder", "hseconnect/chat-files",
+                                    "resource_type", "auto"
+                            )
+                    );
+
+                    String fileUrl = uploadResult.get("secure_url").toString();
+                    String fileName = file.getOriginalFilename();
+                    String fileType = file.getContentType();
+                    Long fileSize = file.getSize();
+
+                    jdbcTemplate.update("""
+                    INSERT INTO app.message_attachment
+                        (message_id, file_url, file_name, file_type, file_size, created_at)
+                    VALUES (?, ?, ?, ?, ?, NOW())
+                """, messageId, fileUrl, fileName, fileType, fileSize);
+
+                    attachments.add(new AttachmentDto(
+                            fileUrl,
+                            fileName,
+                            fileType,
+                            fileSize
+                    ));
+                }
+            }
+
+            MessageDto dto = new MessageDto();
+            dto.setId(messageId);
+            dto.setChatId(chatId);
+            dto.setSenderId(userId);
+            dto.setText(hasText ? text.trim() : "");
+            dto.setSender("outgoing");
+            dto.setTime("только что");
+            dto.setCreatedAt(java.time.LocalDateTime.now().toString());
+            dto.setAttachments(attachments);
+
+            return dto;
+
+        } catch (RuntimeException error) {
+            throw error;
+        } catch (Exception error) {
+            throw new RuntimeException("Не удалось отправить сообщение с файлами");
+        }
     }
 }

@@ -1,5 +1,7 @@
 // profile.js - универсальный модуль для страницы профиля (своего и чужого)
 
+let relationStatus = {friend: false, following: false, blocked: false, blockedByTarget: false};
+
 // Глобальные переменные
 let currentProfile = null;
 let selectedEvent = null;
@@ -180,6 +182,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     currentProfile = profile;
+
+    const targetUserId = getTargetUserId();
+
+    if (targetUserId && targetUserId !== 'null' && !Number.isNaN(Number(targetUserId))) {
+      await loadRelationStatus();
+    }
+
     renderProfile(profile);
 
     // Загружаем события
@@ -317,6 +326,26 @@ async function updateProfile(profile) {
   }
 
   return await apiPut(`/api/profile/${userId}`, profile);
+}
+
+async function uploadProfileAvatar() {
+  const input = document.getElementById('editAvatar');
+  const userId = localStorage.getItem('userId');
+
+  if (!input || !input.files || input.files.length === 0) {
+    return null;
+  }
+
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+
+  const response = await fetch(`${API_URL}/api/users/${userId}/avatar`, {method: 'POST', body: formData});
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+
+  return await response.text();
 }
 
 function renderEvents(events) {
@@ -623,6 +652,8 @@ function renderProfile(profile) {
     eventsCount.textContent = profile.eventsCount || 0;
 
   // Обновляем аватарку
+  initRelationButtons();
+  initMessageButton();
   updateAvatarDisplay();
 }
 
@@ -856,6 +887,293 @@ function editEvent(eventId) {
 function closeDetailsModal() {
   document.getElementById('detailsModal').classList.remove('active');
   selectedEvent = null;
+}
+
+async function loadRelationStatus() {
+  const currentUserId = localStorage.getItem('userId');
+  const targetUserId = getTargetUserId();
+
+  if (!targetUserId || targetUserId === 'null' || Number.isNaN(Number(targetUserId))) {
+    return;
+  }
+
+  const response = await fetch(`${API_URL}/api/friends/${currentUserId}/status/${targetUserId}`);
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+
+  relationStatus = await response.json();
+  console.log('RELATION STATUS', relationStatus);
+
+
+  updateRelationButtons();
+}
+
+function initRelationButtons() {
+  const followBtn = document.getElementById('followBtn');
+  const friendBtn = document.getElementById('friendBtn');
+  const blockBtn = document.getElementById('blockBtn');
+
+  if (followBtn) {
+    followBtn.onclick = handleFollowClick;
+  }
+
+  if (friendBtn) {
+    friendBtn.onclick = handleFriendClick;
+  }
+
+  if (blockBtn) {
+    blockBtn.onclick = handleBlockClick;
+  }
+
+  updateRelationButtons();
+}
+
+function updateRelationButtons() {
+  const followBtn = document.getElementById('followBtn');
+  const friendBtn = document.getElementById('friendBtn');
+  const blockBtn = document.getElementById('blockBtn');
+
+  const followText = document.getElementById('followText');
+  const friendText = document.getElementById('friendText');
+  const blockText = document.getElementById('blockText');
+
+  const followIcon = document.getElementById('followIcon');
+  const friendIcon = document.getElementById('friendIcon');
+  const blockIcon = document.getElementById('blockIcon');
+
+  if (relationStatus.blockedByTarget) {
+    if (followText)
+      followText.textContent = 'Недоступно';
+    if (friendText)
+      friendText.textContent = 'Недоступно';
+    if (blockText)
+      blockText.textContent = 'Недоступно';
+
+    if (followBtn)
+      followBtn.disabled = true;
+    if (friendBtn)
+      friendBtn.disabled = true;
+    if (blockBtn)
+      blockBtn.disabled = true;
+
+    return;
+  }
+
+  if (relationStatus.blocked) {
+    if (followText)
+      followText.textContent = 'Заблокирован';
+    if (friendText)
+      friendText.textContent = 'Заблокирован';
+    if (blockText)
+      blockText.textContent = 'Разблокировать';
+
+    if (followBtn)
+      followBtn.disabled = true;
+    if (friendBtn)
+      friendBtn.disabled = true;
+    if (blockBtn)
+      blockBtn.disabled = false;
+
+    if (blockIcon)
+      blockIcon.src = '../icons/unblock_icon.svg';
+    return;
+  }
+
+  if (followText) {
+    followText.textContent = relationStatus.following ? 'Отписаться' : 'Подписаться';
+  }
+
+  if (friendText) {
+    friendText.textContent = relationStatus.friend ? 'Удалить из друзей' : 'Добавить в друзья';
+  }
+
+  if (blockText) {
+    blockText.textContent = 'Заблокировать';
+  }
+
+  if (followBtn)
+    followBtn.disabled = false;
+  if (friendBtn)
+    friendBtn.disabled = false;
+  if (blockBtn)
+    blockBtn.disabled = false;
+
+  if (followIcon) {
+    followIcon.src = relationStatus.following ? '../icons/unfollow_icon.svg' : '../icons/follow_icon.svg';
+  }
+
+  if (friendIcon) {
+    friendIcon.src = relationStatus.friend ? '../icons/unfriend_icon.svg' : '../icons/friend_icon.svg';
+  }
+
+  if (blockIcon) {
+    blockIcon.src = '../icons/block_icon.svg';
+  }
+}
+
+async function handleFollowClick() {
+  const currentUserId = localStorage.getItem('userId');
+  const targetUserId = getTargetUserId();
+
+  try {
+    const method = relationStatus.following ? 'DELETE' : 'POST';
+
+    const response = await fetch(`${API_URL}/api/friends/${currentUserId}/follow/${targetUserId}`, {method: method});
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    await loadRelationStatus();
+    await reloadCountersOnly();
+  } catch (error) {
+    console.error('Ошибка подписки:', error);
+    alert(error.message || 'Не удалось выполнить действие');
+  }
+}
+
+async function handleFriendClick() {
+  const currentUserId = localStorage.getItem('userId');
+  const targetUserId = getTargetUserId();
+
+  try {
+    const url = relationStatus.friend ? `${API_URL}/api/friends/${currentUserId}/friend/${targetUserId}` :
+                                        `${API_URL}/api/friends/${currentUserId}/add/${targetUserId}`;
+
+    const method = relationStatus.friend ? 'DELETE' : 'POST';
+
+    const response = await fetch(url, {method});
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    await loadRelationStatus();
+    await reloadCountersOnly();
+  } catch (error) {
+    console.error('Ошибка действия с друзьями:', error);
+    alert(error.message || 'Не удалось выполнить действие');
+  }
+}
+
+async function handleBlockClick() {
+  const currentUserId = localStorage.getItem('userId');
+  const targetUserId = getTargetUserId();
+
+  console.log('BLOCK CLICK');
+  console.log('currentUserId =', currentUserId);
+  console.log('targetUserId =', targetUserId);
+  console.log('relationStatus =', relationStatus);
+
+  if (!currentUserId || !targetUserId) {
+    alert('Не удалось определить пользователя для блокировки');
+    return;
+  }
+
+  try {
+    const method = relationStatus.blocked ? 'DELETE' : 'POST';
+
+    const url = `${API_URL}/api/blocks/${currentUserId}/${targetUserId}`;
+
+    console.log('BLOCK REQUEST:', method, url);
+
+    const response = await fetch(url, {method: method});
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    await loadRelationStatus();
+    updateRelationButtons();
+    initMessageButton();
+
+  } catch (error) {
+    console.error('Ошибка блокировки:', error);
+    alert(error.message || 'Не удалось выполнить блокировку');
+  }
+}
+
+function getTargetUserId() {
+  const params = new URLSearchParams(window.location.search);
+
+  return (params.get('id') || params.get('userId') || params.get('profileUserId'));
+}
+
+function hideActionsBlock() {
+  const actionsBlock = document.getElementById('actionsBlock');
+  if (actionsBlock) {
+    actionsBlock.style.display = 'none';
+  }
+}
+
+function setTextSafe(id, text) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = text;
+  }
+}
+
+async function reloadCountersOnly() {
+  const targetUserId = getTargetUserId();
+
+  try {
+    const response = await fetch(`${API_URL}/api/profile/${targetUserId}`);
+
+    if (!response.ok)
+      return;
+
+    const profile = await response.json();
+
+    setTextSafe('friendsCount', profile.friendsCount ?? 0);
+    setTextSafe('followersCount', profile.followersCount ?? 0);
+  } catch (error) {
+    console.error('Не удалось обновить счётчики:', error);
+  }
+}
+
+function initMessageButton() {
+  const messageBtn = document.getElementById('messageBtn');
+  if (!messageBtn)
+    return;
+
+  if (relationStatus.blocked || relationStatus.blockedByTarget) {
+    messageBtn.disabled = true;
+    messageBtn.style.opacity = '0.5';
+    messageBtn.style.cursor = 'not-allowed';
+
+    const span = messageBtn.querySelector('span');
+    if (span) {
+      span.textContent = 'Недоступно';
+    }
+
+    messageBtn.onclick = () => {
+      alert('Нельзя написать пользователю, который вас заблокировал');
+    };
+
+    return;
+  }
+
+  messageBtn.disabled = false;
+  messageBtn.style.opacity = '1';
+  messageBtn.style.cursor = 'pointer';
+
+  const span = messageBtn.querySelector('span');
+  if (span) {
+    span.textContent = 'Написать';
+  }
+
+  messageBtn.onclick = () => {
+    const targetUserId = getTargetUserId();
+
+    if (!targetUserId) {
+      alert('Не удалось определить пользователя');
+      return;
+    }
+
+    window.location.href = `chat.html?userId=${targetUserId}`;
+  };
 }
 
 // Escape HTML

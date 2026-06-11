@@ -6,6 +6,7 @@ import org.example.hseconnect.model.SendMessageRequest;
 import org.example.hseconnect.services.ChatService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -70,6 +71,20 @@ public class ChatController {
         try {
             ChatDto chat = chatService.getOrCreatePrivateChat(userId, targetUserId);
             return ResponseEntity.ok(chat);
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @PostMapping("/{chatId}/messages/user/{userId}/with-files")
+    public ResponseEntity<?> sendMessageWithFiles(
+            @PathVariable Long chatId,
+            @PathVariable Long userId,
+            @RequestParam(value = "text", required = false) String text,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files
+    ) {
+        try {
+            return ResponseEntity.ok(chatService.sendMessageWithFiles(chatId, userId, text, files));
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
         }

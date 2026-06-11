@@ -228,6 +228,7 @@
             return 'Пользователь';
         }
 
+<<<<<<< HEAD
 
         // Функция для отображения аватарки с использованием avatar.js
         async function renderFriendAvatar(container, userId, firstName, lastName) {
@@ -247,6 +248,26 @@
         }
 
         async function renderFriends() {
+=======
+        function getUserAvatarHtml(user) {
+    const avatarUrl = user.avatarUrl || user.photoUrl;
+
+    if (avatarUrl && avatarUrl.trim() && avatarUrl.startsWith("http")) {
+        return `
+            <img 
+                src="${escapeHtml(avatarUrl)}" 
+                alt=""
+                onerror="this.style.display='none'; this.parentElement.textContent='${escapeHtml(getUserName(user).substring(0, 1).toUpperCase())}'"
+                style="width:100%;height:100%;border-radius:50%;object-fit:cover;"
+            >
+        `;
+    }
+
+    const name = getUserName(user);
+    return escapeHtml(name.substring(0, 1).toUpperCase());
+}
+        function renderFriends() {
+>>>>>>> a09a5c52625322a35fec4e2d1f235865513a56ed
             const container = document.getElementById('friendsContainer');
             if (!container) return;
 
@@ -285,6 +306,7 @@
                     : '';
                 
                 html += `
+<<<<<<< HEAD
                     <div class="friend-card" data-user-id="${user.id}" data-first-name="${escapeHtml(user.firstName || '')}" data-last-name="${escapeHtml(user.lastName || '')}">
                         <div class="friend-avatar-container" id="avatar-${user.id}"></div>
                         <div class="friend-info">
@@ -297,6 +319,19 @@
                         </div>
                         <div class="friend-actions" onclick="event.stopPropagation()">
                             ${getButtonsHtml(user)}
+=======
+                <div class="friend-card" onclick="openUserProfile(${user.id})">
+                    <div class="friend-avatar">
+                        ${getUserAvatarHtml(user)}
+                    </div>
+
+                    <div class="friend-info">
+                        <div class="friend-name">${escapeHtml(getUserName(user))}</div>
+                        <div class="friend-status">
+                            <span class="status-dot ${statusClass}"></span>
+                            ${statusText}
+                            ${mutualFriendsText}
+>>>>>>> a09a5c52625322a35fec4e2d1f235865513a56ed
                         </div>
                     </div>
                 `;

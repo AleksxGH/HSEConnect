@@ -1,11 +1,16 @@
 package org.example.hseconnect.services;
 
+import com.cloudinary.Cloudinary;
+import org.example.hseconnect.entity.Profile;
 import org.example.hseconnect.model.FriendUserDto;
 import org.example.hseconnect.model.RelationStatusDto;
+import org.example.hseconnect.repository.ProfileRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class FriendsService {
@@ -13,11 +18,15 @@ public class FriendsService {
     private final JdbcTemplate jdbcTemplate;
     private final NotificationService notificationService;
     private final BlockService blockService;
+    private final ProfileRepository profileRepository;
+    private final Cloudinary cloudinary;
 
-    public FriendsService(JdbcTemplate jdbcTemplate, NotificationService notificationService, BlockService blockService) {
+    public FriendsService(JdbcTemplate jdbcTemplate, NotificationService notificationService, BlockService blockService, ProfileRepository profileRepository, Cloudinary cloudinary) {
         this.jdbcTemplate = jdbcTemplate;
         this.notificationService = notificationService;
         this.blockService = blockService;
+        this.profileRepository = profileRepository;
+        this.cloudinary = cloudinary;
     }
 
     public List<FriendUserDto> getFriends(Long userId) {
@@ -382,5 +391,51 @@ public class FriendsService {
         dto.setFollowing(isFollowing(userId, targetUserId));
 
         return dto;
+    }
+
+    public String getUserAvatar(Long userId) {
+        Profile profile = profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+        String avatarUrl = profile.getAvatarUrl();
+
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            throw new RuntimeException("Avatar not found");
+        }
+
+        return avatarUrl;
+    }
+
+    public String uploadAvatar(Long userId, MultipartFile file) {
+        try {
+            Profile profile = profileRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("Profile not found"));
+
+            if (file == null || file.isEmpty()) {
+                throw new RuntimeException("Файл не выбран");
+            }
+
+            Map uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    Map.of(
+                            "folder", "hseconnect/avatars",
+                            "public_id", "user_" + userId,
+                            "overwrite", true,
+                            "resource_type", "image"
+                    )
+            );
+
+            String avatarUrl = uploadResult.get("secure_url").toString();
+
+            profile.setAvatarUrl(avatarUrl);
+            profileRepository.save(profile);
+
+            return avatarUrl;
+
+        } catch (RuntimeException error) {
+            throw error;
+        } catch (Exception error) {
+            throw new RuntimeException("Failed to upload avatar");
+        }
     }
 }
