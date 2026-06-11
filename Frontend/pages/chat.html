@@ -166,10 +166,13 @@
 
                 <div class="messages-area">
                     <div class="chat-header" id="chatHeader" style="display: none;">
-                        <div class="chat-header-avatar" id="chatAvatar">А</div>
-                        <div class="chat-header-info">
-                            <h4 id="chatName">Алексей Смирнов</h4>
-                            <span id="chatStatus">онлайн</span>
+                        <div class="chat-header-left" id="chatHeaderProfile"
+                            style="display: flex; align-items: center; gap: 12px; cursor: pointer;">
+                            <div class="chat-header-avatar" id="chatAvatar">А</div>
+                            <div class="chat-header-info">
+                                <h4 id="chatName">Алексей Смирнов</h4>
+                                <span id="chatStatus">онлайн</span>
+                            </div>
                         </div>
                     </div>
 
@@ -455,6 +458,28 @@
             document.getElementById("chatName").innerText = chat.name;
             document.getElementById("chatStatus").innerText = chat.status;
             document.getElementById("chatAvatar").innerText = chat.avatarInitial;
+
+            // Создаём ссылку для аватарки и имени
+            const chatHeaderLeft = document.getElementById("chatHeaderLeft");
+            if (chatHeaderLeft && chat.otherUserId) {
+                // Оборачиваем содержимое в ссылку
+                const link = document.createElement('a');
+                link.href = `./user.html?id=${chat.otherUserId}`;
+                link.style.display = 'flex';
+                link.style.alignItems = 'center';
+                link.style.gap = '12px';
+                link.style.textDecoration = 'none';
+                link.style.color = 'inherit';
+
+                // Перемещаем содержимое в ссылку
+                const avatar = chatHeaderLeft.querySelector('.chat-header-avatar');
+                const info = chatHeaderLeft.querySelector('.chat-header-info');
+
+                chatHeaderLeft.innerHTML = '';
+                link.appendChild(avatar.cloneNode(true));
+                link.appendChild(info.cloneNode(true));
+                chatHeaderLeft.appendChild(link);
+            }
         }
 
         function renderMessages() {
