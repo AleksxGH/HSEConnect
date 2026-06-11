@@ -136,7 +136,7 @@ body {
 }
 
 .chat-header {
-    padding: 14px 20px;
+    padding: 10px 20px;
     border-bottom: 1px solid rgba(75, 89, 255, 0.15);
     background: rgba(255, 255, 255, 0.96);
     display: flex;
@@ -395,10 +395,6 @@ body {
         font-size: 14px;
     }
     
-    .chat-header {
-        padding: 10px 15px;
-    }
-    
     .chat-header-avatar {
         width: 36px;
         height: 36px;
@@ -434,4 +430,32 @@ body {
     height: 18px;
     display: block;
     filter: brightness(0) invert(1); /* Делает иконку белой, если она темная */
+}
+
+.chat-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 12px;
+    transition: background-color 0.2s ease;
+    padding: 4px 8px;
+}
+
+.chat-header-left:hover {
+    background-color: rgba(75, 89, 255, 0.08);
+}
+
+.chat-header-left:active {
+    background-color: rgba(75, 89, 255, 0.12);
+}
+
+.chat-header-avatar,
+.chat-header-info h4 {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.chat-header-avatar:hover,
+.chat-header-info h4:hover {
+    opacity: 0.8;
 }
