@@ -101,6 +101,8 @@ public class ProfileService {
         validateQuestionnaire(dto);
         ensureUserExists(userId);
 
+        dto.setId(userId);
+
         Long campusId = null;
 
         if ("student".equals(dto.getType()) && dto.getStudent() != null) {

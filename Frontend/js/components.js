@@ -1,5 +1,13 @@
 // js/components.js - Web Components для header и sidebar
 
+const LOCAL_API = 'http://localhost:8080';
+const SERVER_API = 'https://hseconnect.onrender.com';
+
+const API_URL =
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? LOCAL_API : SERVER_API;
+
+const WS_URL = API_URL.replace(/^http/, 'ws');
+
 class HseHeader extends HTMLElement {
   constructor() {
     super();
@@ -11,16 +19,6 @@ class HseHeader extends HTMLElement {
   getBasePath() {
     const currentPath = window.location.pathname;
     return currentPath.includes('/pages/') ? '../' : '';
-  }
-
-  getBaseApiUrl() {
-    const hostname = window.location.hostname;
-
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:8080';
-    }
-
-    return 'https://hseconnect.onrender.com';
   }
 
   loadTemplate() {
@@ -36,7 +34,8 @@ class HseHeader extends HTMLElement {
         <div class="topbar-right">
           <div class="user-menu-trigger" id="userMenuTrigger">
             <div class="avatar-container" id="headerAvatar">
-              <img class="mini-avatar" src="${basePath}stubs/photo_circle.jpg" alt="Фото профиля" style="display: none;" />
+              <img class="mini-avatar" src="${
+        basePath}stubs/photo_circle.jpg" alt="Фото профиля" style="display: none;" />
               <div class="mini-avatar-initials" style="display: none;"></div>
             </div>
             <img class="dropdown-icon" src="${basePath}icons/dropdown_icon.svg" alt="Меню" />
@@ -64,7 +63,8 @@ class HseHeader extends HTMLElement {
     }
 
     const userId = localStorage.getItem('userId');
-    if (!userId) return;
+    if (!userId)
+      return;
 
     try {
       const response = await fetch(`${this.getBaseApiUrl()}/api/profile/${userId}`);
@@ -77,12 +77,7 @@ class HseHeader extends HTMLElement {
         const avatarContainer = this.querySelector('#headerAvatar');
 
         if (avatarContainer) {
-          await window.avatarAPI.renderMiniAvatar(
-            avatarContainer,
-            userId,
-            firstName,
-            lastName
-          );
+          await window.avatarAPI.renderMiniAvatar(avatarContainer, userId, firstName, lastName);
         }
       }
     } catch (error) {
@@ -95,7 +90,8 @@ class HseHeader extends HTMLElement {
       const userMenuTrigger = this.querySelector('#userMenuTrigger');
       const dropdownMenu = this.querySelector('#userDropdown');
 
-      if (!userMenuTrigger || !dropdownMenu) return;
+      if (!userMenuTrigger || !dropdownMenu)
+        return;
 
       userMenuTrigger.addEventListener('click', (event) => {
         event.stopPropagation();
@@ -103,10 +99,7 @@ class HseHeader extends HTMLElement {
       });
 
       document.addEventListener('click', (event) => {
-        if (
-          !userMenuTrigger.contains(event.target) &&
-          !dropdownMenu.contains(event.target)
-        ) {
+        if (!userMenuTrigger.contains(event.target) && !dropdownMenu.contains(event.target)) {
           dropdownMenu.classList.remove('show');
         }
       });
@@ -141,15 +134,6 @@ class HseSidebar extends HTMLElement {
     return currentPath.includes('/pages/') ? '../' : '';
   }
 
-  getBaseApiUrl() {
-    const hostname = window.location.hostname;
-
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:8080';
-    }
-
-    return 'https://hseconnect.onrender.com';
-  }
 
   loadTemplate() {
     const basePath = this.getBasePath();
@@ -223,12 +207,14 @@ class HseSidebar extends HTMLElement {
 
   async hasUnreadMessages() {
     const userId = localStorage.getItem('userId');
-    if (!userId) return false;
+    if (!userId)
+      return false;
 
     try {
-      const response = await fetch(`${this.getBaseApiUrl()}/api/chats/user/${userId}`);
+      const response = await fetch(`${API_URL}/api/chats/user/${userId}`);
 
-      if (!response.ok) return false;
+      if (!response.ok)
+        return false;
 
       const chats = await response.json();
 
@@ -250,21 +236,14 @@ class HseSidebar extends HTMLElement {
 
   connectGlobalChatSocket() {
     const userId = localStorage.getItem('userId');
-    if (!userId) return;
+    if (!userId)
+      return;
 
-    if (
-      window.globalChatSocket &&
-      window.globalChatSocket.readyState !== WebSocket.CLOSED
-    ) {
+    if (window.globalChatSocket && window.globalChatSocket.readyState !== WebSocket.CLOSED) {
       return;
     }
 
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const host = this.getBaseApiUrl().replace(/^https?:\/\//, '');
-
-    window.globalChatSocket = new WebSocket(
-      `${wsProtocol}://${host}/ws/chat?userId=${userId}`
-    );
+    window.globalChatSocket = new WebSocket(`${WS_URL}/ws/chat?userId=${userId}`);
 
     window.globalChatSocket.onmessage = async (event) => {
       try {
@@ -293,14 +272,14 @@ class HseSidebar extends HTMLElement {
 
   async hasUnreadNotifications() {
     const userId = localStorage.getItem('userId');
-    if (!userId) return false;
+    if (!userId)
+      return false;
 
     try {
-      const response = await fetch(
-        `${this.getBaseApiUrl()}/api/notifications/user/${userId}/has-unread`
-      );
+      const response = await fetch(`${API_URL}/api/notifications/user/${userId}/has-unread`);
 
-      if (!response.ok) return false;
+      if (!response.ok)
+        return false;
 
       const data = await response.json();
 
@@ -334,15 +313,11 @@ class HseSidebar extends HTMLElement {
 
   initNotificationsSocket() {
     const userId = localStorage.getItem('userId');
-    if (!userId) return;
-
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const host = this.getBaseApiUrl().replace(/^https?:\/\//, '');
+    if (!userId)
+      return;
 
     try {
-      const socket = new WebSocket(
-        `${wsProtocol}://${host}/ws/notifications?userId=${userId}`
-      );
+      const socket = new WebSocket(`${WS_URL}/ws/notifications?userId=${userId}`);
 
       socket.onmessage = async (event) => {
         try {
@@ -352,11 +327,7 @@ class HseSidebar extends HTMLElement {
             await this.updateNotificationsIcon();
           }
 
-          if (
-            data.type === 'new_message' ||
-            data.type === 'message_read' ||
-            data.type === 'message'
-          ) {
+          if (data.type === 'new_message' || data.type === 'message_read' || data.type === 'message') {
             await this.updateChatIcon();
           }
         } catch (error) {

@@ -7,6 +7,24 @@ let selectedEvent = null;
 let currentRenderedEvents = [];
 let isOwnProfile = false;
 
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    currentProfile = await getProfile();
+
+    if (!currentProfile) {
+      console.warn("Профиль не найден, отправляем на анкету");
+      window.location.href = "auth.html";
+      return;
+    }
+          renderProfile(currentProfile);
+    await loadProfileEvents('my');
+    initProfileEditModal();
+
+  } catch (error) {
+    console.error('Ошибка загрузки профиля:', error);
+    alert(error.message || 'Ошибка загрузки профиля');
+  }
+});
 // Функция для создания аббревиатуры из строки
 function createAbbreviation(str) {
     if (!str) return '';
@@ -225,6 +243,259 @@ async function initAvatar() {
     }
 }
 
+function initProfileEditModal() {
+  const openBtn = document.getElementById('openEditProfileBtn');
+  const modal = document.getElementById('profileModal');
+  const closeBtn = document.getElementById('closeProfileModalBtn');
+  const saveBtn = document.getElementById('saveProfileBtn');
+
+  if (!openBtn || !modal || !closeBtn || !saveBtn)
+    return;
+
+  openBtn.addEventListener('click', openProfileModal);
+  closeBtn.addEventListener('click', closeProfileModal);
+  saveBtn.addEventListener('click', saveProfileChanges);
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeProfileModal();
+    }
+  });
+}
+
+function openProfileModal() {
+  if (!currentProfile)
+    return;
+
+  document.getElementById('editLastName').value = currentProfile.lastName || '';
+  document.getElementById('editFirstName').value = currentProfile.firstName || '';
+  document.getElementById('editMiddleName').value = currentProfile.middleName || '';
+  document.getElementById('editAbout').value = currentProfile.about || '';
+
+  document.getElementById('editInterests').value =
+      Array.isArray(currentProfile.interests) ? currentProfile.interests.join(', ') : '';
+
+  document.getElementById('profileModal').classList.add('active');
+}
+
+function closeProfileModal() {
+  document.getElementById('profileModal').classList.remove('active');
+}
+
+async function saveProfileChanges() {
+  const updatedProfile = {
+    ...currentProfile,
+    lastName: document.getElementById('editLastName').value.trim(),
+    firstName: document.getElementById('editFirstName').value.trim(),
+    middleName: document.getElementById('editMiddleName').value.trim(),
+    about: document.getElementById('editAbout').value.trim(),
+    interests: document.getElementById('editInterests')
+                   .value.split(',')
+                   .map(item => item.trim())
+                   .filter(item => item.length > 0)
+  };
+
+  try {
+    await updateProfile(updatedProfile);
+
+    currentProfile = updatedProfile;
+    renderProfile(currentProfile);
+
+    closeProfileModal();
+    alert('Профиль сохранён');
+  } catch (error) {
+    console.error('Ошибка сохранения профиля:', error);
+    alert(error.message || 'Не удалось сохранить профиль');
+  }
+}
+
+async function updateProfile(profile) {
+  const userId = localStorage.getItem('userId');
+
+  if (!userId) {
+    throw new Error('Пользователь не найден');
+  }
+
+  return await apiPut(`/api/profile/${userId}`, profile);
+}
+
+function renderEvents(events) {
+  currentRenderedEvents = events || [];
+
+  const container = document.getElementById('eventsContainer');
+  if (!container)
+    return;
+
+  if (!events || events.length === 0) {
+    container.innerHTML = `<div class="empty-events">Пока нет событий</div>`;
+    return;
+  }
+
+  container.innerHTML = events
+                            .map(
+                                event => `
+    <article class="event-card" onclick="viewEvent(${event.id})">
+      <div>
+        <span class="event-badge">${event.category || event.type || 'Событие'}</span>
+
+        <h3 class="event-title">${event.title || 'Без названия'}</h3>
+
+        <div class="event-meta">
+          <span>${formatEventDate(event)}</span>
+          <span>${event.location || event.address || 'Место не указано'}</span>
+          <span>${event.respondedUserIds?.length || 0} участника</span>
+        </div>
+      </div>
+
+      <img class="event-photo" src="../stubs/photo_square.svg" alt="Фото события">
+
+      <div class="event-actions">
+        ${
+                                    currentEventsMode === 'my' ? `
+              <button
+    class="btn"
+    onclick="event.stopPropagation(); editEvent(${event.id})">
+    Редактировать
+</button>
+
+<button
+    class="btn danger"
+    onclick="event.stopPropagation(); deleteEvent(${event.id})">
+    Удалить
+</button>
+            ` :
+                                                                 `
+              <button
+    class="btn"
+    onclick="event.stopPropagation(); viewEvent(${event.id})">
+    Подробнее
+</button>
+
+<button
+    class="btn danger"
+    onclick="event.stopPropagation(); cancelGoing(${event.id})">
+    Отменить
+</button>
+            `}
+      </div>
+    </article>
+  `).join('');
+}
+
+async function cancelGoing(eventId) {
+  if (!confirm('Отменить участие в событии?'))
+    return;
+
+  const userId = localStorage.getItem('userId');
+
+  try {
+    await apiDelete(`/api/events/${eventId}/respond?userId=${userId}`);
+    await loadGoingEvents();
+  } catch (error) {
+    console.error('Ошибка отмены участия:', error);
+    alert(error.message || 'Не удалось отменить участие');
+  }
+}
+
+async function deleteEvent(eventId) {
+  if (!confirm('Удалить событие?'))
+    return;
+
+  try {
+    await apiDelete(`/api/events/${eventId}`);
+    await loadMyEvents();
+  } catch (error) {
+    console.error('Ошибка удаления события:', error);
+    alert(error.message || 'Не удалось удалить событие');
+  }
+}
+
+function formatEventDate(event) {
+  const months = [
+    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+  ];
+
+  let dateObj = null;
+  let timeStr = null;
+
+  // Определяем источник данных
+  if (event.date && event.time) {
+    dateObj = new Date(event.date);
+    timeStr = event.time;
+  } else if (event.startsAt) {
+    dateObj = new Date(event.startsAt);
+    const hours = dateObj.getHours().toString().padStart(2, '0');
+    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+    timeStr = `${hours}:${minutes}`;
+  } else {
+    return 'Дата не указана';
+  }
+
+  // Проверка на валидность даты
+  if (isNaN(dateObj.getTime())) {
+    return 'Дата не указана';
+  }
+
+  const day = dateObj.getDate();
+  const month = months[dateObj.getMonth()];
+  const year = dateObj.getFullYear();
+
+  return `${day} ${month} ${year}, ${timeStr}`;
+}
+
+function getDay(date) {
+  if (!date)
+    return '';
+  return new Date(date).getDate().toString();
+}
+
+function getMonth(date) {
+  if (!date)
+    return '';
+  return new Date(date).toLocaleString('ru', {month: 'short'}).replace('.', '');
+}
+
+function escapeHtml(str) {
+  if (!str)
+    return '';
+
+  return String(str).replace(/[&<>]/g, function(m) {
+    if (m === '&')
+      return '&amp;';
+    if (m === '<')
+      return '&lt;';
+    if (m === '>')
+      return '&gt;';
+    return m;
+  });
+}
+
+function initDetailsModal() {
+  const detailsModal = document.getElementById('detailsModal');
+  const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+
+  if (!detailsModal || !closeDetailsBtn)
+    return;
+
+  closeDetailsBtn.addEventListener('click', closeDetailsModal);
+
+  detailsModal.addEventListener('click', (event) => {
+    if (event.target === detailsModal) {
+      closeDetailsModal();
+    }
+  });
+}
+
+function viewEvent(eventId) {
+  window.location.href = `event-details.html?id=${eventId}`;
+}
+
+function closeDetailsModal() {
+  document.getElementById('detailsModal').classList.remove('active');
+  selectedEvent = null;
+}
+
+// Функция для обновления аватарки
 // Обновление отображения аватарки
 async function updateAvatarDisplay() {
     const avatarContainer = document.getElementById('avatarContainer');
