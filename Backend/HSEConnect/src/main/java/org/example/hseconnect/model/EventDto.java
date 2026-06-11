@@ -24,6 +24,8 @@ public class EventDto {
     private String visibility;
     private Integer participantsCount = 0;
 
+    private String photoUrl;
+
     private List<Long> respondedUserIds = new ArrayList<>();
 
     public EventDto() {}
@@ -87,5 +89,13 @@ public class EventDto {
 
     public void setParticipantsCount(Integer participantsCount) {
         this.participantsCount = participantsCount;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 }

@@ -83,7 +83,7 @@
             .event-details-header {
                 flex-direction: column;
             }
-            
+
             .event-details-image {
                 width: 100%;
                 max-width: 100%;
@@ -276,11 +276,24 @@
 
         function formatEventDateTime(date, time) {
             if (!date) return "Дата не указана";
-            const dateObj = new Date(date);
+
+            const sourceDate = time
+                ? new Date(`${date}T${time}:00+03:00`) // серверное время МСК
+                : new Date(`${date}T00:00:00+03:00`);
+
             const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
                 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-            const formattedDate = `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
-            return time ? `${formattedDate}, ${time}` : formattedDate;
+
+            const formattedDate = `${sourceDate.getDate()} ${months[sourceDate.getMonth()]} ${sourceDate.getFullYear()}`;
+
+            if (!time) return formattedDate;
+
+            const localTime = sourceDate.toLocaleTimeString("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+
+            return `${formattedDate}, ${localTime}`;
         }
 
         function getParticipantsText(count) {
@@ -292,7 +305,7 @@
 
         function escapeHtml(str) {
             if (!str) return '';
-            return String(str).replace(/[&<>]/g, function(m) {
+            return String(str).replace(/[&<>]/g, function (m) {
                 if (m === '&') return '&amp;';
                 if (m === '<') return '&lt;';
                 if (m === '>') return '&gt;';
@@ -439,9 +452,12 @@
             };
         }
 
-        window.inviteFriend = async function(friendId) {
+        window.inviteFriend = async function (friendId) {
             try {
-                await apiPost(`/api/events/${currentEvent.id}/invite`, { friendId });
+                const userId = localStorage.getItem("userId");
+
+                await apiPost(`/api/events/${currentEvent.id}/invite?inviterId=${userId}`, { friendId });
+
                 alert("Приглашение отправлено!");
                 document.getElementById('inviteDropdown').style.display = 'none';
             } catch (error) {

@@ -1,5 +1,6 @@
 package org.example.hseconnect.services;
 
+import com.cloudinary.Cloudinary;
 import org.example.hseconnect.model.EventDto;
 import org.example.hseconnect.model.FriendUserDto;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -8,15 +9,19 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @Service
@@ -27,11 +32,13 @@ public class EventService {
     private final JdbcTemplate jdbcTemplate;
     private final NotificationService notificationService;
     private final BlockService blockService;
+    private final Cloudinary cloudinary;
 
-    public EventService(JdbcTemplate jdbcTemplate, NotificationService notificationService, BlockService blockService) {
+    public EventService(JdbcTemplate jdbcTemplate, NotificationService notificationService, BlockService blockService, Cloudinary cloudinary) {
         this.jdbcTemplate = jdbcTemplate;
         this.notificationService = notificationService;
         this.blockService = blockService;
+        this.cloudinary = cloudinary;
     }
 
     public List<EventDto> getAllEvents(Long currentUserId) {
@@ -43,6 +50,7 @@ public class EventService {
                COALESCE(a.full_address, '') AS location,
                e.starts_at,
                e.description,
+               e.photo_url,
                (
                    SELECT COUNT(*)
                    FROM app.event_participant ep
@@ -71,6 +79,7 @@ public class EventService {
                COALESCE(a.full_address, '') AS location,
                e.starts_at,
                e.description,
+               e.photo_url,
                (
                    SELECT COUNT(*)
                    FROM app.event_participant ep
@@ -94,6 +103,7 @@ public class EventService {
                COALESCE(a.full_address, '') AS location,
                e.starts_at,
                e.description,
+               e.photo_url,
                (
                    SELECT COUNT(*)
                    FROM app.event_participant ep_count
@@ -125,7 +135,7 @@ public class EventService {
         Long accessTypeId = findOrCreateSimple("event_access_type", "access_type_id", accessType);
         Long addressId = createAddressIfPresent(event.getLocation());
         LocalDateTime startsAt = parseStartsAt(event.getDate(), event.getTime());
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Europe/Moscow"));
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
@@ -175,9 +185,9 @@ public class EventService {
                     title = ?,
                     description = ?,
                     starts_at = ?,
-                    updated_at = NOW()
+                    updated_at = ?
                 WHERE event_id = ?
-                """, categoryId, addressId, updatedEvent.getTitle().trim(), updatedEvent.getDescription(), startsAt, eventId);
+                """, categoryId, addressId, updatedEvent.getTitle().trim(), updatedEvent.getDescription(), startsAt, Timestamp.valueOf(LocalDateTime.now(ZoneId.of("Europe/Moscow"))), eventId);
 
         if (updated == 0) {
             throw new RuntimeException("Событие не найдено");
@@ -237,6 +247,7 @@ public class EventService {
                COALESCE(a.full_address, '') AS location,
                e.starts_at,
                e.description,
+               e.photo_url,
                (
                    SELECT COUNT(*)
                    FROM app.event_participant ep
@@ -329,7 +340,7 @@ public class EventService {
             dto.setLocation(rs.getString("location"));
             dto.setDescription(rs.getString("description"));
             dto.setParticipantsCount(rs.getInt("participants_count"));
-
+            dto.setPhotoUrl(rs.getString("photo_url"));
 
             if (startsAt != null) {
                 dto.setDate(startsAt.toLocalDate().toString());
@@ -391,9 +402,9 @@ public class EventService {
 
             jdbcTemplate.update("""
             INSERT INTO app.event_invitation
-            (event_id, inviter_user_id, invitee_user_id, invitation_status, invited_at)
-            VALUES (?, ?, ?, ?, NOW())
-        """, eventId, creatorId, invitedUserId, "pending");
+                                      (event_id, inviter_id, invitee_id, status, created_at)
+                                      VALUES (?, ?, ?, 'pending', NOW())
+       """, eventId, creatorId, invitedUserId);
 
             notificationService.createNotification(
                     invitedUserId,
@@ -444,6 +455,155 @@ public class EventService {
                 ),
                 eventId
         );
+    }
+
+    @Transactional
+    public void inviteToEvent(Long eventId, Long inviterId, Long friendId) {
+        if (eventId == null || inviterId == null || friendId == null) {
+            throw new RuntimeException("Некорректные данные приглашения");
+        }
+
+        if (inviterId.equals(friendId)) {
+            throw new RuntimeException("Нельзя пригласить самого себя");
+        }
+
+        EventDto event = getEventById(eventId);
+
+        if (blockService.hasBlockBetween(inviterId, friendId)) {
+            throw new RuntimeException("Действие недоступно");
+        }
+
+        Integer alreadyParticipant = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*)
+        FROM app.event_participant
+        WHERE event_id = ?
+          AND user_id = ?
+          AND cancelled_at IS NULL
+    """, Integer.class, eventId, friendId);
+
+        if (alreadyParticipant != null && alreadyParticipant > 0) {
+            throw new RuntimeException("Пользователь уже участвует в событии");
+        }
+
+        Integer alreadyInvited = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*)
+                                           FROM app.event_invitation
+                                           WHERE event_id = ?
+                                             AND inviter_id = ?
+                                             AND invitee_id = ?
+                                             AND status = 'pending'
+    """, Integer.class, eventId, inviterId, friendId);
+
+        if (alreadyInvited != null && alreadyInvited > 0) {
+            throw new RuntimeException("Приглашение уже отправлено");
+        }
+
+        jdbcTemplate.update("""
+    INSERT INTO app.event_invitation
+    (event_id, inviter_id, invitee_id, status, created_at)
+    VALUES (?, ?, ?, 'pending', NOW())
+""", eventId, inviterId, friendId);
+
+        String inviterName = getUserName(inviterId);
+
+        notificationService.createNotification(
+                friendId,
+                "event_invitation",
+                "Приглашение на событие",
+                inviterName + " приглашает вас на событие «" + event.getTitle() + "»",
+                eventId,
+                inviterId,
+                null
+        );
+    }
+
+    @Transactional
+    public EventDto acceptEventInvitation(Long eventId, Long userId) {
+        Integer exists = jdbcTemplate.queryForObject("""
+    SELECT COUNT(*)
+    FROM app.event_invitation
+    WHERE event_id = ?
+      AND invitee_id = ?
+      AND status = 'pending'
+""", Integer.class, eventId, userId);
+
+        if (exists == null || exists == 0) {
+            throw new RuntimeException("Приглашение не найдено");
+        }
+
+        Integer alreadyParticipant = jdbcTemplate.queryForObject("""
+        SELECT COUNT(*)
+        FROM app.event_participant
+        WHERE event_id = ?
+          AND user_id = ?
+          AND cancelled_at IS NULL
+    """, Integer.class, eventId, userId);
+
+        if (alreadyParticipant == null || alreadyParticipant == 0) {
+            jdbcTemplate.update("""
+            INSERT INTO app.event_participant
+            (event_id, user_id, participant_status, joined_at, cancelled_at)
+            VALUES (?, ?, 'going', NOW(), NULL)
+        """, eventId, userId);
+        }
+
+        jdbcTemplate.update("""
+        UPDATE app.event_invitation
+                                           SET status = 'accepted',
+                                               responded_at = NOW()
+                                           WHERE event_id = ?
+                                             AND invitee_id = ?
+                                             AND status = 'pending'
+    """, eventId, userId);
+
+        return getEventById(eventId);
+    }
+
+    @Transactional
+    public void declineEventInvitation(Long eventId, Long userId) {
+        int updated = jdbcTemplate.update("""
+        UPDATE app.event_invitation
+        SET status = 'declined',
+            responded_at = NOW()
+        WHERE event_id = ?
+          AND invitee_id = ?
+          AND status = 'pending'
+    """, eventId, userId);
+
+        if (updated == 0) {
+            throw new RuntimeException("Приглашение не найдено");
+        }
+    }
+
+    @Transactional
+    public String uploadEventPhoto(Long eventId, MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Файл не выбран");
+        }
+
+        try {
+            Map uploadResult = cloudinary.uploader().upload(
+                    file.getBytes(),
+                    Map.of("folder", "hseconnect/events")
+            );
+
+            String photoUrl = uploadResult.get("secure_url").toString();
+
+            int updated = jdbcTemplate.update("""
+            UPDATE app.event
+            SET photo_url = ?,
+                updated_at = NOW()
+            WHERE event_id = ?
+        """, photoUrl, eventId);
+
+            if (updated == 0) {
+                throw new RuntimeException("Событие не найдено");
+            }
+
+            return photoUrl;
+        } catch (IOException e) {
+            throw new RuntimeException("Не удалось загрузить фото");
+        }
     }
 
     private LocalDateTime parseStartsAt(String date, String time) {

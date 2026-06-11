@@ -4,6 +4,7 @@ import org.example.hseconnect.model.EventDto;
 import org.example.hseconnect.services.EventService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -106,12 +107,35 @@ public class EventController {
     @PutMapping("/{eventId}")
     public ResponseEntity<?> updateEvent(
             @PathVariable Long eventId,
-            @RequestBody EventDto event
+            @RequestParam String title,
+            @RequestParam String location,
+            @RequestParam String date,
+            @RequestParam String time,
+            @RequestParam String type,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String privacy,
+            @RequestParam(required = false) MultipartFile photo
     ) {
         try {
-            return ResponseEntity.ok(eventService.updateEvent(eventId, event));
+            EventDto event = new EventDto();
+            event.setTitle(title);
+            event.setLocation(location);
+            event.setDate(date);
+            event.setTime(time);
+            event.setType(type);
+            event.setDescription(description);
+            event.setPrivacy(privacy);
+
+            EventDto updated = eventService.updateEvent(eventId, event);
+
+            if (photo != null && !photo.isEmpty()) {
+                eventService.uploadEventPhoto(eventId, photo);
+                updated = eventService.getEventById(eventId);
+            }
+
+            return ResponseEntity.ok(updated);
         } catch (RuntimeException error) {
-            return ResponseEntity.badRequest().body(error.getMessage());
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", error.getMessage()));
         }
     }
 
@@ -158,6 +182,59 @@ public class EventController {
             return ResponseEntity.ok(eventService.getEventParticipants(eventId));
         } catch (RuntimeException error) {
             return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @PostMapping("/{eventId}/invite")
+    public ResponseEntity<?> inviteToEvent(
+            @PathVariable Long eventId,
+            @RequestParam Long inviterId,
+            @RequestBody java.util.Map<String, Long> body
+    ) {
+        try {
+            Long friendId = body.get("friendId");
+            eventService.inviteToEvent(eventId, inviterId, friendId);
+            return ResponseEntity.ok(java.util.Map.of("message", "Приглашение отправлено"));
+        } catch (RuntimeException error) {
+            return ResponseEntity.ok(java.util.Map.of("message", "Приглашение отклонено"));
+        }
+    }
+
+    @PostMapping("/{eventId}/invite/accept")
+    public ResponseEntity<?> acceptEventInvitation(
+            @PathVariable Long eventId,
+            @RequestParam Long userId
+    ) {
+        try {
+            return ResponseEntity.ok(eventService.acceptEventInvitation(eventId, userId));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
+        }
+    }
+
+    @PostMapping("/{eventId}/invite/decline")
+    public ResponseEntity<?> declineEventInvitation(
+            @PathVariable Long eventId,
+            @RequestParam Long userId
+    ) {
+        try {
+            eventService.declineEventInvitation(eventId, userId);
+            return ResponseEntity.ok(java.util.Map.of("message", "Приглашение отклонено"));
+        } catch (RuntimeException error) {
+            return ResponseEntity.ok(java.util.Map.of("message", "Приглашение отклонено"));
+        }
+    }
+
+    @PostMapping("/{eventId}/photo")
+    public ResponseEntity<?> uploadEventPhoto(
+            @PathVariable Long eventId,
+            @RequestParam("photo") MultipartFile photo
+    ) {
+        try {
+            String photoUrl = eventService.uploadEventPhoto(eventId, photo);
+            return ResponseEntity.ok(java.util.Map.of("photoUrl", photoUrl));
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", error.getMessage()));
         }
     }
 }

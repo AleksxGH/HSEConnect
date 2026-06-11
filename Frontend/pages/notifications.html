@@ -106,7 +106,8 @@
                     text: n.body,
                     time: formatTime(n.createdAt),
                     read: n.isRead,
-                    relatedUserId: n.relatedUserId
+                    relatedUserId: n.relatedUserId,
+                    relatedEventId: n.relatedEventId
                 }));
 
                 renderNotifications();
@@ -120,6 +121,46 @@
                     <p>Не удалось загрузить уведомления</p>
                 </div>
             `;
+            }
+        }
+
+        async function acceptEventInvitation(notificationId, eventId) {
+            try {
+                const response = await fetch(`${API_URL}/api/events/${eventId}/invite/accept?userId=${currentUserId}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    alert(await response.text());
+                    return;
+                }
+
+                await markNotificationAsRead(notificationId);
+                alert('Вы приняли приглашение');
+                window.location.href = `event-details.html?id=${eventId}`;
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка соединения с сервером');
+            }
+        }
+
+        async function declineEventInvitation(notificationId, eventId) {
+            try {
+                const response = await fetch(`${API_URL}/api/events/${eventId}/invite/decline?userId=${currentUserId}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    alert(await response.text());
+                    return;
+                }
+
+                await markNotificationAsRead(notificationId);
+                alert('Приглашение отклонено');
+                loadNotifications();
+            } catch (error) {
+                console.error(error);
+                alert('Ошибка соединения с сервером');
             }
         }
 
@@ -238,6 +279,16 @@
                 Принять
             </button>
         ` : ''}
+
+        ${notification.type === 'event_invitation' ? `
+            <button class="btn-accept" onclick="acceptEventInvitation(${notification.id}, ${notification.relatedEventId})">
+                Принять
+            </button>
+            <button class="btn-decline" onclick="declineEventInvitation(${notification.id}, ${notification.relatedEventId})">
+                Отклонить
+            </button>
+        ` : ''}
+
         <span class="unread-dot" title="Новое уведомление"></span>
     </div>
 ` : ''}
