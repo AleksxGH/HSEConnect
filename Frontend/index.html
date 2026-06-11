@@ -548,6 +548,7 @@
             if (!container) return;
 
             let filteredEvents = [...events];
+
             if (searchQuery) {
                 filteredEvents = filteredEvents.filter(event =>
                     event.title.toLowerCase().includes(searchQuery) ||
@@ -566,18 +567,22 @@
                 const month = dateObj.toLocaleString('ru', { month: 'short' }).replace('.', '');
 
                 return `
-                    <div class="event-item" data-event-id="${event.id}">
-                            <div class="event-day">${day}</div>
-                            <div class="event-month">${month}</div>
-                        </div>
-                        <div class="event-info">
-                            <div class="event-title">${escapeHtml(event.title)}</div>
-                            <div class="event-location">${escapeHtml(event.location || '')}, ${escapeHtml(event.time || '')}</div>
-                        </div>
-                        <div class="event-badge">${escapeHtml(event.type || 'Событие')}</div>
-                    </div>
-                `;
+            <div class="event-item" data-event-id="${event.id}">
+                <div class="event-date">
+                    <div class="event-day">${day}</div>
+                    <div class="event-month">${month}</div>
+                </div>
+
+                <div class="event-info">
+                    <div class="event-title">${escapeHtml(event.title)}</div>
+                    <div class="event-location">${escapeHtml(event.location || '')}, ${escapeHtml(event.time || '')}</div>
+                </div>
+
+                <div class="event-badge">${escapeHtml(event.type || 'Событие')}</div>
+            </div>
+        `;
             }).join('');
+
             container.querySelectorAll('.event-item').forEach(card => {
                 card.addEventListener('click', () => {
                     openEventDetails(card.dataset.eventId);
