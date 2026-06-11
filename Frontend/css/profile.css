@@ -153,7 +153,7 @@
     cursor: pointer;
     font: inherit;
     padding-right: 18px;
-    
+
     background: transparent;
     outline: none;
     box-shadow: none;
@@ -543,6 +543,173 @@
 .name {
     text-transform: uppercase;
     letter-spacing: 1px;
+}
+
+.user-profile-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    column-gap: 18px;
+    padding-top: 42px;
+    padding-left: 128px;
+}
+
+
+.message-floating {
+    border: 0;
+    border-radius: 10px;
+    height: 36px;
+    width: auto;
+    margin-top: 10px;
+    margin-right: 10px;
+    padding: 0 16px;
+    color: #fff;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    background: #4b59ff;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.message-floating:hover {
+    background: #3a48e8;
+    transform: translateY(-1px);
+}
+
+.message-floating img {
+    width: 16px;
+    height: 16px;
+    filter: invert(100%) sepia(100%) grayscale(100%) brightness(200%);
+}
+
+/* Блок с кнопками действий (3 кнопки) */
+.actions-block {
+    display: flex;
+    gap: 10px;
+    justify-content: space-around;
+    margin-top: 16px;
+    padding: 16px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.action-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: inherit;
+    width: 100%;
+}
+
+.action-btn img {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.action-label {
+    font-size: 11px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.btn-follow {
+    background: white;
+    color: #4b59ff;
+    border: 1px solid #4b59ff;
+}
+
+.btn-follow:hover {
+    background: #f0f2ff;
+    transform: translateY(-1px);
+}
+
+.btn-friend {
+    background: white;
+    color: #28a745;
+    border: 1px solid #28a745;
+}
+
+.btn-friend:hover {
+    background: #f0fff4;
+    transform: translateY(-1px);
+}
+
+.btn-block {
+    background: white;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+}
+
+.btn-block:hover {
+    background: #fff5f5;
+    transform: translateY(-1px);
+}
+
+.btn-unfollow {
+    background: #6c757d;
+    color: white;
+    border: none;
+}
+
+.btn-unfollow:hover {
+    background: #5a6268;
+}
+
+.btn-unfriend {
+    background: #dc3545;
+    color: white;
+    border: none;
+}
+
+.btn-unfriend:hover {
+    background: #c82333;
+}
+
+.btn-unblock {
+    background: #28a745;
+    color: white;
+    border: none;
+}
+
+.btn-unblock:hover {
+    background: #218838;
+}
+
+.interests-compact {
+    margin-top: 24px;
+    padding-top: 8px;
+    border-top: 1px solid #e9ecef;
+}
+
+.interests-compact .section-title {
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.interests-compact .chip-list {
+    margin-bottom: 0;
 }
 
 

@@ -154,25 +154,3 @@
 </div>
 </body>
 </html>
-
-<script>
-    // Дополнительный код для аватарки в profile.html
-    async function updateAvatarDisplay() {
-        const avatarContainer = document.getElementById('avatarContainer');
-        if (avatarContainer && currentProfile) {
-            const firstName = currentProfile.firstName || '';
-            const lastName = currentProfile.lastName || '';
-            const userId = localStorage.getItem('userId');
-            await window.avatarAPI.renderAvatar(avatarContainer, userId, firstName, lastName, 'medium');
-        }
-    }
-    
-    // Переопределяем функцию renderProfile или добавляем в неё вызов
-    const originalRenderProfile = window.renderProfile;
-    if (originalRenderProfile) {
-        window.renderProfile = function(profile) {
-            originalRenderProfile(profile);
-            updateAvatarDisplay();
-        };
-    }
-</script>
