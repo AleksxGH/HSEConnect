@@ -226,10 +226,10 @@ body {
 }
 
 .menu-item img {
-    width: 17px;
-    height: 17px;
+    width: 20px;
+    height: 20px;
     display: block;
-    flex: 0 0 17px;
+    flex: 0 0 20px;
 }
 
 /* Активное состояние пункта меню */
