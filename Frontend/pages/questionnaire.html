@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HSE Connect — Анкета</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/auth_reg.css">
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: #eef3fb;
+            text-align: center;
+        }
+
+        .card-wrap {
+            width: min(1040px, 100%);
+        }
+
+        .auth-card {
+            width: min(980px, 100%);
+        }
+
+        .title {
+            margin-bottom: 22px;
+        }
+
+        .section-title {
+            margin: 20px 0 12px;
+            color: #4a59ff;
+            font-size: 15px;
+            text-transform: uppercase;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .input,
+        .select,
+        .textarea {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+            padding: 13px 15px;
+            border: 1px solid rgba(74, 89, 255, 0.18);
+            border-radius: 16px;
+            outline: none;
+            font: inherit;
+            color: #20244a;
+            background: #f7f8ff;
+        }
+
+        .textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .radio-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 13px 15px;
+            border-radius: 16px;
+            background: #f7f8ff;
+            border: 1px solid rgba(74, 89, 255, 0.18);
+            color: #20244a;
+            cursor: pointer;
+        }
+
+        .radio-card input {
+            margin-right: 8px;
+        }
+
+        .job-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 48px;
+            gap: 10px;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .job-row .input {
+            margin-bottom: 0;
+        }
+
+        .small-btn {
+            border: 0;
+            border-radius: 14px;
+            padding: 12px 15px;
+            color: #4a59ff;
+            background: #eef0ff;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .small-btn.danger {
+            color: #ff3b5f;
+            background: #ffeef2;
+        }
+
+        #addJobBtn {
+            margin: 6px 0 18px;
+        }
+
+        .chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 6px 0 12px;
+        }
+
+        .chip {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #eef0ff;
+            color: #4a59ff;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .hint {
+            margin: -4px 0 12px;
+            font-size: 12px;
+            color: #7b82a8;
+        }
+
+        .error {
+            color: #ff3b5f;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        /* Стили для автокомплита */
+        .autocomplete-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid rgba(74, 89, 255, 0.18);
+            border-radius: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            background: #f7f8ff;
+        }
+
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .autocomplete-item:hover {
+            background: #eef0ff;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="auth-page">
+        <div class="card-wrap">
+            <div class="logo-wrap">
+                <img src="../icons/logo_with_title.png" alt="HSE Connect" class="logo">
+            </div>
+
+            <section class="auth-card">
+                <h1 class="title">Анкета</h1>
+
+                <form class="form" id="questionnaireForm" novalidate>
+                    <div class="section-title">Основная информация</div>
+
+                    <input class="input" id="lastName" type="text" placeholder="Фамилия">
+                    <input class="input" id="firstName" type="text" placeholder="Имя">
+                    <input class="input" id="middleName" type="text" placeholder="Отчество (если есть)">
+                    <input class="input" id="birthDate" type="date">
+
+                    <select class="select" id="userType">
+                        <option value="">Выберите роль</option>
+                        <option value="student">Студент</option>
+                        <option value="employee">Сотрудник</option>
+                    </select>
+
+                    <div id="studentBlock" class="hidden">
+                        <div class="section-title">Информация о студенте</div>
+
+                        <input class="input" id="campus" type="text" placeholder="Кампус">
+
+                        <div class="autocomplete-wrapper">
+                            <input class="input" id="faculty" type="text" placeholder="Факультет" autocomplete="off">
+                            <div id="facultyDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                        </div>
+
+                        <div class="section-title" style="margin-top: 16px;">Ступень обучения</div>
+                        <div class="radio-group">
+                            <label class="radio-card">
+                                <input type="radio" name="educationForm" value="Бакалавриат">
+                                Бакалавриат
+                            </label>
+
+                            <label class="radio-card">
+                                <input type="radio" name="educationForm" value="Специалитет">
+                                Специалитет
+                            </label>
+
+                            <label class="radio-card">
+                                <input type="radio" name="educationForm" value="Магистратура">
+                                Магистратура
+                            </label>
+                        </div>
+
+                        <div class="section-title" style="margin-top: 16px;">Форма обучения</div>
+                        <div class="radio-group">
+                            <label class="radio-card">
+                                <input type="radio" name="studyFormat" value="Очная">
+                                Очная
+                            </label>
+
+                            <label class="radio-card">
+                                <input type="radio" name="studyFormat" value="Заочная">
+                                Заочная
+                            </label>
+
+                            <label class="radio-card">
+                                <input type="radio" name="studyFormat" value="Очно-заочная">
+                                Очно-заочная
+                            </label>
+                        </div>
+
+                        <div class="autocomplete-wrapper">
+                            <input class="input" id="program" type="text" placeholder="Образовательная программа"
+                                autocomplete="off">
+                            <div id="programDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                        </div>
+
+                        <input class="input" id="graduationYear" type="number" placeholder="Год конца обучения">
+                        <div id="courseBlock" style="display:none;">
+                            <input class="input" id="course" type="text" placeholder="Курс посчитается автоматически"
+                                disabled>
+                        </div>
+
+                        <select class="select" id="studentStatus">
+                            <option value="">Статус</option>
+                            <option value="Учусь">Учусь</option>
+                            <option value="В академе">В академе</option>
+                            <option value="Выпускник">Выпускник</option>
+                        </select>
+                    </div>
+
+                    <div id="employeeBlock" class="hidden">
+                        <div class="section-title">Информация о сотруднике</div>
+
+                        <div id="jobsContainer"></div>
+
+                        <button class="small-btn" type="button" id="addJobBtn">+ Добавить должность</button>
+
+                        <input class="input" id="address" type="text" placeholder="Адрес (необязательно)">
+                        <input class="input" id="workPhone" type="tel" placeholder="Рабочий номер (необязательно)">
+                    </div>
+
+                    <div class="section-title">О себе</div>
+
+                    <textarea class="textarea" id="about" maxlength="500"
+                        placeholder="О себе (необязательно)"></textarea>
+
+                    <div class="autocomplete-wrapper">
+                        <input class="input" id="interestInput" type="text" placeholder="Интересы: начните вводить..."
+                            autocomplete="off">
+                        <div id="interestDropdown" class="autocomplete-dropdown" style="display: none;"></div>
+                    </div>
+
+                    <div class="chips" id="interestChips"></div>
+
+                    <div class="error" id="errorText"></div>
+
+                    <button class="primary" type="submit">Сохранить анкету</button>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <script src="../scripts/api.js"></script>
+    <script>
+        const form = document.getElementById("questionnaireForm");
+        const userType = document.getElementById("userType");
+
+        const studentBlock = document.getElementById("studentBlock");
+        const employeeBlock = document.getElementById("employeeBlock");
+
+        const graduationYearInput = document.getElementById("graduationYear");
+        const courseInput = document.getElementById("course");
+
+        const jobsContainer = document.getElementById("jobsContainer");
+        const addJobBtn = document.getElementById("addJobBtn");
+
+        const interestInput = document.getElementById("interestInput");
+        const interestDropdown = document.getElementById("interestDropdown");
+        const interestChips = document.getElementById("interestChips");
+        const errorText = document.getElementById("errorText");
+
+        const facultyInput = document.getElementById("faculty");
+        const facultyDropdown = document.getElementById("facultyDropdown");
+        const programInput = document.getElementById("program");
+        const programDropdown = document.getElementById("programDropdown");
+
+        let selectedInterests = [];
+        let allApprovedInterests = [];
+
+        let faculties = [];
+        let programs = [];
+        let currentFacultyId = null;
+
+        const currentUserId = localStorage.getItem('userId');
+
+        // Функция для нормализации строки (первая буква заглавная, остальные строчные)
+        function normalizeString(str) {
+            if (!str) return '';
+            const cleaned = str.trim().replace(/\s+/g, ' ');
+            return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+        }
+
+        // ========== РАБОТА С ИНТЕРЕСАМИ ==========
+
+        // Загрузка одобренных интересов
+        async function loadApprovedInterests() {
+            try {
+                const response = await fetch(`${API_URL}/api/interests?approved=true`);
+                if (response.ok) {
+                    allApprovedInterests = await response.json();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки интересов:", error);
+            }
+        }
+
+        // Автодополнение для интересов
+        async function setupInterestAutocomplete() {
+            interestInput.addEventListener("input", async () => {
+                const query = interestInput.value.trim();
+
+                if (!query) {
+                    interestDropdown.style.display = "none";
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}/api/profile/suggest/interest?q=${encodeURIComponent(query)}`);
+
+                if (!response.ok) {
+                    interestDropdown.style.display = "none";
+                    return;
+                }
+
+                const variants = await response.json();
+
+                if (!variants.length) {
+                    interestDropdown.style.display = "none";
+                    return;
+                }
+
+                interestDropdown.innerHTML = variants.map(name =>
+                    `<div class="autocomplete-item" data-name="${name}">${name}</div>`
+                ).join("");
+
+                interestDropdown.style.display = "block";
+
+                interestDropdown.querySelectorAll(".autocomplete-item").forEach(el => {
+                    el.addEventListener("click", () => {
+                        const interestName = el.dataset.name;
+
+                        if (!selectedInterests.includes(interestName)) {
+                            selectedInterests.push(interestName);
+                            renderInterests();
+                        }
+
+                        interestInput.value = "";
+                        interestDropdown.style.display = "none";
+                    });
+                });
+            });
+        }
+
+        // Добавление нового интереса в базу
+        async function addNewInterest(name) {
+            try {
+                const response = await fetch(`${API_URL}/api/interests`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: normalizeString(name),
+                        created_by_user_id: currentUserId ? parseInt(currentUserId) : null
+                    })
+                });
+
+                if (response.ok) {
+                    const newInterest = await response.json();
+                    // Если интерес сразу одобрен (например, для админа), добавляем в список
+                    if (newInterest.is_approved) {
+                        allApprovedInterests.push(newInterest);
+                    }
+                    return newInterest;
+                }
+            } catch (error) {
+                console.error("Ошибка создания интереса:", error);
+            }
+            return null;
+        }
+
+        // Обработка Enter для ввода нового интереса
+        interestInput.addEventListener("keydown", async (event) => {
+            if (event.key !== "Enter") return;
+
+            event.preventDefault();
+
+            const value = interestInput.value.trim();
+            if (!value) return;
+
+            const normalizedValue = normalizeString(value);
+
+            // Проверяем, есть ли такой интерес уже в выбранных
+            if (selectedInterests.includes(normalizedValue)) {
+                interestInput.value = "";
+                return;
+            }
+
+            // Проверяем, есть ли такой интерес в одобренных
+            const existingApproved = allApprovedInterests.find(i =>
+                i.name.toLowerCase() === normalizedValue.toLowerCase()
+            );
+
+            if (existingApproved) {
+                // Если есть одобренный - добавляем
+                selectedInterests.push(existingApproved.name);
+                renderInterests();
+                interestInput.value = "";
+                return;
+            }
+
+            // Если нет - создаём новый (требует одобрения)
+            const newInterest = await addNewInterest(normalizedValue);
+
+            if (newInterest) {
+                if (newInterest.is_approved) {
+                    // Если сразу одобрен
+                    selectedInterests.push(newInterest.name);
+                } else {
+                    // Если требует одобрения
+                    alert(`Интерес "${normalizedValue}" отправлен на модерацию. После одобрения он появится в списке.`);
+                }
+                renderInterests();
+                interestInput.value = "";
+            } else {
+                alert("Не удалось добавить интерес. Попробуйте позже.");
+            }
+        });
+
+        function renderInterests() {
+            interestChips.innerHTML = "";
+
+            selectedInterests.forEach((interest) => {
+                const chip = document.createElement("span");
+                chip.className = "chip";
+                chip.textContent = interest;
+
+                chip.addEventListener("click", () => {
+                    selectedInterests = selectedInterests.filter(item => item !== interest);
+                    renderInterests();
+                });
+
+                interestChips.appendChild(chip);
+            });
+        }
+
+        // ========== РАБОТА С ФАКУЛЬТЕТАМИ И ПРОГРАММАМИ ==========
+
+        async function loadFaculties() {
+            try {
+                const response = await fetch(`${API_URL}/api/faculties`);
+                if (response.ok) {
+                    faculties = await response.json();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки факультетов:", error);
+            }
+        }
+
+        async function loadPrograms(facultyId = null) {
+            try {
+                let url = `${API_URL}/api/education-programs`;
+                if (facultyId) {
+                    url += `?facultyId=${facultyId}`;
+                }
+                const response = await fetch(url);
+                if (response.ok) {
+                    programs = await response.json();
+                }
+            } catch (error) {
+                console.error("Ошибка загрузки программ:", error);
+            }
+        }
+
+        function setupAutocomplete(input, dropdown, dictionary, onSelect) {
+            input.addEventListener("input", async () => {
+                const query = input.value.trim();
+
+                if (!query) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                const response = await fetch(`${API_URL}/api/profile/suggest/${dictionary}?q=${encodeURIComponent(query)}`);
+
+                if (!response.ok) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                const variants = await response.json();
+
+                if (!variants.length) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                dropdown.innerHTML = variants.map(name =>
+                    `<div class="autocomplete-item" data-name="${name}">${name}</div>`
+                ).join("");
+
+                dropdown.style.display = "block";
+
+                dropdown.querySelectorAll(".autocomplete-item").forEach(el => {
+                    el.addEventListener("click", () => {
+                        input.value = el.dataset.name;
+                        dropdown.style.display = "none";
+
+                        if (onSelect) onSelect(el.dataset.name);
+                    });
+                });
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!dropdown.contains(e.target) && e.target !== input) {
+                    dropdown.style.display = "none";
+                }
+            });
+        }
+
+        function onFacultySelect(facultyId) {
+            currentFacultyId = facultyId;
+            loadPrograms(facultyId);
+            programInput.value = "";
+            setupAutocomplete(programInput, programDropdown, programs, null);
+        }
+
+        async function createFaculty(name) {
+            try {
+                const response = await fetch(`${API_URL}/api/faculties`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: normalizeString(name) })
+                });
+                if (response.ok) {
+                    const newFaculty = await response.json();
+                    faculties.push(newFaculty);
+                    return newFaculty.id;
+                }
+            } catch (error) {
+                console.error("Ошибка создания факультета:", error);
+            }
+            return null;
+        }
+
+        async function createEducationProgram(facultyId, name, educationLevel, studyForm) {
+            try {
+                const response = await fetch(`${API_URL}/api/education-programs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        facultyId: facultyId,
+                        name: normalizeString(name),
+                        educationLevel: normalizeString(educationLevel),
+                        studyForm: normalizeString(studyForm)
+                    })
+                });
+                if (response.ok) {
+                    const newProgram = await response.json();
+                    programs.push(newProgram);
+                    return newProgram.id;
+                }
+            } catch (error) {
+                console.error("Ошибка создания программы:", error);
+            }
+            return null;
+        }
+
+        async function getOrCreateFaculty(name) {
+            if (!name) return null;
+            const normalizedName = normalizeString(name);
+            const existing = faculties.find(f =>
+                f.name.toLowerCase() === normalizedName.toLowerCase()
+            );
+            if (existing) return existing.id;
+            return await createFaculty(normalizedName);
+        }
+
+        async function getOrCreateProgram(facultyId, programName, educationLevel, studyForm) {
+            if (!facultyId || !programName) return null;
+            const normalizedName = normalizeString(programName);
+            const existing = programs.find(p =>
+                p.facultyId === facultyId &&
+                p.name.toLowerCase() === normalizedName.toLowerCase()
+            );
+            if (existing) return existing.id;
+            return await createEducationProgram(facultyId, normalizedName, educationLevel, studyForm);
+        }
+
+        // ========== ОСТАЛЬНАЯ ЛОГИКА ==========
+
+        userType.addEventListener("change", () => {
+            studentBlock.classList.toggle("hidden", userType.value !== "student");
+            employeeBlock.classList.toggle("hidden", userType.value !== "employee");
+
+            if (userType.value === "employee" && jobsContainer.children.length === 0) {
+                addJobRow();
+            }
+        });
+
+        graduationYearInput.addEventListener("input", calculateCourse);
+
+        document.querySelectorAll('input[name="educationForm"]').forEach(radio => {
+            radio.addEventListener("change", calculateCourse);
+        });
+
+        const courseBlock = document.getElementById("courseBlock");
+
+        function calculateCourse() {
+            const graduationYear = Number(graduationYearInput.value);
+            const educationForm = document.querySelector('input[name="educationForm"]:checked')?.value;
+
+            if (!graduationYear || !educationForm) {
+                courseBlock.style.display = "none";
+                return;
+            }
+
+            let duration = 4;
+            if (educationForm === "Бакалавриат") duration = 4;
+            if (educationForm === "Специалитет") duration = 5;
+            if (educationForm === "Магистратура") duration = 2;
+
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const academicYear = today.getMonth() >= 8 ? currentYear : currentYear - 1;
+
+            const startYear = graduationYear - duration;
+            const course = academicYear - startYear + 1;
+
+            if (course >= 1 && course <= duration) {
+                courseBlock.style.display = "block";
+                courseInput.value = `${course} курс`;
+            } else {
+                courseBlock.style.display = "none";
+                courseInput.value = "";
+            }
+        }
+
+        function addJobRow() {
+            const row = document.createElement("div");
+            row.className = "job-row";
+
+            row.innerHTML = `
+                <input class="input" type="text" placeholder="Подразделение">
+                <input class="input" type="text" placeholder="Должность">
+                <button class="small-btn danger" type="button">×</button>
+            `;
+
+            const deleteBtn = row.querySelector("button");
+            deleteBtn.addEventListener("click", () => row.remove());
+
+            jobsContainer.appendChild(row);
+        }
+
+        addJobBtn.addEventListener("click", addJobRow);
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            errorText.textContent = "";
+
+            const lastName = document.getElementById("lastName").value.trim();
+            const firstName = document.getElementById("firstName").value.trim();
+            const birthDate = document.getElementById("birthDate").value;
+
+            if (!lastName || !firstName || !birthDate || !userType.value) {
+                errorText.textContent = "Заполните фамилию, имя, дату рождения и роль.";
+                return;
+            }
+
+            const payload = {
+                lastName: normalizeString(lastName),
+                firstName: normalizeString(firstName),
+                middleName: normalizeString(document.getElementById("middleName").value.trim()),
+                birthDate,
+                type: userType.value,
+                about: document.getElementById("about").value.trim(),
+                interests: selectedInterests
+            };
+
+            if (userType.value === "student") {
+                const facultyName = document.getElementById("faculty").value.trim();
+                const programName = document.getElementById("program").value.trim();
+                const educationLevel = document.querySelector('input[name="educationForm"]:checked')?.value || "";
+                const studyForm = document.querySelector('input[name="studyFormat"]:checked')?.value || "";
+
+                if (!facultyName) {
+                    errorText.textContent = "Введите факультет.";
+                    return;
+                }
+
+                if (!educationLevel || !studyForm) {
+                    errorText.textContent = "Выберите ступень и форму обучения.";
+                    return;
+                }
+
+                const facultyId = null;
+                const programId = null;
+
+                payload.student = {
+                    faculty: facultyName,
+                    facultyId: facultyId,
+                    educationProgram: programName,
+                    educationProgramId: programId,
+                    educationLevel: educationLevel,
+                    studyForm: studyForm,
+                    campus: document.getElementById("campus").value.trim(),
+                    graduationYear: graduationYearInput.value,
+                    course: courseInput.value,
+                    academicStatus: document.getElementById("studentStatus").value,
+                    status: document.getElementById("studentStatus").value
+                };
+            }
+
+            if (userType.value === "employee") {
+                payload.employee = {
+                    jobs: Array.from(jobsContainer.children).map(row => {
+                        const inputs = row.querySelectorAll("input");
+                        return {
+                            department: normalizeString(inputs[0].value.trim()),
+                            position: normalizeString(inputs[1].value.trim())
+                        };
+                    }),
+                    address: document.getElementById("address").value.trim(),
+                    workPhone: document.getElementById("workPhone").value.trim()
+                };
+            }
+
+            console.log(payload);
+
+            try {
+                await saveQuestionnaire(payload);
+                window.location.href = "profile.html";
+
+            } catch (error) {
+                errorText.textContent = error.message;
+            }
+        });
+
+        async function init() {
+            await loadApprovedInterests();
+            await loadFaculties();
+            await loadPrograms();
+
+            setupInterestAutocomplete();
+            setupAutocomplete(facultyInput, facultyDropdown, "faculty", null);
+            setupAutocomplete(programInput, programDropdown, "education_program", null);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

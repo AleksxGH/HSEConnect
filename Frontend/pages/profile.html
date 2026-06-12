@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HSE Connect — Профиль</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/profile.css">
+
+    <script src="../js/components.js" defer></script>
+</head>
+
+<body>
+<hse-header></hse-header>
+
+<div class="page">
+    <hse-sidebar></hse-sidebar>
+
+    <main class="content">
+        <section class="hero">
+            <div class="hero-cover"></div>
+
+            <div class="hero-body">
+                <div class="avatar-wrap" id="avatarContainer">
+                        <!-- Сюда avatar.js загрузит аватарку -->
+                </div>
+
+                <div class="hero-main">
+                    <div class="hero-main-left">
+                        <h1 class="name">Загрузка...</h1>
+                        <div class="tags"></div>
+                    </div>
+
+                    <button class="edit-floating" id="openEditProfileBtn" type="button">
+                        <span>Редактировать</span>
+                        <img src="../icons/edit_icon.svg" alt="" aria-hidden="true" />
+                    </button>
+                </div>
+
+                <div class="row">
+                    <section class="card">
+                        <h2 class="section-title">ОПИСАНИЕ</h2>
+                        <p class="description">Загрузка описания...</p>
+                    </section>
+
+                    <section class="card">
+                        <div class="stats">
+                            <div>
+                                <div class="stat-value" id="friendsCount">0</div>
+                                <div class="stat-label">друг</div>
+                            </div>
+
+                            <div>
+                                <div class="stat-value" id="followersCount">0</div>
+                                <div class="stat-label">подписчиков</div>
+                            </div>
+
+                            <div>
+                                <div class="stat-value" id="eventsCount">0</div>
+                                <div class="stat-label">событий</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="interests">
+                    <h2 class="section-title" style="margin:0; color:#4a59ff;">ИНТЕРЕСЫ</h2>
+                    <div class="chip-list"></div>
+                </section>
+
+                <section class="events">
+                    <div class="events-tabs"
+                         style="display:flex; gap:18px; padding:14px 16px 10px; color:var(--blue-strong); font-size:15px; border-bottom:1px solid rgba(75,89,255,0.08);">
+                        <span id="myEventsTab" class="active" style="cursor:pointer;">МОИ СОБЫТИЯ</span>
+                        <span id="goingEventsTab" class="inactive" style="cursor:pointer;">СОБИРАЮСЬ ПОЙТИ</span>
+                    </div>
+
+                    <div id="eventsContainer" class="events-grid"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div class="modal" id="eventModal">
+    <div class="modal-content">
+        <h2 id="modalTitle">Событие</h2>
+
+        <input type="text" id="eventTitle" placeholder="Название события">
+
+        <select id="eventType">
+            <option value="Учёба">Учёба</option>
+            <option value="Спорт">Спорт</option>
+            <option value="Вечеринка">Вечеринка</option>
+            <option value="Образование">Образование</option>
+            <option value="Развлечения">Развлечения</option>
+            <option value="Общение">Общение</option>
+        </select>
+
+        <input type="text" id="eventLocation" placeholder="Место проведения">
+        <input type="date" id="eventDate">
+        <input type="time" id="eventTime">
+        <textarea id="eventDescription" placeholder="Описание события"></textarea>
+
+        <div class="modal-buttons">
+            <button class="cancel-btn" id="closeModalBtn" type="button">Закрыть</button>
+            <button class="submit-btn" id="saveEventBtn" type="button">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="profileModal">
+    <div class="modal-content">
+        <h2>Редактировать профиль</h2>
+
+        <input type="text" id="editLastName" placeholder="Фамилия">
+        <input type="text" id="editFirstName" placeholder="Имя">
+        <input type="text" id="editMiddleName" placeholder="Отчество">
+
+        <textarea id="editAbout" placeholder="О себе"></textarea>
+
+        <input type="text" id="editInterests" placeholder="Интересы через запятую">
+
+        <div class="modal-buttons">
+            <button class="cancel-btn" id="closeProfileModalBtn" type="button">Закрыть</button>
+            <button class="submit-btn" id="saveProfileBtn" type="button">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<script src="../scripts/api.js"></script>
+<script src="../js/avatar.js"></script>
+<script src="../scripts/profile.js"></script>
+<div class="modal" id="detailsModal">
+    <div class="modal-content">
+        <h2 id="detailsTitle">Название события</h2>
+
+        <p><b>Тип:</b> <span id="detailsType"></span></p>
+        <p><b>Место:</b> <span id="detailsLocation"></span></p>
+        <p><b>Дата:</b> <span id="detailsDate"></span></p>
+        <p><b>Время:</b> <span id="detailsTime"></span></p>
+        <p><b>Описание:</b></p>
+        <p id="detailsDescription"></p>
+
+        <div class="modal-buttons">
+            <button class="cancel-btn" id="closeDetailsBtn">Закрыть</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

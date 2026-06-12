@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HSE Connect — Авторизация</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/auth_reg.css">
+</head>
+
+<body>
+  <main class="auth-page">
+    <div class="card-wrap">
+      <div class="logo-wrap">
+        <img src="../icons/logo_with_title.png" alt="HSE Connect" class="logo">
+      </div>
+      <section class="auth-card">
+        <h1 class="title">Авторизация</h1>
+
+        <form class="form" id="loginForm" novalidate>
+          <label class="label">
+            <span class="vis">Электронная почта</span>
+            <input class="input" id="emailInput" type="email" placeholder="Электронная почта">
+          </label>
+
+          <label class="label">
+            <span class="vis">Пароль</span>
+            <input class="input" id="passwordInput" type="password" placeholder="Пароль">
+          </label>
+
+          <button class="primary" id="loginButton" type="submit" disabled>Войти</button>
+        </form>
+
+        <p id="errorText" style="color: red;"></p>
+      </section>
+
+      <a class="muted-link" href="register.html">Еще не зарегистрированы?</a>
+
+    </div>
+  </main>
+  <script src="../scripts/api.js"></script>
+  <script src="../scripts/auth_script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,287 @@
+/* components.css - универсальные стили для Web Components и базовых элементов */
+/* Этот файл подходит для всех страниц: профиль, чат, главная и т.д. */
+
+:root {
+    --bg: #eef3fb;
+    --blue: #4b59ff;
+    --blue-soft: #7f90df;
+    --blue-strong: #3f4cff;
+    --text: #24304a;
+    --muted: #8792b0;
+    --card: #ffffff;
+    --stroke: rgba(63, 76, 255, 0.12);
+    --shadow: 0 14px 30px rgba(59, 72, 150, 0.12);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-weight: 600;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Layout страницы - универсальная сетка */
+.page {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    gap: 18px;
+    padding: 14px 16px 18px;
+}
+
+/* Контентная область */
+.content {
+    min-width: 0;
+}
+
+/* ========== Стили для topbar ========== */
+.topbar {
+    height: 54px;
+    background: linear-gradient(180deg, #7c90de 0%, #7f92e2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px 0 14px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.24) inset;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    text-decoration: none;
+}
+
+.brand-icon { 
+    width: 34px; 
+    height: 34px; 
+    display: block; 
+}
+
+.brand-text { 
+    height: 15px; 
+    width: auto; 
+    display: block; 
+}
+
+/* Правая часть topbar с меню пользователя */
+.topbar-right {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+/* Кнопка-триггер для выпадающего меню (аватарка + стрелка) */
+.user-menu-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 40px;
+    transition: background-color 0.2s;
+}
+
+.user-menu-trigger:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Контейнер для аватарки */
+.avatar-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Стили для мини-аватарки в хедере */
+.mini-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Стили для аватарки с инициалами в хедере */
+.mini-avatar-initials {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+}
+
+/* Стрелка выпадающего меню */
+.dropdown-icon {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    filter: brightness(0) invert(1); /* Делает иконку белой */
+}
+
+
+/* ========== Выпадающее меню ========== */
+.dropdown-menu {
+    position: absolute;
+    top: 45px;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Стрелка меню (треугольник сверху) */
+.dropdown-menu::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 15px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid white;
+}
+
+/* Пункты выпадающего меню */
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    color: #24304a;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background: #f5f7fd;
+}
+
+.dropdown-icon-svg {
+    flex-shrink: 0;
+    color: #4b59ff;
+}
+
+.dropdown-item span {
+    flex: 1;
+}
+
+/* ========== Стили для sidebar ========== */
+.sidebar {
+    padding-top: 10px;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 10px;
+}
+
+.menu-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--blue-strong);
+    text-decoration: none;
+    font-size: 16px;
+    line-height: 1;
+    width: fit-content;
+    padding-bottom: 5px;
+    transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+    opacity: 0.8;
+}
+
+.menu-item img {
+    height: 20px;
+    width: 20px;
+    display: block;
+    flex: 0 0 20px;
+}
+
+.icon-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.notification-dot {
+    position: absolute;
+    top: -3px;
+    right: -7px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff4757;
+    box-shadow: 0 0 0 4px rgba(255, 71, 87, 0.12);
+    animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-red {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4);
+    }
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 4px rgba(255, 71, 87, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 71, 87, 0);
+    }
+}
+
+/* Активное состояние пункта меню */
+.menu-item.active {
+    background: rgba(75, 89, 255, 0.08);
+    padding: 6px 14px 6px 10px;
+    border-radius: 40px;
+    margin-left: -6px;
+}
+
+/* ========== Адаптивность ========== */
+@media (max-width: 900px) {
+    .page {
+        grid-template-columns: 1fr;
+    }
+    .sidebar {
+        display: none;
+    }
+}

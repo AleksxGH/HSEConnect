@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HSE Connect — Профиль пользователя</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/profile.css">
+
+    <script src="../js/components.js" defer></script>
+    <script src="../scripts/api.js"></script>
+    <script src="../js/avatar.js"></script>
+
+</head>
+
+<body>
+    <hse-header></hse-header>
+
+    <div class="page">
+        <hse-sidebar></hse-sidebar>
+
+        <main class="content">
+            <section class="hero">
+                <div class="hero-cover"></div>
+
+                <div class="hero-body">
+                    <div class="avatar-wrap" id="avatarContainer">
+                    </div>
+
+                    <div class="user-profile-header">
+                        <div class="hero-main-left">
+                            <h1 class="name" id="profileName">Загрузка...</h1>
+                            <div class="tags" id="profileTags"></div>
+                        </div>
+
+                        <button class="message-floating" id="messageBtn" type="button">
+                            <img src="../icons/chat_icon.svg" alt="" aria-hidden="true" />
+                            <span>Написать</span>
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <section class="card">
+                            <h2 class="section-title">ОПИСАНИЕ</h2>
+                            <p class="description" id="profileDescription">Загрузка описания...</p>
+                        </section>
+
+                        <section class="card">
+                            <div class="stats">
+                                <div>
+                                    <div class="stat-value" id="friendsCount">0</div>
+                                    <div class="stat-label">друзей</div>
+                                </div>
+
+                                <div>
+                                    <div class="stat-value" id="followersCount">0</div>
+                                    <div class="stat-label">подписчиков</div>
+                                </div>
+
+                                <div>
+                                    <div class="stat-value" id="eventsCount">0</div>
+                                    <div class="stat-label">событий</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="actions-block" id="actionsBlock">
+                        <div class="action-item">
+                            <button class="action-btn" id="followBtn">
+                                <img src="../icons/follow_icon.svg" alt="" id="followIcon">
+                                <span id="followText">Загрузка...</span>
+                            </button>
+                        </div>
+
+                        <div class="action-item">
+                            <button class="action-btn" id="friendBtn">
+                                <img src="../icons/friend_icon.svg" alt="" id="friendIcon">
+                                <span id="friendText">Загрузка...</span>
+                            </button>
+                        </div>
+
+                        <div class="action-item">
+                            <button class="action-btn" id="blockBtn">
+                                <img src="../icons/block_icon.svg" alt="" id="blockIcon">
+                                <span id="blockText">Загрузка...</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Интересы (компактные) -->
+                    <div class="interests interests-compact">
+                        <h2 class="section-title" style="margin:0; color:#4a59ff;">ИНТЕРЕСЫ</h2>
+                        <div class="chip-list" id="interestsList"></div>
+                    </div>
+
+                    <!-- События -->
+                    <section class="events">
+                        <div class="events-tabs"
+                            style="display:flex; gap:18px; padding:14px 16px 10px; color:var(--blue-strong); font-size:15px; border-bottom:1px solid rgba(75,89,255,0.08);">
+                            <span id="myEventsTab" class="active" style="cursor:pointer;">СОБЫТИЯ ПОЛЬЗОВАТЕЛЯ</span>
+                            <span id="goingEventsTab" class="inactive" style="cursor:pointer;">ПОЛЬЗОВАТЕЛЬ СОБИРАЕТСЯ
+                                ПОЙТИ</span>
+                        </div>
+
+                        <div id="eventsContainer" class="events-grid"></div>
+                    </section>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Модальное окно события -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Событие</h2>
+            <input type="text" id="eventTitle" placeholder="Название события">
+            <select id="eventType">
+                <option value="Учёба">Учёба</option>
+                <option value="Спорт">Спорт</option>
+                <option value="Вечеринка">Вечеринка</option>
+                <option value="Образование">Образование</option>
+                <option value="Развлечения">Развлечения</option>
+                <option value="Общение">Общение</option>
+            </select>
+            <input type="text" id="eventLocation" placeholder="Место проведения">
+            <input type="date" id="eventDate">
+            <input type="time" id="eventTime">
+            <textarea id="eventDescription" placeholder="Описание события"></textarea>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeModalBtn">Закрыть</button>
+                <button class="submit-btn" id="saveEventBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно деталей события -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content">
+            <h2 id="detailsTitle">Название события</h2>
+            <p><b>Тип:</b> <span id="detailsType"></span></p>
+            <p><b>Место:</b> <span id="detailsLocation"></span></p>
+            <p><b>Дата:</b> <span id="detailsDate"></span></p>
+            <p><b>Время:</b> <span id="detailsTime"></span></p>
+            <p><b>Описание:</b></p>
+            <p id="detailsDescription"></p>
+            <div class="modal-buttons">
+                <button class="cancel-btn" id="closeDetailsBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== НАСТРОЙКА ИКОНОК ==========
+        const ICON_PATHS = {
+            message: '../icons/message_icon.svg',
+            follow: '../icons/follow_icon.svg',
+            unfollow: '../icons/unfollow_icon.svg',
+            friend: '../icons/friend_icon.svg',
+            unfriend: '../icons/unfriend_icon.svg',
+            block: '../icons/block_icon.svg',
+            unblock: '../icons/unblock_icon.svg'
+        };
+    </script>
+    <script src="../scripts/profile.js"></script>
+</body>
+
+</html>
