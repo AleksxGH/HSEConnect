@@ -45,6 +45,9 @@ public class Event {
     @Column(name = "visibility")
     private String visibility;
 
+    @Column(name = "photo_url")
+    private String photoUrl;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -88,6 +91,14 @@ public class Event {
 
     public String getVisibility() { return visibility; }
     public void setVisibility(String visibility) { this.visibility = visibility; }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

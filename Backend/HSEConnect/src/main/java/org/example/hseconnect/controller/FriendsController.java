@@ -10,7 +10,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/friends")
-@CrossOrigin(origins = "*")
 public class FriendsController {
 
     private final FriendsService friendsService;
@@ -129,6 +128,19 @@ public class FriendsController {
             return ResponseEntity.ok(avatarUrl);
         } catch (RuntimeException error) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/{userId}/accept/{targetUserId}")
+    public ResponseEntity<?> acceptFriendRequest(
+            @PathVariable Long userId,
+            @PathVariable Long targetUserId
+    ) {
+        try {
+            friendsService.acceptFriendRequest(userId, targetUserId);
+            return ResponseEntity.ok("Заявка принята");
+        } catch (RuntimeException error) {
+            return ResponseEntity.badRequest().body(error.getMessage());
         }
     }
 }

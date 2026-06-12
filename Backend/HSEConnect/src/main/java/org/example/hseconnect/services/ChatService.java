@@ -422,11 +422,15 @@ public class ChatService {
             validateChatExists(chatId);
             validateUserInChat(chatId, userId);
 
+            ZoneId moscowZone = ZoneId.of("Europe/Moscow");
+            ZonedDateTime nowMoscow = ZonedDateTime.now(moscowZone);
+            LocalDateTime now = nowMoscow.toLocalDateTime();
+
             Long messageId = jdbcTemplate.queryForObject("""
-            INSERT INTO app.message (chat_id, sender_id, message_text, created_at, edited_at, deleted_at)
-                                VALUES (?, ?, ?, NOW(), NULL, NULL)
-                                RETURNING message_id
-        """, Long.class, chatId, userId, hasText ? text.trim() : "");
+    INSERT INTO app.message (chat_id, sender_id, message_text, created_at, edited_at, deleted_at)
+    VALUES (?, ?, ?, ?, NULL, NULL)
+    RETURNING message_id
+""", Long.class, chatId, userId, hasText ? text.trim() : "", Timestamp.valueOf(now));
 
             List<AttachmentDto> attachments = new ArrayList<>();
 
@@ -450,8 +454,8 @@ public class ChatService {
                     jdbcTemplate.update("""
                     INSERT INTO app.message_attachment
                         (message_id, file_url, file_name, file_type, file_size, created_at)
-                    VALUES (?, ?, ?, ?, ?, NOW())
-                """, messageId, fileUrl, fileName, fileType, fileSize);
+                                                 VALUES (?, ?, ?, ?, ?, ?)
+                """, messageId, fileUrl, fileName, fileType, fileSize, Timestamp.valueOf(now));
 
                     attachments.add(new AttachmentDto(
                             fileUrl,
@@ -468,8 +472,8 @@ public class ChatService {
             dto.setSenderId(userId);
             dto.setText(hasText ? text.trim() : "");
             dto.setSender("outgoing");
-            dto.setTime("только что");
-            dto.setCreatedAt(java.time.LocalDateTime.now().toString());
+            dto.setTime(now.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm")));
+            dto.setCreatedAt(nowMoscow.toInstant().toString());
             dto.setAttachments(attachments);
 
             return dto;

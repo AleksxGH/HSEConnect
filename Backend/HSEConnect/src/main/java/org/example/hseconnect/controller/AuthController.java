@@ -18,7 +18,6 @@ import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final JdbcTemplate jdbcTemplate;

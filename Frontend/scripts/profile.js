@@ -686,7 +686,11 @@ function renderEvents(events) {
                     <span>${event.respondedUserIds?.length || 0} участника</span>
                 </div>
             </div>
-            <img class="event-photo" src="../stubs/photo_square.svg" alt="Фото события">
+            <img
+    class="event-photo"
+    src="${event.photoUrl || '../stubs/photo_square.svg'}"
+    alt="Фото события"
+    onerror="this.src='../stubs/photo_square.svg'">
             <div class="event-actions">
                 ${getEventActions(event)}
             </div>

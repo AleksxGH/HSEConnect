@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*")
 public class DictionaryController {
 
     private final ProfileService profileService;
@@ -57,4 +56,9 @@ public class DictionaryController {
             return ResponseEntity.badRequest().body(error.getMessage());
         }
     }
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> a15eb75032107b7cf61aef964c1264217459dde3
 }

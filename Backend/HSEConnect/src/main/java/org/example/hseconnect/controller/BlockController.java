@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/blocks")
-@CrossOrigin(origins = "*")
 public class BlockController {
 
     private final BlockService blockService;
